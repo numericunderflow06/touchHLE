@@ -62,6 +62,8 @@ pub struct Options {
     pub event_capture_path: Option<PathBuf>,
     /// Path for event injection command file
     pub event_inject_path: Option<PathBuf>,
+    /// Path for frame capture output directory
+    pub frame_capture_path: Option<PathBuf>,
 }
 
 impl Default for Options {
@@ -93,6 +95,7 @@ impl Default for Options {
             ignore_gl_errors: false,
             event_capture_path: None,
             event_inject_path: None,
+            frame_capture_path: None,
         }
     }
 }
@@ -226,6 +229,8 @@ impl Options {
             self.event_capture_path = Some(crate::paths::user_data_base_path().join(path));
         } else if let Some(path) = arg.strip_prefix("--event-inject=") {
             self.event_inject_path = Some(crate::paths::user_data_base_path().join(path));
+        } else if let Some(path) = arg.strip_prefix("--frame-capture=") {
+            self.frame_capture_path = Some(crate::paths::user_data_base_path().join(path));
         } else if arg == "--ignore-gl-errors" {
             self.ignore_gl_errors = true;
         } else {

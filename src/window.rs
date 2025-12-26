@@ -1094,8 +1094,43 @@ impl Window {
 
     /// Swap front-buffer and back-buffer so the result of OpenGL rendering is
     /// presented.
-    pub fn swap_window(&self) {
+    pub fn swap_window(&mut self) {
+        // Check if frame capture was requested
+        if crate::frame_capture::capture_requested() {
+            self.capture_frame();
+        }
         self.window.gl_swap_window();
+    }
+
+    /// Capture the current frame to a file
+    fn capture_frame(&mut self) {
+        if !crate::frame_capture::is_enabled() {
+            return;
+        }
+
+        let (width, height) = self.window.drawable_size();
+        let pixel_count = (width * height) as usize;
+        let mut pixels = vec![0u8; pixel_count * 4]; // RGBA
+
+        // Read pixels from the current framebuffer
+        let gl_ctx = self.internal_gl_ctx.as_deref_mut().unwrap();
+        unsafe {
+            use crate::gles::gles11_raw as gles11;
+            gl_ctx.ReadPixels(
+                0,
+                0,
+                width as i32,
+                height as i32,
+                gles11::RGBA,
+                gles11::UNSIGNED_BYTE,
+                pixels.as_mut_ptr() as *mut _,
+            );
+        }
+
+        // Save to file
+        if let Err(e) = crate::frame_capture::save_frame(width, height, &pixels) {
+            log!("Frame capture failed: {}", e);
+        }
     }
 
     /// Consider the emulated device to be rotated to a particular orientation.

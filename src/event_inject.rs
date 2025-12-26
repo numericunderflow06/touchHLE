@@ -30,6 +30,8 @@ pub enum InjectCommand {
     Wait { ms: u64 },
     /// Replay events from a captured events file
     Replay { file: String },
+    /// Capture a screenshot
+    Capture,
 }
 
 /// Global event injection state
@@ -182,6 +184,7 @@ fn parse_command(line: &str) -> Option<InjectCommand> {
             let file = extract_string_field(line, "file")?;
             Some(InjectCommand::Replay { file })
         }
+        "capture" => Some(InjectCommand::Capture),
         _ => None,
     }
 }
@@ -361,6 +364,10 @@ pub fn poll() -> Vec<SyntheticEvent> {
                 for event in events {
                     pending.push_back(event);
                 }
+            }
+            InjectCommand::Capture => {
+                echo!("Requesting frame capture...");
+                crate::frame_capture::request_capture();
             }
         }
     }

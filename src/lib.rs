@@ -37,6 +37,7 @@ mod dyld;
 mod environment;
 mod event_capture;
 mod event_inject;
+mod frame_capture;
 mod font;
 mod frameworks;
 mod fs;
@@ -322,6 +323,13 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
     // Initialize event injection if enabled
     if let Some(ref path) = options.event_inject_path {
         if let Err(e) = event_inject::init(path.clone()) {
+            echo!("Warning: {}", e);
+        }
+    }
+
+    // Initialize frame capture if enabled
+    if let Some(ref path) = options.frame_capture_path {
+        if let Err(e) = frame_capture::init(path.clone()) {
             echo!("Warning: {}", e);
         }
     }

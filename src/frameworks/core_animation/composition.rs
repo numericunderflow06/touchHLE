@@ -369,7 +369,7 @@ pub fn recomposite_if_necessary(env: &mut Environment, force: bool) -> Option<In
             present_frame_args.2,
         );
     }
-    env.window().swap_window();
+    env.window_mut().swap_window();
 
     animation_state.update_started_and_finished_animations(env);
 
