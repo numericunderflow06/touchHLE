@@ -191,6 +191,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     from_rust_ordering(host_object.time_interval.total_cmp(&another_date_host_object.time_interval))
 }
 
+- (id)description { // NSString*
+    use super::ns_string::from_rust_string;
+    let time_interval = env.objc.borrow::<NSDateHostObject>(this).time_interval;
+    // Convert from Apple epoch (2001-01-01) to a readable format
+    // For simplicity, just output the time interval since reference date
+    let desc = format!("{} seconds since 2001-01-01 00:00:00 +0000", time_interval);
+    from_rust_string(env, desc)
+}
+
 @end
 
 };

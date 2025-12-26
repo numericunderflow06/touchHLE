@@ -485,6 +485,44 @@ pub const CLASSES: ClassExports = objc_classes! {
     NSRange { location: NSNotFound as NSUInteger, length: 0 }
 }
 
+- (NSRange)rangeOfCharacterFromSet:(id)character_set { // NSCharacterSet*
+    msg![env; this rangeOfCharacterFromSet:character_set options:0u32]
+}
+
+- (NSRange)rangeOfCharacterFromSet:(id)character_set
+                           options:(NSStringCompareOptions)options { // NSCharacterSet*
+    log_dbg!(
+        "[(NSString *){:?} rangeOfCharacterFromSet:{:?} options:{}]",
+        this, character_set, options
+    );
+    let len: NSUInteger = msg![env; this length];
+    if len == 0 {
+        return NSRange { location: NSNotFound as NSUInteger, length: 0 };
+    }
+
+    let backwards = (options & NSBackwardsSearch) != 0;
+
+    if backwards {
+        for i in (0..len).rev() {
+            let c: unichar = msg![env; this characterAtIndex:i];
+            let is_member: bool = msg![env; character_set characterIsMember:c];
+            if is_member {
+                return NSRange { location: i, length: 1 };
+            }
+        }
+    } else {
+        for i in 0..len {
+            let c: unichar = msg![env; this characterAtIndex:i];
+            let is_member: bool = msg![env; character_set characterIsMember:c];
+            if is_member {
+                return NSRange { location: i, length: 1 };
+            }
+        }
+    }
+
+    NSRange { location: NSNotFound as NSUInteger, length: 0 }
+}
+
 - (id)description {
     this
 }
