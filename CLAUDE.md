@@ -212,9 +212,12 @@ Updated `src/frameworks/core_foundation.rs` to include `cf_array::CONSTANTS`.
 
 ## Current Status (Updated 2025-12-26)
 
-### GAME IS NOW RUNNING!
+### GAME IS RUNNING - PARTIALLY PLAYABLE
 
 After implementing several missing classes and methods, the game now boots successfully and runs!
+
+**GitHub Repository**: https://github.com/numericunderflow06/touchHLE
+**Branch**: `avatar-of-war-support`
 
 ### What Works
 - App loads and initializes
@@ -225,13 +228,22 @@ After implementing several missing classes and methods, the game now boots succe
 - XML parsing (for game data)
 - NSOperation queue operations (stubbed)
 - Main menu renders and animates
-- Game runs continuously without crashing
+- **Touch input works for navigating menus**
+- Can navigate to level selection (level 1-1)
+
+### Current Issue Being Investigated
+- **"Start" button on level 1-1 doesn't respond to clicks**
+- Other menu buttons work fine
+- Likely a touch handling or hit testing issue specific to that button
 
 ### Known Limitations
 - NSOperationQueue operations are stubbed (ignored) - may affect background tasks
 - AVAudioSession is stubbed - audio configuration may not be fully accurate
 - Some fonts (Arial) fall back to system font
 - Missing dylibs listed above are still unimplemented
+- `touchesCancelled:withEvent:` not implemented
+- `tapCount` always returns 1 (no double-tap support)
+- No UIGestureRecognizer support
 
 ### How to Run
 
@@ -245,6 +257,51 @@ Or use the built version from source:
 D:/touchHLE_src/target/release/touchHLE.exe "touchHLE_apps/Avatar_of_War_The_Dark_Lord_v1.1.ipa"
 ```
 
+### Development Tools
+
+**Crash Monitor** (`crash_monitor.sh`):
+```bash
+./crash_monitor.sh run      # Start game and BLOCK until crash (recommended)
+./crash_monitor.sh start    # Start game in background
+./crash_monitor.sh status   # Check if running or crashed
+./crash_monitor.sh crash    # Show crash details
+./crash_monitor.sh log      # Show recent log output
+./crash_monitor.sh stop     # Stop the game
+```
+
+**Build Monitor** (`build_monitor.sh`):
+```bash
+./build_monitor.sh start    # Start build in background
+./build_monitor.sh status   # Check build status
+./build_monitor.sh output   # Show build output
+./build_monitor.sh wait     # Wait for build to finish
+```
+
+---
+
+## Touch System Analysis
+
+The touch handling system was analyzed to debug button click issues:
+
+### Touch Event Flow
+1. `handle_events()` in `src/frameworks/uikit.rs` receives SDL events
+2. Routes to `ui_touch::handle_touches_down/move/up()`
+3. Hit testing via `UIView.hitTest:withEvent:`
+4. Touch events dispatched via responder chain
+
+### Key Files
+- `src/frameworks/uikit/ui_touch.rs` - UITouch implementation
+- `src/frameworks/uikit/ui_event.rs` - UIEvent implementation
+- `src/frameworks/uikit/ui_responder.rs` - Responder chain
+- `src/frameworks/uikit/ui_view.rs` - Hit testing
+- `src/frameworks/uikit/ui_view/ui_control.rs` - UIControl touch tracking
+
+### Known Touch System Issues
+1. **`touchesCancelled:withEvent:`** - Not implemented
+2. **`tapCount`** - Always returns 1 (hardcoded)
+3. **`exclusiveTouch`** - Stubbed with TODO
+4. **UIGestureRecognizer** - Not implemented
+
 ---
 
 ## Version History
@@ -257,6 +314,7 @@ D:/touchHLE_src/target/release/touchHLE.exe "touchHLE_apps/Avatar_of_War_The_Dar
 | v5 | 2025-12-25 | Added indirect pointer for block class constants |
 | v6 | 2025-12-25 | Added dispatch function stubs |
 | v7 | 2025-12-26 | Game now runs! Added AVAudioSession, NSBundle methods, NSData method, NSXMLParser method, NSOperation |
+| v8 | 2025-12-26 | Added NSDate description, NSString rangeOfCharacterFromSet:options:, improved crash_monitor.sh |
 
 ---
 
@@ -266,17 +324,20 @@ D:/touchHLE_src/target/release/touchHLE.exe "touchHLE_apps/Avatar_of_War_The_Dar
 |------|--------|-------------|
 | `src/objc.rs` | Modified | Added blocks module, updated constants |
 | `src/objc/blocks.rs` | New | Block class implementations |
+| `src/objc/messages.rs` | Modified | Added debug output for class chain on selector errors |
 | `src/libc/dispatch.rs` | Modified | GCD function stubs |
 | `src/libc.rs` | Modified | Added dispatch::FUNCTIONS |
-| `src/frameworks/foundation/ns_operation_queue.rs` | New | NSOperationQueue stub |
+| `src/frameworks/foundation/ns_operation_queue.rs` | New | NSOperationQueue, NSOperation, NSInvocationOperation |
 | `src/frameworks/foundation/ns_user_defaults.rs` | Modified | Added dictionaryForKey: |
-| `src/frameworks/foundation.rs` | Modified | Added ns_operation_queue module |
-| `src/frameworks/avfoundation/av_audio_session.rs` | Modified | AVAudioSession class + constants |
-| `src/frameworks/avfoundation.rs` | Modified | Added av_audio_session classes |
-| `src/frameworks/core_foundation/cf_array.rs` | Modified | Added kCFTypeArrayCallBacks |
-| `src/frameworks/core_foundation.rs` | Modified | Added cf_array::CONSTANTS |
 | `src/frameworks/foundation/ns_bundle.rs` | Modified | Added pathsForResourcesOfType:inDirectory:, classNamed: |
 | `src/frameworks/foundation/ns_data.rs` | Modified | Added dataWithContentsOfFile:options:error: |
 | `src/frameworks/foundation/ns_xml_parser.rs` | Modified | Added parserError method |
-| `src/frameworks/foundation/ns_operation_queue.rs` | Modified | Added NSOperation, NSInvocationOperation classes |
-| `src/objc/messages.rs` | Modified | Added debug output for class chain on selector errors |
+| `src/frameworks/foundation/ns_date.rs` | Modified | Added description method |
+| `src/frameworks/foundation/ns_string.rs` | Modified | Added rangeOfCharacterFromSet:, rangeOfCharacterFromSet:options: |
+| `src/frameworks/foundation.rs` | Modified | Added ns_operation_queue module |
+| `src/frameworks/avfoundation/av_audio_session.rs` | New | AVAudioSession class + constants |
+| `src/frameworks/avfoundation.rs` | Modified | Added av_audio_session classes |
+| `src/frameworks/core_foundation/cf_array.rs` | Modified | Added kCFTypeArrayCallBacks |
+| `src/frameworks/core_foundation.rs` | Modified | Added cf_array::CONSTANTS |
+| `crash_monitor.sh` | New | Crash monitoring and notification tool |
+| `build_monitor.sh` | New | Build process monitoring tool |
