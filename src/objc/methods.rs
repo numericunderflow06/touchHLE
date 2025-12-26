@@ -165,6 +165,37 @@ impl ObjC {
     /// Same as [Self::class_has_method], but using a named selector (rather
     /// than a pointer).
     #[allow(dead_code)]
+    /// Gets the IMP for an instance method of a class.
+    /// Returns the guest function address if found, or 0 if not found.
+    /// Note: Only works for guest methods. Host methods will log a warning and return 0.
+    pub fn class_get_instance_method_imp(&self, class: Class, sel: SEL) -> u32 {
+        let mut class = class;
+        loop {
+            let &ClassHostObject {
+                superclass,
+                ref methods,
+                ..
+            } = self.borrow(class);
+            if let Some(imp) = methods.get(&sel) {
+                match imp {
+                    IMP::Guest(guest_imp) => {
+                        return guest_imp.addr_with_thumb_bit();
+                    }
+                    IMP::Host(_) => {
+                        log!(
+                            "Warning: instanceMethodForSelector: called for host method, returning NULL"
+                        );
+                        return 0;
+                    }
+                }
+            } else if superclass == nil {
+                return 0;
+            } else {
+                class = superclass;
+            }
+        }
+    }
+
     pub fn class_has_method_named(&self, class: Class, sel_name: &str) -> bool {
         if let Some(sel) = self.lookup_selector(sel_name) {
             self.class_has_method(class, sel)

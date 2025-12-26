@@ -42,12 +42,13 @@ pub mod sysctl;
 pub mod time;
 pub mod unistd;
 pub mod wchar;
+pub mod dispatch;
 
 pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
     path: "/usr/lib/libSystem.B.dylib",
     aliases: &["/usr/lib/libSystem.dylib"],
     class_exports: &[],
-    constant_exports: &[ctype::CONSTANTS, stdio::CONSTANTS, mach::init::CONSTANTS],
+    constant_exports: &[ctype::CONSTANTS, stdio::CONSTANTS, mach::init::CONSTANTS, dispatch::CONSTANTS],
     function_exports: &[
         arpa::inet::FUNCTIONS,
         clocale::FUNCTIONS,
@@ -95,6 +96,7 @@ pub const DYLIB: crate::dyld::HostDylib = crate::dyld::HostDylib {
         time::FUNCTIONS,
         unistd::FUNCTIONS,
         wchar::FUNCTIONS,
+        dispatch::FUNCTIONS,
     ],
 };
 

@@ -81,6 +81,14 @@ pub const CLASSES: ClassExports = objc_classes! {
     assert!(!should);
 }
 
+- (id)parserError { // NSError*
+    // Returns the NSError from the last parsing operation, or nil if successful.
+    // Currently we don't store parse errors (we panic on errors instead),
+    // so we always return nil.
+    log_dbg!("NSXMLParser parserError - returning nil (no error tracking implemented)");
+    nil
+}
+
 - (bool)parse {
     let data = env.objc.borrow::<NSXMLParserHostObject>(this).data;
     assert_ne!(data, nil);

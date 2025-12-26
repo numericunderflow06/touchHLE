@@ -299,6 +299,63 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; info_dict objectForKey:key]
 }
 
+- (id)pathsForResourcesOfType:(id)extension // NSString* or nil
+                  inDirectory:(id)subpath { // NSString* or nil
+    // Returns NSArray<NSString*>* with paths to all matching resources
+    let results: id = msg_class![env; NSMutableArray new];
+
+    // Build the search path
+    let mut search_path: id = msg![env; this resourcePath];
+    if subpath != nil {
+        search_path = msg![env; search_path stringByAppendingPathComponent:subpath];
+    }
+
+    let search_path_str = ns_string::to_rust_string(env, search_path);
+
+    let ext_filter = if extension != nil {
+        Some(ns_string::to_rust_string(env, extension).into_owned())
+    } else {
+        None
+    };
+
+    // Use the guest filesystem to enumerate - collect first to avoid borrow issues
+    use crate::fs::GuestPath;
+    let matching_entries: Vec<String> = if let Ok(entries) = env.fs.enumerate(GuestPath::new(&search_path_str)) {
+        entries
+            .filter(|entry_name| {
+                if let Some(ref ext) = ext_filter {
+                    entry_name.ends_with(&format!(".{}", ext))
+                } else {
+                    true
+                }
+            })
+            .map(|s| s.to_string())
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    // Now build NSStrings with mutable env access
+    for entry_name in matching_entries {
+        let entry_ns: id = ns_string::from_rust_string(env, entry_name);
+        let full_path: id = msg![env; search_path stringByAppendingPathComponent:entry_ns];
+        () = msg![env; results addObject:full_path];
+    }
+
+    autorelease(env, results)
+}
+
+- (id)classNamed:(id)class_name { // NSString* -> Class
+    if class_name == nil {
+        return nil;
+    }
+    // Get the class by name. For the main bundle, this just looks up the class.
+    // TODO: For other bundles, we might need to restrict to classes from that bundle.
+    let name = ns_string::to_rust_string(env, class_name);
+    log_dbg!("[(NSBundle*){:?} classNamed:{}]", this, name);
+    env.objc.get_known_class(&name, &mut env.mem)
+}
+
 - (id)localizations {
     let localizations = CFBundleCopyBundleLocalizations(env, this);
     autorelease(env, localizations)

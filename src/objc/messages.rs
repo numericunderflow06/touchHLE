@@ -57,8 +57,27 @@ fn objc_msgSend_inner(env: &mut Environment, receiver: id, selector: SEL, super2
                 ..
             } = class_host_object.as_any().downcast_ref().unwrap();
 
+            // Debug: print the full class chain
+            let mut chain_debug = String::new();
+            let mut debug_class = orig_class;
+            for i in 0..20 {
+                if let Some(host) = env.objc.get_host_object(debug_class) {
+                    if let Some(&super::ClassHostObject { ref name, superclass, .. }) = host.as_any().downcast_ref() {
+                        chain_debug.push_str(&format!("{}: {} ({:?}) -> {:?}\n", i, name, debug_class, superclass));
+                        debug_class = superclass;
+                        if debug_class == nil { break; }
+                    } else {
+                        chain_debug.push_str(&format!("{}: non-ClassHostObject at {:?}\n", i, debug_class));
+                        break;
+                    }
+                } else {
+                    chain_debug.push_str(&format!("{}: no host object for {:?}\n", i, debug_class));
+                    break;
+                }
+            }
+
             panic!(
-                "{} {:?} ({}class \"{}\", {:?}){} does not respond to selector \"{}\"!",
+                "{} {:?} ({}class \"{}\", {:?}){} does not respond to selector \"{}\"!\n\nClass chain:\n{}",
                 if is_metaclass { "Class" } else { "Object" },
                 receiver,
                 if is_metaclass { "meta" } else { "" },
@@ -70,6 +89,7 @@ fn objc_msgSend_inner(env: &mut Environment, receiver: id, selector: SEL, super2
                     ""
                 },
                 selector.as_str(&env.mem),
+                chain_debug,
             );
         }
 

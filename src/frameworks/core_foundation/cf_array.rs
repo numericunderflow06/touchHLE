@@ -10,7 +10,7 @@
 
 use super::cf_allocator::{kCFAllocatorDefault, CFAllocatorRef};
 use super::CFIndex;
-use crate::dyld::{export_c_func, FunctionExports};
+use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant};
 use crate::frameworks::foundation::NSUInteger;
 use crate::mem::ConstVoidPtr;
 use crate::objc::{id, msg, msg_class};
@@ -53,6 +53,11 @@ fn CFArrayRemoveValueAtIndex(env: &mut Environment, array: CFMutableArrayRef, id
     let idx: NSUInteger = idx.try_into().unwrap();
     msg![env; array removeObjectAtIndex:idx]
 }
+
+pub const CONSTANTS: ConstantExports = &[
+    // Stub for kCFTypeArrayCallBacks - provides null pointer
+    ("_kCFTypeArrayCallBacks", HostConstant::NullPtr),
+];
 
 pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(CFArrayCreateMutable(_, _, _)),

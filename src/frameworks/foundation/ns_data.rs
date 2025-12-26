@@ -66,6 +66,25 @@ pub const CLASSES: ClassExports = objc_classes! {
     autorelease(env, new)
 }
 
++ (id)dataWithContentsOfFile:(id)path
+                     options:(NSUInteger)options
+                       error:(MutPtr<id>)error {
+    // options are things like NSDataReadingMappedIfSafe, NSDataReadingUncached
+    // For now, we ignore options and just load the file normally
+    log_dbg!("dataWithContentsOfFile:options:error: path={:?}, options={}, ignoring options", path, options);
+
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithContentsOfFile:path];
+
+    if new == nil && !error.is_null() {
+        // TODO: create proper NSError
+        log!("Warning: dataWithContentsOfFile:options:error: failed but error creation not implemented");
+        env.mem.write(error, nil);
+    }
+
+    autorelease(env, new)
+}
+
 + (id)dataWithContentsOfMappedFile:(id)path {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithContentsOfMappedFile:path];

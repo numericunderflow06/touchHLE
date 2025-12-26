@@ -65,6 +65,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.class_has_method(this, selector)
 }
 
++ (MutVoidPtr)instanceMethodForSelector:(SEL)selector {
+    let imp_addr = env.objc.class_get_instance_method_imp(this, selector);
+    MutVoidPtr::from_bits(imp_addr)
+}
+
 + (bool)accessInstanceVariablesDirectly {
     true
 }
@@ -217,6 +222,12 @@ forUndefinedKey:(id)key { // NSString*
 - (bool)respondsToSelector:(SEL)selector {
     let class = msg![env; this class];
     env.objc.class_has_method(class, selector)
+}
+
+- (MutVoidPtr)methodForSelector:(SEL)selector {
+    let class: Class = msg![env; this class];
+    let imp_addr = env.objc.class_get_instance_method_imp(class, selector);
+    MutVoidPtr::from_bits(imp_addr)
 }
 
 - (id)performSelector:(SEL)sel {
