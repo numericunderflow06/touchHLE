@@ -35,6 +35,8 @@ mod cpu;
 mod debug;
 mod dyld;
 mod environment;
+mod event_capture;
+mod event_inject;
 mod font;
 mod frameworks;
 mod fs;
@@ -308,6 +310,20 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
     for option_arg in option_args {
         let parse_result = options.parse_argument(&option_arg);
         assert!(parse_result == Ok(true));
+    }
+
+    // Initialize event capture if enabled
+    if let Some(ref path) = options.event_capture_path {
+        if let Err(e) = event_capture::init(path.clone()) {
+            echo!("Warning: {}", e);
+        }
+    }
+
+    // Initialize event injection if enabled
+    if let Some(ref path) = options.event_inject_path {
+        if let Err(e) = event_inject::init(path.clone()) {
+            echo!("Warning: {}", e);
+        }
     }
 
     let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

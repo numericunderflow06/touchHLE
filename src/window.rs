@@ -16,6 +16,7 @@ use crate::gles::present::present_frame;
 use crate::gles::{create_gles1_ctx, GLES};
 use crate::image::Image;
 use crate::matrix::Matrix;
+use crate::event_inject;
 use crate::options::Options;
 use sdl2::mouse::MouseButton;
 use sdl2::pixels::PixelFormatEnum;
@@ -673,6 +674,30 @@ impl Window {
                     }
                     _ => return,
                 });
+        }
+
+        // Poll for injected events
+        for synthetic_event in event_inject::poll() {
+            match synthetic_event {
+                event_inject::SyntheticEvent::TouchDown { x, y } => {
+                    let coords = transform_input_coords(self, (x, y), false);
+                    self.event_queue.push_back(
+                        Event::TouchesDown(HashMap::from([(FingerId::Mouse, coords)]))
+                    );
+                }
+                event_inject::SyntheticEvent::TouchMove { x, y } => {
+                    let coords = transform_input_coords(self, (x, y), false);
+                    self.event_queue.push_back(
+                        Event::TouchesMove(HashMap::from([(FingerId::Mouse, coords)]))
+                    );
+                }
+                event_inject::SyntheticEvent::TouchUp { x, y } => {
+                    let coords = transform_input_coords(self, (x, y), false);
+                    self.event_queue.push_back(
+                        Event::TouchesUp(HashMap::from([(FingerId::Mouse, coords)]))
+                    );
+                }
+            }
         }
     }
 

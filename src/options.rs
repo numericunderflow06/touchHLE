@@ -58,6 +58,10 @@ pub struct Options {
     pub dumping_options: DumpingOptions,
     pub dumping_file: PathBuf,
     pub ignore_gl_errors: bool,
+    /// Path for event capture JSON output
+    pub event_capture_path: Option<PathBuf>,
+    /// Path for event injection command file
+    pub event_inject_path: Option<PathBuf>,
 }
 
 impl Default for Options {
@@ -87,6 +91,8 @@ impl Default for Options {
             dumping_options: Default::default(),
             dumping_file: crate::paths::user_data_base_path().join("DUMP.txt"),
             ignore_gl_errors: false,
+            event_capture_path: None,
+            event_inject_path: None,
         }
     }
 }
@@ -216,6 +222,10 @@ impl Options {
             self.dumping_options = parse_dump_options(values)?;
         } else if let Some(path) = arg.strip_prefix("--dump-file=") {
             self.dumping_file = crate::paths::user_data_base_path().join(path);
+        } else if let Some(path) = arg.strip_prefix("--event-capture=") {
+            self.event_capture_path = Some(crate::paths::user_data_base_path().join(path));
+        } else if let Some(path) = arg.strip_prefix("--event-inject=") {
+            self.event_inject_path = Some(crate::paths::user_data_base_path().join(path));
         } else if arg == "--ignore-gl-errors" {
             self.ignore_gl_errors = true;
         } else {
