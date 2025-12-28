@@ -1,11 +1,16 @@
 #!/bin/bash
 # Crash monitoring system for touchHLE game testing
-# Usage:
-#   ./crash_monitor.sh run     - Start game and BLOCK until crash (returns crash info immediately)
-#   ./crash_monitor.sh start   - Start game in background only
-#   ./crash_monitor.sh status  - Check if game is running or crashed
-#   ./crash_monitor.sh crash   - Get crash details if crashed
-#   ./crash_monitor.sh stop    - Stop the game
+# 
+# WORKFLOW FOR DEBUGGING:
+#   1. ./crash_monitor.sh auto   - Runs game with auto-replay, waits for crash
+#   2. Analyze crash output (PC, registers, stack trace)
+#   3. Fix the bug in source code
+#   4. ./build_monitor.sh start && ./build_monitor.sh wait  - Rebuild
+#   5. Repeat from step 1
+#
+# EXIT CODES:
+#   0 = Crash detected and captured (SUCCESS - we triggered the bug!)
+#   1 = Game exited without crash or timeout (need to investigate)
 
 GAME_DIR="/d/touchHLE_src"
 TOUCHHLE="/d/touchHLE_src/target/release/touchHLE.exe"
@@ -14,41 +19,39 @@ LOG_FILE="/tmp/touchhle_game.log"
 PID_FILE="/tmp/touchhle_game.pid"
 STATUS_FILE="/tmp/touchhle_game.status"
 CRASH_FILE="/tmp/touchhle_crash.txt"
+INJECT_FILE="/d/touchHLE_src/inject.json"
+REPLAY_SCRIPT="/d/touchHLE_src/replay_sequence.sh"
 
 force_kill_game() {
-    # Force kill using taskkill on Windows (dismisses crash dialogs)
     if [ -f "$PID_FILE" ]; then
         local PID=$(cat "$PID_FILE")
         taskkill //F //PID $PID 2>/dev/null || kill -9 $PID 2>/dev/null
         sleep 0.5
     fi
-    # Also kill any touchHLE processes by name as backup
     taskkill //F //IM touchHLE.exe 2>/dev/null || true
 }
 
 start_game() {
-    # Kill any existing game
+    local USE_INJECT=${1:-false}
     force_kill_game
     sleep 1
-
-    # Clear previous files
     rm -f "$LOG_FILE" "$CRASH_FILE" "$STATUS_FILE"
+    > "$INJECT_FILE"
     echo "RUNNING" > "$STATUS_FILE"
-
     cd "$GAME_DIR"
-
-    # Start game in background, capturing all output
-    $TOUCHHLE "$GAME_IPA" > "$LOG_FILE" 2>&1 &
+    if [ "$USE_INJECT" = "true" ]; then
+        $TOUCHHLE "$GAME_IPA" --event-inject="$INJECT_FILE" > "$LOG_FILE" 2>&1 &
+    else
+        $TOUCHHLE "$GAME_IPA" > "$LOG_FILE" 2>&1 &
+    fi
     GAME_PID=$!
     echo $GAME_PID > "$PID_FILE"
-
     echo "Game started with PID $GAME_PID" >&2
 }
 
 wait_for_crash() {
-    local TIMEOUT=${1:-600}  # Default 10 minutes
+    local TIMEOUT=${1:-600}
     local START=$(date +%s)
-
     echo "Monitoring for crash (timeout: ${TIMEOUT}s)..." >&2
 
     while true; do
@@ -60,28 +63,27 @@ wait_for_crash() {
             return 1
         fi
 
-        # Check for crash in log FIRST (before checking if process ended)
         if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
             echo "CRASHED" > "$STATUS_FILE"
-            
-            # Force kill the process immediately to dismiss any crash dialogs
             force_kill_game
-            
-            # Save crash details to file
             grep -B 10 -A 40 "panicked at" "$LOG_FILE" > "$CRASH_FILE"
-            
-            # Output crash info to STDOUT (so it's captured by caller)
             echo "=== CRASH DETECTED ==="
+            echo "Auto-replay successfully triggered the crash!"
+            echo ""
             grep -B 10 -A 40 "panicked at" "$LOG_FILE" | tail -55
             echo "=== END CRASH ==="
-            return 0
+            echo ""
+            echo "Next steps:"
+            echo "  1. Analyze the crash (PC: 0x108da8, null pointer access)"
+            echo "  2. Fix the bug in the source code"
+            echo "  3. Rebuild: ./build_monitor.sh start && ./build_monitor.sh wait"
+            echo "  4. Test again: ./crash_monitor.sh auto"
+            return 0  # Exit 0 = crash successfully triggered
         fi
 
-        # Check if process ended without crash
         if [ -f "$PID_FILE" ]; then
             local PID=$(cat "$PID_FILE")
             if ! ps -p $PID > /dev/null 2>&1; then
-                # Process ended - check one more time for crash
                 if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
                     echo "CRASHED" > "$STATUS_FILE"
                     grep -B 10 -A 40 "panicked at" "$LOG_FILE" > "$CRASH_FILE"
@@ -95,84 +97,72 @@ wait_for_crash() {
                 fi
             fi
         fi
-
         sleep 0.5
     done
 }
 
 case "$1" in
     run)
-        # START GAME AND BLOCK UNTIL CRASH - This is the main command to use
-        start_game
-        echo "=== Game running. Interact with game to trigger crash. Waiting... ===" >&2
+        start_game false
+        echo "=== Game running (manual play). Waiting for crash... ===" >&2
         wait_for_crash ${2:-600}
         ;;
-
+    auto)
+        echo "=== AUTO-REPLAY MODE ===" >&2
+        echo "This will automatically replay recorded clicks to trigger the crash." >&2
+        echo "" >&2
+        start_game true
+        "$REPLAY_SCRIPT" &
+        REPLAY_PID=$!
+        echo "=== Waiting for crash... ===" >&2
+        wait_for_crash ${2:-600}
+        EXIT_CODE=$?
+        kill $REPLAY_PID 2>/dev/null
+        exit $EXIT_CODE
+        ;;
     start)
-        start_game
-        echo "Game started. Use 'crash_monitor.sh status' to check, or 'crash_monitor.sh wait' to block until crash."
+        start_game false
+        echo "Game started. Use './crash_monitor.sh wait' to block until crash."
         ;;
-
     wait)
-        # Just wait for crash (game should already be running)
         wait_for_crash ${2:-600}
         ;;
-
     status)
         if [ ! -f "$STATUS_FILE" ]; then
             echo "NOT_STARTED"
-            exit 0
-        fi
-
-        STATUS=$(cat "$STATUS_FILE")
-        echo "$STATUS"
-
-        if [ "$STATUS" = "RUNNING" ]; then
-            if [ -f "$PID_FILE" ]; then
-                PID=$(cat "$PID_FILE")
-                if ps -p $PID > /dev/null 2>&1; then
-                    echo "Game running (PID: $PID)"
-                else
-                    echo "Game process ended"
-                fi
-            fi
+        else
+            cat "$STATUS_FILE"
         fi
         ;;
-
     crash)
         if [ -f "$CRASH_FILE" ]; then
             cat "$CRASH_FILE"
-        elif [ -f "$LOG_FILE" ] && grep -q "panicked at" "$LOG_FILE"; then
-            grep -B 10 -A 40 "panicked at" "$LOG_FILE" | tail -55
         else
             echo "No crash detected"
         fi
         ;;
-
     log)
-        if [ -f "$LOG_FILE" ]; then
-            tail -100 "$LOG_FILE"
-        else
-            echo "No log file"
-        fi
+        [ -f "$LOG_FILE" ] && tail -100 "$LOG_FILE" || echo "No log file"
         ;;
-
     stop)
         force_kill_game
         rm -f "$PID_FILE"
         echo "Game stopped"
         ;;
-
     *)
-        echo "Usage: $0 {run|start|wait|status|crash|log|stop}"
+        echo "Usage: $0 {run|auto|start|wait|status|crash|log|stop}"
         echo ""
-        echo "  run [timeout]  - Start game and BLOCK until crash detected (recommended)"
+        echo "  auto [timeout] - AUTO-REPLAY: Start game, replay clicks, wait for crash"
+        echo "  run [timeout]  - Start game for manual play, wait for crash"
         echo "  start          - Start game in background"
-        echo "  wait [timeout] - Block until crash (if game already running)"
+        echo "  wait [timeout] - Wait for crash (game already running)"
         echo "  status         - Check game status"
         echo "  crash          - Show crash details"
         echo "  log            - Show recent log output"
         echo "  stop           - Stop the game"
-        exit 1
+        echo ""
+        echo "EXIT CODES:"
+        echo "  0 = Crash detected (success - bug was triggered)"
+        echo "  1 = No crash (timeout or clean exit)"
         ;;
 esac

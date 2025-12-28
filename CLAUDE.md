@@ -22,28 +22,39 @@ This document tracks modifications made to touchHLE to support running "Avatar o
 - Game: crashes (returns crash details) or timeout
 
 ---
+## Automated Debugging Workflow
 
-## Project Location
+The crash monitor supports **auto-replay mode** which automatically replays recorded clicks to trigger crashes:
 
-- **Source**: `D:/touchHLE_src/`
-- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`
-- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`
-  - `Avatar_of_War_The_Dark_Lord_v1.1.ipa`
-  - `Avatar_Of_War_The_Dark_Lord_v2.0.ipa`
+```bash
+# AUTOMATED DEBUG CYCLE:
+./crash_monitor.sh auto    # Replays clicks, waits for crash, reports details
+# ... analyze crash, fix code ...
+./build_monitor.sh start && ./build_monitor.sh wait   # Rebuild
+./crash_monitor.sh auto    # Test again
+```
+
+**Exit codes for `./crash_monitor.sh auto`:**
+- `0` = Crash detected (SUCCESS - the bug was triggered, analyze the output)
+- `1` = No crash (timeout or clean exit - investigate why)
+
+**When the background task completes with exit 0**, it means:
+1. The auto-replay successfully navigated to the crash point
+2. The crash was captured with full details
+3. You should analyze PC/registers and fix the bug
+4. Then rebuild and test again
+
+**Recording new click sequences:**
+```bash
+# Start game with event capture to record clicks:
+./target/release/touchHLE.exe app.ipa --event-capture=recorded_events.json
+# Play through manually, then process recording into replay_sequence.sh
+```
 
 ---
 
-## Current Status - December 28, 2025
 
-### Game is PROGRESSING!
-
-After implementing missing framework stubs and fixing NSOperationQueue, the game now:
-- Boots successfully
-- Renders menus
-- **Responds to button clicks and progresses past the start screen**
-- Can navigate to level selection
-- Still being debugged for remaining issues
-
+## Project Location- **Source**: `D:/touchHLE_src/`- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`---## Current Status - December 28, 2025### Game is PROGRESSING!- Boots successfully, renders menus, touch input works- **Crashes with null pointer at PC 0x108da8** (being debugged with auto-replay)### Key Changes in v11 (Latest)1. **Auto-replay debugging system**:   - `./crash_monitor.sh auto` - Replays recorded clicks to trigger crash   - `replay_sequence.sh` - Recorded click sequence with timing   - Exit code 0 = crash detected, exit code 1 = no crash
 ### Key Changes in v10 (Latest)
 
 1. **Improved crash_monitor.sh**:
@@ -88,7 +99,6 @@ After implementing missing framework stubs and fixing NSOperationQueue, the game
 - NSOperation queue operations execute synchronously
 - Main menu renders and animates
 - **Touch input works for navigating menus**
-- Can navigate to level selection
 
 ### Things to Keep in Mind
 
@@ -372,6 +382,7 @@ The touch handling system was analyzed to debug button click issues:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v11 | 2025-12-28 | Auto-replay debugging system for automated crash testing |
 | v10 | 2025-12-28 | Improved crash_monitor.sh: fixed path, auto-kill crash dialogs, better output |
 | v9 | 2025-12-28 | Implemented 7 framework stubs, __objc_personality_v0, fixed NSOperationQueue, fixed UTF-8 crash |
 | v8 | 2025-12-26 | Added NSDate description, NSString rangeOfCharacterFromSet:options:, improved crash_monitor.sh |
