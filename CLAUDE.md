@@ -1,14 +1,61 @@
-## IMPORTANT: Current Status - December 28, 2025
+# touchHLE Modifications for Avatar of War: The Dark Lord
 
-### Game is now PROGRESSING!
+This document tracks modifications made to touchHLE to support running "Avatar of War: The Dark Lord" (v1.1 and v2.0).
+
+---
+
+## CRITICAL: Always Use Monitor Scripts
+
+> **WARNING**: You MUST use the monitor scripts. NEVER run touchHLE directly!
+>
+> Running touchHLE directly causes crash dialogs requiring manual dismissal.
+
+**ALWAYS use the monitor scripts:**
+
+| Task | Use This | NOT This |
+|------|----------|----------|
+| Build & wait | `./build_monitor.sh start && ./build_monitor.sh wait` | `cargo build --release` |
+| Test & wait for crash | `./crash_monitor.sh run` | `./touchHLE.exe ...` |
+
+**These commands BLOCK until completion** - no need to poll status. The command returns when:
+- Build: finishes (success or failure)
+- Game: crashes (returns crash details) or timeout
+
+---
+
+## Project Location
+
+- **Source**: `D:/touchHLE_src/`
+- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`
+- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`
+  - `Avatar_of_War_The_Dark_Lord_v1.1.ipa`
+  - `Avatar_Of_War_The_Dark_Lord_v2.0.ipa`
+
+---
+
+## Current Status - December 28, 2025
+
+### Game is PROGRESSING!
 
 After implementing missing framework stubs and fixing NSOperationQueue, the game now:
 - Boots successfully
 - Renders menus
 - **Responds to button clicks and progresses past the start screen**
-- Still has some crashes to debug (next step)
+- Can navigate to level selection
+- Still being debugged for remaining issues
 
-### Key Changes in This Version (v9)
+### Key Changes in v10 (Latest)
+
+1. **Improved crash_monitor.sh**:
+   - Fixed `GAME_DIR` path to point to correct location (`/d/touchHLE_src`)
+   - Added `force_kill_game()` function using `taskkill //F` to dismiss crash dialogs
+   - Crash detection now checks log FIRST before checking if process ended
+   - Output includes clear `=== CRASH DETECTED ===` and `=== END CRASH ===` markers
+   - Faster polling (0.5s instead of 1s)
+   - Crash details saved to `/tmp/touchhle_crash.txt`
+
+
+### Key Changes in v9
 
 1. **Implemented 7 missing framework stubs**:
    - `libsqlite3.dylib` - Returns SQLITE_CANTOPEN
@@ -31,7 +78,19 @@ After implementing missing framework stubs and fixing NSOperationQueue, the game
    - Changed `String::from_utf8().unwrap()` to `String::from_utf8_lossy()`
    - Prevents crash on invalid UTF-8 sequences
 
-### IMPORTANT: Things to Keep in Mind
+### What Works
+- App loads and initializes
+- OpenGL ES 1.1 context created successfully
+- UI loads (UIActivityIndicatorView shows)
+- Audio session setup (stubbed)
+- OpenAL audio initialization
+- XML parsing (for game data)
+- NSOperation queue operations execute synchronously
+- Main menu renders and animates
+- **Touch input works for navigating menus**
+- Can navigate to level selection
+
+### Things to Keep in Mind
 
 1. **NSOperationQueue runs synchronously** - All operations execute immediately on the main thread. This may cause issues if the game expects async behavior.
 
@@ -41,43 +100,44 @@ After implementing missing framework stubs and fixing NSOperationQueue, the game
 
 4. **Security keychain returns empty** - Any saved credentials/tokens will not be found.
 
----
-
-## IMPORTANT: Always Use Monitor Scripts
-
-**ALWAYS use the monitor scripts when building or testing. NEVER run commands directly:**
-
-- For building: Use `./build_monitor.sh start` instead of `cargo build`
-- For testing: Use `./crash_monitor.sh run` instead of running touchHLE directly
-
-This ensures proper background monitoring and crash detection.
+### Known Limitations
+- Some fonts (Arial) fall back to system font
+- `touchesCancelled:withEvent:` not implemented
+- `tapCount` always returns 1 (no double-tap support)
+- No UIGestureRecognizer support
 
 ---
 
-# touchHLE Modifications for Avatar of War: The Dark Lord
+## Development Tools
 
-This document tracks modifications made to touchHLE to support running "Avatar of War: The Dark Lord" (v1.1 and v2.0).
-
-## Project Location
-
-- **Source**: `D:/touchHLE_src/`
-- **Built executables**: `D:/touchHLE_nightly/touchHLE_v*.exe`
-- **Game IPAs**: `D:/touchHLE_nightly/touchHLE_apps/`
-  - `Avatar_of_War_The_Dark_Lord_v1.1.ipa`
-  - `Avatar_Of_War_The_Dark_Lord_v2.0.ipa`
-
-## Build Instructions
+### Build Monitor (`build_monitor.sh`)
 
 ```bash
-# Ensure Rust is in PATH
-export PATH="/c/Users/cs06t/.cargo/bin:$PATH"
-
-# Build with limited parallelism to avoid Windows resource errors
 cd D:/touchHLE_src
-cargo build --release -j 2
+
+# PRIMARY - use this to build (blocks until done):
+./build_monitor.sh start && ./build_monitor.sh wait
+
+# Secondary commands (for manual inspection only):
+./build_monitor.sh output   # Show full build output
+./build_monitor.sh tail     # Show last 50 lines of build output
 ```
 
-The built executable will be at `target/release/touchHLE.exe`.
+### Crash Monitor (`crash_monitor.sh`)
+
+```bash
+cd D:/touchHLE_src
+
+# PRIMARY - use this to test (blocks until crash):
+./crash_monitor.sh run
+
+# Secondary commands (for manual inspection only):
+./crash_monitor.sh crash    # Show crash details (if already captured)
+./crash_monitor.sh log      # Show recent log output
+./crash_monitor.sh stop     # Stop the game manually
+```
+
+---
 
 ## Game Information
 
@@ -85,21 +145,6 @@ The built executable will be at `target/release/touchHLE.exe`.
 - **Bundle ID**: cde.AvatarOfWarTDL
 - **Minimum iOS**: 3.0
 - **Architecture**: armv7
-
-## Missing Dependencies (Warnings)
-
-The game depends on several unimplemented dylibs:
-- `/usr/lib/libsqlite3.dylib`
-- `/System/Library/Frameworks/MapKit.framework/MapKit`
-- `/System/Library/Frameworks/Security.framework/Security`
-- `/System/Library/Frameworks/CoreAudio.framework/CoreAudio`
-- `/System/Library/Frameworks/CFNetwork.framework/CFNetwork`
-- `/System/Library/Frameworks/AddressBook.framework/AddressBook`
-- `/System/Library/Frameworks/AddressBookUI.framework/AddressBookUI`
-
-Unhandled symbols:
-- `___objc_personality_v0` - Exception handling personality
-- `_glDiscardFramebufferEXT` - OpenGL ES extension
 
 ---
 
@@ -190,11 +235,11 @@ Updated `__dispatch_main_q` constant to return a non-null stub:
 
 Added `dispatch::FUNCTIONS` to `libc.rs` function_exports.
 
-### 3. NSOperationQueue Stub
+### 3. NSOperationQueue Implementation
 
 **File**: `src/frameworks/foundation/ns_operation_queue.rs` (NEW)
 
-Created a minimal stub implementation:
+Created a functional implementation that runs operations synchronously:
 
 ```rust
 pub const CLASSES: ClassExports = objc_classes! {
@@ -203,9 +248,24 @@ pub const CLASSES: ClassExports = objc_classes! {
 @implementation NSOperationQueue: NSObject
 + (id)alloc { ... }
 - (id)init { this }
-- (())addOperation:(id)_op { log!("Warning: ignored"); }
-- (())addOperationWithBlock:(id)_block { log!("Warning: ignored"); }
-- (())setMaxConcurrentOperationCount:(i32)_count { log!("Warning: ignored"); }
+- (())addOperation:(id)op { /* Executes operation synchronously */ }
+- (())addOperationWithBlock:(id)block { /* Executes block synchronously */ }
+- (())setMaxConcurrentOperationCount:(i32)_count { /* Ignored - always 1 */ }
+@end
+
+@implementation NSOperation: NSObject
+- (())start { /* Calls main */ }
+- (())main { /* Override point */ }
+@end
+
+@implementation NSInvocationOperation: NSOperation
+- (id)initWithTarget:(id)target selector:(SEL)sel object:(id)arg { ... }
+- (())main { /* Calls target with selector */ }
+@end
+
+@implementation NSBlockOperation: NSOperation
++ (id)blockOperationWithBlock:(id)block { ... }
+- (())main { /* Invokes block */ }
 @end
 };
 ```
@@ -264,74 +324,22 @@ pub const CONSTANTS: ConstantExports = &[
 
 Updated `src/frameworks/core_foundation.rs` to include `cf_array::CONSTANTS`.
 
----
+### 7. Framework Stubs (v9)
 
-## Current Status (Updated 2025-12-26)
+**New Files**:
+- `src/libc/sqlite.rs` - SQLite stubs returning SQLITE_CANTOPEN
+- `src/frameworks/map_kit.rs` - MapKit framework stubs
+- `src/frameworks/security.rs` - Security/Keychain stubs
+- `src/frameworks/core_audio.rs` - CoreAudio AudioObject* stubs
+- `src/frameworks/cf_network.rs` - CFNetwork HTTP stubs
+- `src/frameworks/address_book.rs` - AddressBook stubs
+- `src/frameworks/address_book_ui.rs` - AddressBookUI stubs
 
-### GAME IS RUNNING - PARTIALLY PLAYABLE
+### 8. Exception Handling Personality
 
-After implementing several missing classes and methods, the game now boots successfully and runs!
+**File**: `src/objc.rs`
 
-**GitHub Repository**: https://github.com/numericunderflow06/touchHLE
-**Branch**: `avatar-of-war-support`
-
-### What Works
-- App loads and initializes
-- OpenGL ES 1.1 context created successfully
-- UI loads (UIActivityIndicatorView shows)
-- Audio session setup (stubbed)
-- OpenAL audio initialization
-- XML parsing (for game data)
-- NSOperation queue operations (stubbed)
-- Main menu renders and animates
-- **Touch input works for navigating menus**
-- Can navigate to level selection (level 1-1)
-
-### Current Issue Being Investigated
-- **"Start" button on level 1-1 doesn't respond to clicks**
-- Other menu buttons work fine
-- Likely a touch handling or hit testing issue specific to that button
-
-### Known Limitations
-- NSOperationQueue operations are stubbed (ignored) - may affect background tasks
-- AVAudioSession is stubbed - audio configuration may not be fully accurate
-- Some fonts (Arial) fall back to system font
-- Missing dylibs listed above are still unimplemented
-- `touchesCancelled:withEvent:` not implemented
-- `tapCount` always returns 1 (no double-tap support)
-- No UIGestureRecognizer support
-
-### How to Run
-
-```bash
-cd D:/touchHLE_nightly
-./touchHLE.exe "touchHLE_apps/Avatar_of_War_The_Dark_Lord_v1.1.ipa"
-```
-
-Or use the built version from source:
-```bash
-D:/touchHLE_src/target/release/touchHLE.exe "touchHLE_apps/Avatar_of_War_The_Dark_Lord_v1.1.ipa"
-```
-
-### Development Tools
-
-**Crash Monitor** (`crash_monitor.sh`):
-```bash
-./crash_monitor.sh run      # Start game and BLOCK until crash (recommended)
-./crash_monitor.sh start    # Start game in background
-./crash_monitor.sh status   # Check if running or crashed
-./crash_monitor.sh crash    # Show crash details
-./crash_monitor.sh log      # Show recent log output
-./crash_monitor.sh stop     # Stop the game
-```
-
-**Build Monitor** (`build_monitor.sh`):
-```bash
-./build_monitor.sh start    # Start build in background
-./build_monitor.sh status   # Check build status
-./build_monitor.sh output   # Show build output
-./build_monitor.sh wait     # Wait for build to finish
-```
+Added `__objc_personality_v0` function stub for Objective-C exception handling.
 
 ---
 
@@ -364,36 +372,44 @@ The touch handling system was analyzed to debug button click issues:
 
 | Version | Date | Changes |
 |---------|------|---------|
-| v2 | 2025-12-25 | Initial block/dispatch stubs |
-| v3 | 2025-12-25 | Added NSOperationQueue, dictionaryForKey: |
-| v4 | 2025-12-25 | Fixed block constants to use alloc_and_write |
-| v5 | 2025-12-25 | Added indirect pointer for block class constants |
-| v6 | 2025-12-25 | Added dispatch function stubs |
-| v7 | 2025-12-26 | Game now runs! Added AVAudioSession, NSBundle methods, NSData method, NSXMLParser method, NSOperation |
+| v10 | 2025-12-28 | Improved crash_monitor.sh: fixed path, auto-kill crash dialogs, better output |
+| v9 | 2025-12-28 | Implemented 7 framework stubs, __objc_personality_v0, fixed NSOperationQueue, fixed UTF-8 crash |
 | v8 | 2025-12-26 | Added NSDate description, NSString rangeOfCharacterFromSet:options:, improved crash_monitor.sh |
+| v7 | 2025-12-26 | Game now runs! Added AVAudioSession, NSBundle methods, NSData method, NSXMLParser method, NSOperation |
+| v6 | 2025-12-25 | Added dispatch function stubs |
+| v5 | 2025-12-25 | Added indirect pointer for block class constants |
+| v4 | 2025-12-25 | Fixed block constants to use alloc_and_write |
+| v3 | 2025-12-25 | Added NSOperationQueue, dictionaryForKey: |
+| v2 | 2025-12-25 | Initial block/dispatch stubs |
 
 ---
-
 ## File Change Summary
 
 | File | Status | Description |
 |------|--------|-------------|
-| `src/objc.rs` | Modified | Added blocks module, updated constants |
+| `src/objc.rs` | Modified | Added blocks module, updated constants, __objc_personality_v0 |
 | `src/objc/blocks.rs` | New | Block class implementations |
 | `src/objc/messages.rs` | Modified | Added debug output for class chain on selector errors |
 | `src/libc/dispatch.rs` | Modified | GCD function stubs |
-| `src/libc.rs` | Modified | Added dispatch::FUNCTIONS |
-| `src/frameworks/foundation/ns_operation_queue.rs` | New | NSOperationQueue, NSOperation, NSInvocationOperation |
+| `src/libc/sqlite.rs` | New | SQLite stub (SQLITE_CANTOPEN) |
+| `src/libc.rs` | Modified | Added dispatch::FUNCTIONS, sqlite module |
+| `src/frameworks/foundation/ns_operation_queue.rs` | New | NSOperationQueue, NSOperation, NSInvocationOperation, NSBlockOperation |
 | `src/frameworks/foundation/ns_user_defaults.rs` | Modified | Added dictionaryForKey: |
 | `src/frameworks/foundation/ns_bundle.rs` | Modified | Added pathsForResourcesOfType:inDirectory:, classNamed: |
 | `src/frameworks/foundation/ns_data.rs` | Modified | Added dataWithContentsOfFile:options:error: |
 | `src/frameworks/foundation/ns_xml_parser.rs` | Modified | Added parserError method |
 | `src/frameworks/foundation/ns_date.rs` | Modified | Added description method |
-| `src/frameworks/foundation/ns_string.rs` | Modified | Added rangeOfCharacterFromSet:, rangeOfCharacterFromSet:options: |
+| `src/frameworks/foundation/ns_string.rs` | Modified | Added rangeOfCharacterFromSet:, fixed UTF-8 crash |
 | `src/frameworks/foundation.rs` | Modified | Added ns_operation_queue module |
 | `src/frameworks/avfoundation/av_audio_session.rs` | New | AVAudioSession class + constants |
 | `src/frameworks/avfoundation.rs` | Modified | Added av_audio_session classes |
 | `src/frameworks/core_foundation/cf_array.rs` | Modified | Added kCFTypeArrayCallBacks |
 | `src/frameworks/core_foundation.rs` | Modified | Added cf_array::CONSTANTS |
-| `crash_monitor.sh` | New | Crash monitoring and notification tool |
+| `src/frameworks/map_kit.rs` | New | MapKit framework stubs |
+| `src/frameworks/security.rs` | New | Security framework stubs |
+| `src/frameworks/core_audio.rs` | New | CoreAudio framework stubs |
+| `src/frameworks/cf_network.rs` | New | CFNetwork framework stubs |
+| `src/frameworks/address_book.rs` | New | AddressBook framework stubs |
+| `src/frameworks/address_book_ui.rs` | New | AddressBookUI framework stubs |
+| `crash_monitor.sh` | Modified | v10: Auto-kill crash dialogs, better crash detection |
 | `build_monitor.sh` | New | Build process monitoring tool |

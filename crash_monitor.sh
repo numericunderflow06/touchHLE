@@ -7,7 +7,7 @@
 #   ./crash_monitor.sh crash   - Get crash details if crashed
 #   ./crash_monitor.sh stop    - Stop the game
 
-GAME_DIR="/d/touchHLE_nightly"
+GAME_DIR="/d/touchHLE_src"
 TOUCHHLE="/d/touchHLE_src/target/release/touchHLE.exe"
 GAME_IPA="touchHLE_apps/Avatar_of_War_The_Dark_Lord_v1.1.ipa"
 LOG_FILE="/tmp/touchhle_game.log"
@@ -15,13 +15,21 @@ PID_FILE="/tmp/touchhle_game.pid"
 STATUS_FILE="/tmp/touchhle_game.status"
 CRASH_FILE="/tmp/touchhle_crash.txt"
 
+force_kill_game() {
+    # Force kill using taskkill on Windows (dismisses crash dialogs)
+    if [ -f "$PID_FILE" ]; then
+        local PID=$(cat "$PID_FILE")
+        taskkill //F //PID $PID 2>/dev/null || kill -9 $PID 2>/dev/null
+        sleep 0.5
+    fi
+    # Also kill any touchHLE processes by name as backup
+    taskkill //F //IM touchHLE.exe 2>/dev/null || true
+}
+
 start_game() {
     # Kill any existing game
-    if [ -f "$PID_FILE" ]; then
-        OLD_PID=$(cat "$PID_FILE")
-        kill $OLD_PID 2>/dev/null
-        sleep 1
-    fi
+    force_kill_game
+    sleep 1
 
     # Clear previous files
     rm -f "$LOG_FILE" "$CRASH_FILE" "$STATUS_FILE"
@@ -40,7 +48,6 @@ start_game() {
 wait_for_crash() {
     local TIMEOUT=${1:-600}  # Default 10 minutes
     local START=$(date +%s)
-    local LAST_SIZE=0
 
     echo "Monitoring for crash (timeout: ${TIMEOUT}s)..." >&2
 
@@ -53,14 +60,34 @@ wait_for_crash() {
             return 1
         fi
 
-        # Check if process is still running
+        # Check for crash in log FIRST (before checking if process ended)
+        if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
+            echo "CRASHED" > "$STATUS_FILE"
+            
+            # Force kill the process immediately to dismiss any crash dialogs
+            force_kill_game
+            
+            # Save crash details to file
+            grep -B 10 -A 40 "panicked at" "$LOG_FILE" > "$CRASH_FILE"
+            
+            # Output crash info to STDOUT (so it's captured by caller)
+            echo "=== CRASH DETECTED ==="
+            grep -B 10 -A 40 "panicked at" "$LOG_FILE" | tail -55
+            echo "=== END CRASH ==="
+            return 0
+        fi
+
+        # Check if process ended without crash
         if [ -f "$PID_FILE" ]; then
             local PID=$(cat "$PID_FILE")
             if ! ps -p $PID > /dev/null 2>&1; then
-                # Process ended
+                # Process ended - check one more time for crash
                 if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
                     echo "CRASHED" > "$STATUS_FILE"
-                    grep -B 5 -A 35 "panicked at" "$LOG_FILE" | tail -45
+                    grep -B 10 -A 40 "panicked at" "$LOG_FILE" > "$CRASH_FILE"
+                    echo "=== CRASH DETECTED ==="
+                    grep -B 10 -A 40 "panicked at" "$LOG_FILE" | tail -55
+                    echo "=== END CRASH ==="
                     return 0
                 else
                     echo "Game exited without crash" >&2
@@ -69,18 +96,7 @@ wait_for_crash() {
             fi
         fi
 
-        # Check for crash in log while running
-        if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
-            echo "CRASHED" > "$STATUS_FILE"
-            # Kill the process if still running
-            if [ -f "$PID_FILE" ]; then
-                kill $(cat "$PID_FILE") 2>/dev/null
-            fi
-            grep -B 5 -A 35 "panicked at" "$LOG_FILE" | tail -45
-            return 0
-        fi
-
-        sleep 1
+        sleep 0.5
     done
 }
 
@@ -88,7 +104,7 @@ case "$1" in
     run)
         # START GAME AND BLOCK UNTIL CRASH - This is the main command to use
         start_game
-        echo "=== Game running. Click buttons to trigger crash. Waiting... ===" >&2
+        echo "=== Game running. Interact with game to trigger crash. Waiting... ===" >&2
         wait_for_crash ${2:-600}
         ;;
 
@@ -124,8 +140,10 @@ case "$1" in
         ;;
 
     crash)
-        if [ -f "$LOG_FILE" ] && grep -q "panicked at" "$LOG_FILE"; then
-            grep -B 5 -A 35 "panicked at" "$LOG_FILE" | tail -45
+        if [ -f "$CRASH_FILE" ]; then
+            cat "$CRASH_FILE"
+        elif [ -f "$LOG_FILE" ] && grep -q "panicked at" "$LOG_FILE"; then
+            grep -B 10 -A 40 "panicked at" "$LOG_FILE" | tail -55
         else
             echo "No crash detected"
         fi
@@ -140,14 +158,9 @@ case "$1" in
         ;;
 
     stop)
-        if [ -f "$PID_FILE" ]; then
-            PID=$(cat "$PID_FILE")
-            kill $PID 2>/dev/null
-            rm -f "$PID_FILE"
-            echo "Game stopped"
-        else
-            echo "No game running"
-        fi
+        force_kill_game
+        rm -f "$PID_FILE"
+        echo "Game stopped"
         ;;
 
     *)
