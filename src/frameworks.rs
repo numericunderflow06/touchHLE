@@ -37,6 +37,12 @@ pub mod opengles;
 pub mod store_kit;
 pub mod system_configuration;
 pub mod uikit;
+pub mod address_book;
+pub mod address_book_ui;
+pub mod cf_network;
+pub mod core_audio;
+pub mod map_kit;
+pub mod security;
 
 /// Container for state of various child modules
 #[derive(Default)]

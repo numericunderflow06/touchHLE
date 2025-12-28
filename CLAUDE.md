@@ -1,3 +1,59 @@
+## IMPORTANT: Current Status - December 28, 2025
+
+### Game is now PROGRESSING!
+
+After implementing missing framework stubs and fixing NSOperationQueue, the game now:
+- Boots successfully
+- Renders menus
+- **Responds to button clicks and progresses past the start screen**
+- Still has some crashes to debug (next step)
+
+### Key Changes in This Version (v9)
+
+1. **Implemented 7 missing framework stubs**:
+   - `libsqlite3.dylib` - Returns SQLITE_CANTOPEN
+   - `MapKit.framework` - MKMapView, MKAnnotationView, etc.
+   - `Security.framework` - Keychain stubs (returns "not found")
+   - `CoreAudio.framework` - AudioObject* stubs
+   - `CFNetwork.framework` - HTTP/networking stubs
+   - `AddressBook.framework` - Returns "access denied"
+   - `AddressBookUI.framework` - Contact picker stubs
+
+2. **Implemented `__objc_personality_v0`** - Exception handling stub
+
+3. **Made NSOperationQueue FUNCTIONAL**:
+   - Operations now actually execute (synchronously on main thread)
+   - Added NSBlockOperation class
+   - NSInvocationOperation now calls target method
+   - Completion blocks are invoked
+
+4. **Fixed UTF-8 crash in ns_string.rs**:
+   - Changed `String::from_utf8().unwrap()` to `String::from_utf8_lossy()`
+   - Prevents crash on invalid UTF-8 sequences
+
+### IMPORTANT: Things to Keep in Mind
+
+1. **NSOperationQueue runs synchronously** - All operations execute immediately on the main thread. This may cause issues if the game expects async behavior.
+
+2. **UTF-8 handling is lossy** - Invalid UTF-8 sequences are replaced with the Unicode replacement character. This may cause display issues but prevents crashes.
+
+3. **Network/database access is stubbed** - The game cannot actually connect to servers or access SQLite databases.
+
+4. **Security keychain returns empty** - Any saved credentials/tokens will not be found.
+
+---
+
+## IMPORTANT: Always Use Monitor Scripts
+
+**ALWAYS use the monitor scripts when building or testing. NEVER run commands directly:**
+
+- For building: Use `./build_monitor.sh start` instead of `cargo build`
+- For testing: Use `./crash_monitor.sh run` instead of running touchHLE directly
+
+This ensures proper background monitoring and crash detection.
+
+---
+
 # touchHLE Modifications for Avatar of War: The Dark Lord
 
 This document tracks modifications made to touchHLE to support running "Avatar of War: The Dark Lord" (v1.1 and v2.0).

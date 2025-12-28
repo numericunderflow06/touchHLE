@@ -29,6 +29,13 @@ pub const DYLIB_LIST: &[&super::HostDylib] = &[
     &frameworks::store_kit::DYLIB,
     &frameworks::system_configuration::DYLIB,
     &frameworks::uikit::DYLIB,
+    &frameworks::address_book::DYLIB,
+    &frameworks::address_book_ui::DYLIB,
+    &frameworks::cf_network::DYLIB,
+    &frameworks::core_audio::DYLIB,
+    &frameworks::map_kit::DYLIB,
+    &frameworks::security::DYLIB,
+    &libc::sqlite3::DYLIB,
 ];
 
 #[cfg(test)]

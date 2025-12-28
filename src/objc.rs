@@ -146,6 +146,21 @@ fn _Block_object_dispose(_env: &mut Environment, object: ConstVoidPtr, flags: i3
     );
 }
 
+/// Objective-C exception handling personality function.
+/// This is called by the unwinder during exception handling.
+/// We stub it to return _URC_CONTINUE_UNWIND (1) to indicate we don't handle the exception.
+fn __objc_personality_v0(
+    _env: &mut Environment,
+    _version: i32,
+    _actions: i32,
+    _exception_class: u64,
+    _exception_object: ConstVoidPtr,
+    _context: ConstVoidPtr,
+) -> i32 {
+    log!("Warning: __objc_personality_v0 called - stubbed, returning _URC_CONTINUE_UNWIND");
+    1 // _URC_CONTINUE_UNWIND
+}
+
 const FUNCTIONS: FunctionExports = &[
     export_c_func!(objc_msgSend(_, _)),
     export_c_func!(objc_msgSend_stret(_, _, _)),
@@ -158,4 +173,5 @@ const FUNCTIONS: FunctionExports = &[
     export_c_func!(sel_registerName(_)),
     export_c_func!(_Block_object_dispose(_, _)),
     export_c_func!(_Block_object_assign(_, _, _)),
+    export_c_func!(__objc_personality_v0(_, _, _, _, _)),
 ];
