@@ -1,5 +1,7 @@
 /target
 /vendor/boost
+/vendor/boost_*/
+touchHLE_*.exe
 /touchHLE_sandbox
 /touchHLE_apps/*.ipa
 /touchHLE_apps/*.app

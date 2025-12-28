@@ -56,7 +56,15 @@ The crash monitor supports **auto-replay mode** which automatically replays reco
 ---
 
 
-## Project Location- **Source**: `D:/touchHLE_src/`- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`---## Current Status - December 28, 2025
+## Project Location
+
+- **Source**: `D:/touchHLE_src/`
+- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`
+- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`
+
+---
+
+## Current Status - December 28, 2025
 
 ### Game COMPLETES FIRST LEVEL!
 
