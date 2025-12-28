@@ -204,11 +204,21 @@ fn deserialize_plist(env: &mut Environment, value: &Value) -> id {
 }
 
 fn serialize_plist(env: &mut Environment, plist: id) -> Value {
+    // Handle nil values - plists don't have a null type, so we use an empty string
+    // This can happen if a dictionary or array contains nil values
+    if plist == nil {
+        log!(
+            "Warning: serialize_plist called with nil value, using empty string as placeholder"
+        );
+        return Value::String(String::new());
+    }
+
     let class: Class = msg![env; plist class];
 
     let dict_class = env.objc.get_known_class("NSDictionary", &mut env.mem);
     let arr_class = env.objc.get_known_class("NSArray", &mut env.mem);
     let str_class = env.objc.get_known_class("NSString", &mut env.mem);
+    let data_class = env.objc.get_known_class("NSData", &mut env.mem);
 
     if env.objc.class_is_subclass_of(class, dict_class) {
         // only our internal implementation is supported
@@ -268,8 +278,13 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
             NSNumberHostObject::Char(c) => Value::from(*c),
             _ => todo!("num {:?}", num),
         }
-    } else if class == env.objc.get_known_class("NSData", &mut env.mem) {
+    } else if env.objc.class_is_subclass_of(class, data_class) {
+        // Handles both NSData and NSMutableData (which is a subclass of NSData)
         let data = env.objc.borrow::<NSDataHostObject>(plist);
+        // Handle empty or null data
+        if data.length == 0 || data.bytes.is_null() {
+            return Value::Data(Vec::new());
+        }
         let buffer_slice = env.mem.bytes_at(data.bytes.cast(), data.length);
         Value::Data(buffer_slice.to_vec())
     } else if class == env.objc.get_known_class("NSDate", &mut env.mem) {

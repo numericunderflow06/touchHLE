@@ -24,7 +24,9 @@ This document tracks modifications made to touchHLE to support running "Avatar o
 ---
 ## Automated Debugging Workflow
 
-The crash monitor supports **auto-replay mode** which automatically replays recorded clicks to trigger crashes:
+The crash monitor supports **auto-replay mode** which automatically replays recorded clicks to trigger crashes.
+
+**RUST_BACKTRACE=1** is automatically enabled for detailed Rust stack traces.
 
 ```bash
 # AUTOMATED DEBUG CYCLE:
@@ -54,7 +56,43 @@ The crash monitor supports **auto-replay mode** which automatically replays reco
 ---
 
 
-## Project Location- **Source**: `D:/touchHLE_src/`- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`---## Current Status - December 28, 2025### Game is PROGRESSING!- Boots successfully, renders menus, touch input works- **Crashes with null pointer at PC 0x108da8** (being debugged with auto-replay)### Key Changes in v11 (Latest)1. **Auto-replay debugging system**:   - `./crash_monitor.sh auto` - Replays recorded clicks to trigger crash   - `replay_sequence.sh` - Recorded click sequence with timing   - Exit code 0 = crash detected, exit code 1 = no crash
+## Project Location- **Source**: `D:/touchHLE_src/`- **Built executable**: `D:/touchHLE_src/target/release/touchHLE.exe`- **Game IPAs**: `D:/touchHLE_src/touchHLE_apps/`---## Current Status - December 28, 2025
+
+### Game COMPLETES FIRST LEVEL!
+
+- Boots successfully, renders menus, touch input works
+- **First level now playable from start to finish**
+- Fixed serialization crashes that were blocking progress
+
+### Key Changes in v14 (Latest)
+
+1. **Fixed NSData null bytes pointer crash in serialize_plist**:
+   - Added check for null/empty NSData before calling `bytes_at()`
+   - Returns empty `Value::Data(Vec::new())` for null/empty data
+   - File: `src/frameworks/foundation/ns_property_list_serialization.rs`
+
+2. **Added run counter to crash_monitor.sh**:
+   - Tracks simulator launches to work around touch injection quirk
+   - Added `reset-counter` command
+   - Counter stored in `/tmp/touchhle_run_counter`
+
+### Key Changes in v13
+
+1. **Fixed nil object crash in serialize_plist**:
+   - Added nil check at start of `serialize_plist()` function
+   - When encountering nil values, returns empty string placeholder
+   - File: `src/frameworks/foundation/ns_property_list_serialization.rs`
+
+### Key Changes in v12
+
+1. **RUST_BACKTRACE enabled in automation**:
+   - `crash_monitor.sh` now exports `RUST_BACKTRACE=1` automatically
+   - Crash stack traces include full Rust backtrace
+   - Automation still runs automatically - build, monitor, replay, and debug work without manual intervention
+
+### Key Changes in v11
+
+1. **Auto-replay debugging system**:   - `./crash_monitor.sh auto` - Replays recorded clicks to trigger crash   - `replay_sequence.sh` - Recorded click sequence with timing   - Exit code 0 = crash detected, exit code 1 = no crash
 ### Key Changes in v10 (Latest)
 
 1. **Improved crash_monitor.sh**:
@@ -382,6 +420,9 @@ The touch handling system was analyzed to debug button click issues:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| v14 | 2025-12-28 | Fixed NSData null bytes crash, added run counter, game completes first level! |
+| v13 | 2025-12-28 | Fixed nil pointer crash in serialize_plist - added nil check |
+| v12 | 2025-12-28 | RUST_BACKTRACE=1 enabled automatically in crash_monitor.sh for detailed stack traces |
 | v11 | 2025-12-28 | Auto-replay debugging system for automated crash testing |
 | v10 | 2025-12-28 | Improved crash_monitor.sh: fixed path, auto-kill crash dialogs, better output |
 | v9 | 2025-12-28 | Implemented 7 framework stubs, __objc_personality_v0, fixed NSOperationQueue, fixed UTF-8 crash |
@@ -424,3 +465,39 @@ The touch handling system was analyzed to debug button click issues:
 | `src/frameworks/address_book_ui.rs` | New | AddressBookUI framework stubs |
 | `crash_monitor.sh` | Modified | v10: Auto-kill crash dialogs, better crash detection |
 | `build_monitor.sh` | New | Build process monitoring tool |
+
+---
+
+## Recorded Click Sequence (v12)
+
+The following click sequence was recorded on 2025-12-28 and reliably triggers the crash at `ns_property_list_serialization::serialize_plist`:
+
+| Click | Position (x, y) | Delay After (sec) | Description |
+|-------|-----------------|-------------------|-------------|
+| 1 | (109, 157) | 5.757 | Start button |
+| 2 | (81, 166) | 6.408 | Menu option |
+| 3 | (35, 111) | 3.128 | - |
+| 4 | (98, 260) | 5.256 | - |
+| 5 | (168, 292) | 2.094 | - |
+| 6 | (172, 287) | 2.180 | - |
+| 7 | (170, 283) | 2.045 | - |
+| 8 | (170, 283) | 1.764 | - |
+| 9 | (29, 10) | 1.634 | Top-left area |
+| 10 | (204, 70) | 1.116 | - |
+| 11 | (178, 281) | 2.103 | - |
+| 12 | (174, 281) | 2.335 | - |
+| 13 | (170, 272) | 2.199 | - |
+| 14 | (172, 277) | 39.968 | Long wait |
+| 15 | (167, 290) | - | CRASH TRIGGER |
+
+**Initial delay**: 8 seconds (for game to load)
+
+**Crash location**: `touchHLE::frameworks::foundation::ns_property_list_serialization::serialize_plist` - null pointer access at address 0x0
+
+### Key Changes in v13
+
+1. **Fixed nil pointer crash in serialize_plist**:
+   - Added nil check at start of `serialize_plist()` function
+   - When encountering nil values in dictionaries/arrays, returns empty string placeholder
+   - File: `src/frameworks/foundation/ns_property_list_serialization.rs`
+   - Game now progresses past the previous crash point
