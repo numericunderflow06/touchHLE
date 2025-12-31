@@ -9,6 +9,7 @@ use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_animation::ca_eagl_layer::{
     find_fullscreen_eagl_layer, get_pixels_vec_for_presenting, present_pixels,
 };
+use crate::frameworks::core_graphics::CGRect;
 use crate::frameworks::foundation::ns_string::get_static_str;
 use crate::frameworks::foundation::NSUInteger;
 use crate::gles::gles11_raw as gles11; // constants only
@@ -226,7 +227,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     let window = env.window.as_mut().expect("OpenGL ES is not supported in headless mode");
 
     // FIXME: get width and height from the layer!
-    let (width, height) = window.size_unrotated_scalehacked();
+    let (width, height) = window.size_rotated_scalehacked();
+    log!("renderbufferStorage: creating {}x{} framebuffer", width, height);
 
     // Unclear from documentation if this method requires an appropriate context
     // to already be active, but that seems to be the case in practice?
@@ -293,7 +295,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     // We're presenting to the opaque CAEAGLLayer that covers the screen.
     // We can use the fast path where we skip composition and present directly.
     if drawable == fullscreen_layer {
-        log_dbg!(
+        log!(
             "Layer {:?} is the fullscreen layer, presenting renderbuffer {:?} directly (fast path).",
             drawable,
             renderbuffer,
@@ -326,7 +328,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         // copied back to system RAM, and then will have to be copied to VRAM
         // again during composition. find_fullscreen_eagl_layer() exists to
         // avoid this.
-        log_dbg!(
+        log!(
             "There is no fullscreen layer, presenting renderbuffer {:?} to layer {:?} by copying to RAM (slow path).",
             renderbuffer,
             drawable,
@@ -338,6 +340,19 @@ pub const CLASSES: ClassExports = objc_classes! {
             read_renderbuffer(gles, pixels_vec)
         };
         present_pixels(env, drawable, pixels_vec, width, height);
+
+        // Check for frame capture request - capture directly from the presented pixels
+        // This captures IMMEDIATELY after the game finishes rendering, before
+        // the next frame can start
+        if crate::frame_capture::capture_requested() && crate::frame_capture::is_enabled() {
+            let layer_obj = env.objc.borrow::<super::super::core_animation::ca_layer::CALayerHostObject>(drawable);
+            if let Some((ref pixels, w, h)) = layer_obj.presented_pixels {
+                log!("Capturing frame from presented_pixels: {}x{}", w, h);
+                if let Err(e) = crate::frame_capture::save_frame(w, h, pixels) {
+                    log!("Frame capture from presented_pixels failed: {}", e);
+                }
+            }
+        }
     }
 
     if let Some(sleep_for) = sleep_for {
@@ -513,7 +528,7 @@ unsafe fn read_renderbuffer(gles: &mut dyn GLES, mut pixel_buffer: Vec<u8>) -> (
         gles11::UNSIGNED_BYTE,
         pixel_buffer.as_mut_ptr() as *mut _,
     );
-    log_dbg!(
+    log!(
         "glReadPixels(0, 0, {}, {}, …) took {:?}",
         width,
         height,

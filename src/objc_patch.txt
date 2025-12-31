@@ -1,0 +1,15 @@
+/// Objective-C exception handling personality function.
+/// This is called by the unwinder during exception handling.
+/// We stub it to return _URC_CONTINUE_UNWIND (1) to indicate we don't handle the exception.
+fn __objc_personality_v0(
+    _env: &mut Environment,
+    _version: i32,
+    _actions: i32,
+    _exception_class: u64,
+    _exception_object: ConstVoidPtr,
+    _context: ConstVoidPtr,
+) -> i32 {
+    log!("Warning: __objc_personality_v0 called - stubbed, returning _URC_CONTINUE_UNWIND");
+    1 // _URC_CONTINUE_UNWIND
+}
+

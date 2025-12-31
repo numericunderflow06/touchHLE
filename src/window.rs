@@ -1218,6 +1218,15 @@ impl Window {
         size_for_orientation(DeviceOrientation::Portrait, self.scale_hack)
     }
 
+    /// Get the size in pixels of the window with current rotation and scale hack applied.
+    /// Scaling caused by fullscreen mode is not included.
+    ///
+    /// The size reflects the guest app's coordinate space based on current orientation.
+    pub fn size_rotated_scalehacked(&self) -> (u32, u32) {
+        size_for_orientation(self.device_orientation, self.scale_hack)
+    }
+
+
     /// Get the region of the on-screen window (x, y, width, height) used to
     /// display the app content.
     ///

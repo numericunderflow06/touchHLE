@@ -11,14 +11,19 @@
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 
 /// Global frame capture state
 static FRAME_CAPTURE: Mutex<Option<FrameCapture>> = Mutex::new(None);
 
-/// Flag to request a frame capture on next frame
-static CAPTURE_REQUESTED: AtomicBool = AtomicBool::new(false);
+/// Countdown for frame capture - when > 0, decrement each frame; capture when it hits 1
+/// This ensures we wait for multiple frames after request to let rendering stabilize
+static CAPTURE_COUNTDOWN: AtomicU64 = AtomicU64::new(0);
+
+/// Number of frames to wait after capture request before actually capturing
+/// This gives the game time to finish rendering the complete frame
+const CAPTURE_DELAY_FRAMES: u64 = 30;
 
 /// Counter for captured frames
 static CAPTURE_COUNT: AtomicU64 = AtomicU64::new(0);
@@ -64,14 +69,28 @@ pub fn is_enabled() -> bool {
     FRAME_CAPTURE.lock().unwrap().is_some()
 }
 
-/// Request a frame capture on the next frame
+/// Request a frame capture after CAPTURE_DELAY_FRAMES frames
+/// This delay ensures the game has time to finish rendering a complete frame
 pub fn request_capture() {
-    CAPTURE_REQUESTED.store(true, Ordering::Relaxed);
+    CAPTURE_COUNTDOWN.store(CAPTURE_DELAY_FRAMES, Ordering::Relaxed);
 }
 
-/// Check if a capture was requested and clear the flag
+/// Check if we should capture this frame
+/// Returns true when the countdown reaches 1 (and decrements it to 0)
+/// Returns false and decrements when countdown > 1
+/// Returns false when countdown is 0 (no capture pending)
 pub fn capture_requested() -> bool {
-    CAPTURE_REQUESTED.swap(false, Ordering::Relaxed)
+    let current = CAPTURE_COUNTDOWN.load(Ordering::Relaxed);
+    if current == 0 {
+        return false;
+    }
+    if current == 1 {
+        CAPTURE_COUNTDOWN.store(0, Ordering::Relaxed);
+        return true;
+    }
+    // Decrement countdown
+    CAPTURE_COUNTDOWN.fetch_sub(1, Ordering::Relaxed);
+    false
 }
 
 /// Save pixel data to a PPM file

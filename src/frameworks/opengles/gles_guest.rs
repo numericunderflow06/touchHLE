@@ -383,8 +383,23 @@ fn glViewport(env: &mut Environment, x: GLint, y: GLint, width: GLsizei, height:
     // apply scale hack: assume framebuffer's size is larger than the app thinks
     // and scale viewport appropriately
     let factor = env.options.scale_hack.get() as GLsizei;
-    let (x, y) = (x * factor, y * factor);
-    let (width, height) = (width * factor, height * factor);
+    let (mut x, mut y) = (x * factor, y * factor);
+    let (mut width, mut height) = (width * factor, height * factor);
+    
+    // When skip_rotation is set and game passes portrait dimensions,
+    // scale to fit the landscape framebuffer
+    if env.options.skip_rotation && height > width {
+        // Game thinks it's 320x480, framebuffer is 480x320
+        // Scale X by 480/320 = 1.5, Y by 320/480 = 0.667
+        let scale_x = 480.0 / 320.0;
+        let scale_y = 320.0 / 480.0;
+        x = (x as f32 * scale_x) as GLint;
+        y = (y as f32 * scale_y) as GLint;
+        width = (width as f32 * scale_x) as GLsizei;
+        height = (height as f32 * scale_y) as GLsizei;
+        log!("glViewport: scaled to {}x{} at ({},{})", width, height, x, y);
+    }
+    
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.Viewport(x, y, width, height)
     })

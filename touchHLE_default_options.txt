@@ -177,3 +177,6 @@ com.pangea.bug2: --ignore-gl-errors
 # Casper
 # (force composition fixes graphical issues)
 com.mastertronic.casper: --force-composition
+# Avatar of War: The Dark Lord
+# Runs in landscape mode (fullscreen fast path works with orientation-aware UIScreen bounds)
+# cde.AvatarOfWarTDL: Portrait game, no special options needed

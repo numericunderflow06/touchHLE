@@ -1,0 +1,14 @@
+## Previously Missing Dependencies (Now Implemented - v9)
+
+The following dependencies were implemented as stubs on 2025-12-28:
+- `/usr/lib/libsqlite3.dylib` - SQLite database (stubbed with SQLITE_CANTOPEN)
+- `/System/Library/Frameworks/MapKit.framework/MapKit` - Map functionality (stubbed)
+- `/System/Library/Frameworks/Security.framework/Security` - Keychain/security (stubbed)
+- `/System/Library/Frameworks/CoreAudio.framework/CoreAudio` - Low-level audio (stubbed)
+- `/System/Library/Frameworks/CFNetwork.framework/CFNetwork` - Networking (stubbed)
+- `/System/Library/Frameworks/AddressBook.framework/AddressBook` - Contacts (stubbed)
+- `/System/Library/Frameworks/AddressBookUI.framework/AddressBookUI` - Contacts UI (stubbed)
+
+Previously unhandled symbols (now implemented):
+- `___objc_personality_v0` - Exception handling personality (stubbed in objc.rs)
+- `_glDiscardFramebufferEXT` - OpenGL ES extension (already implemented in gles_guest_ext.rs)

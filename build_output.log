@@ -1,0 +1,209 @@
+warning: output filename collision at D:\touchHLE_src\target\release\deps\touchHLE.pdb
+  |
+  = note: the bin target `touchHLE` in package `touchHLE v0.2.2 (D:\touchHLE_src)` has the same output filename as the lib target `touchHLE` in package `touchHLE v0.2.2 (D:\touchHLE_src)`
+  = note: this may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>
+  = help: consider changing their names to be unique or compiling them separately
+warning: output filename collision at D:\touchHLE_src\target\release\touchHLE.pdb
+  |
+  = note: the bin target `touchHLE` in package `touchHLE v0.2.2 (D:\touchHLE_src)` has the same output filename as the lib target `touchHLE` in package `touchHLE v0.2.2 (D:\touchHLE_src)`
+  = note: this may become a hard error in the future; see <https://github.com/rust-lang/cargo/issues/6313>
+  = help: consider changing their names to be unique or compiling them separately
+   Compiling touchHLE v0.2.2 (D:\touchHLE_src)
+warning: unused import: `CGRect`
+ --> src\frameworks\uikit\ui_touch.rs:9:49
+  |
+9 | use crate::frameworks::core_graphics::{CGPoint, CGRect};
+  |                                                 ^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `ConstPtr`
+  --> src\frameworks\address_book.rs:13:18
+   |
+13 | use crate::mem::{ConstPtr, MutPtr, ConstVoidPtr, MutVoidPtr};
+   |                  ^^^^^^^^
+
+warning: unused import: `ConstPtr`
+  --> src\frameworks\cf_network.rs:12:18
+   |
+12 | use crate::mem::{ConstPtr, MutPtr, ConstVoidPtr, MutVoidPtr};
+   |                  ^^^^^^^^
+
+warning: unused import: `ConstPtr`
+  --> src\frameworks\core_audio.rs:15:18
+   |
+15 | use crate::mem::{ConstPtr, MutPtr, ConstVoidPtr, MutVoidPtr};
+   |                  ^^^^^^^^
+
+warning: unused imports: `ConstPtr` and `MutVoidPtr`
+  --> src\frameworks\security.rs:13:18
+   |
+13 | use crate::mem::{ConstPtr, MutPtr, ConstVoidPtr, MutVoidPtr};
+   |                  ^^^^^^^^                        ^^^^^^^^^^
+
+warning: type `dispatch_queue_t` should have an upper camel case name
+  --> src\libc\dispatch.rs:17:10
+   |
+17 | pub type dispatch_queue_t = ConstVoidPtr;
+   |          ^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `DispatchQueueT`
+   |
+   = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: type `dispatch_block_t` should have an upper camel case name
+  --> src\libc\dispatch.rs:20:10
+   |
+20 | pub type dispatch_block_t = ConstVoidPtr;
+   |          ^^^^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `DispatchBlockT`
+
+warning: unused import: `HostConstant`
+  --> src\libc\sqlite3.rs:12:68
+   |
+12 | use crate::dyld::{export_c_func, ConstantExports, FunctionExports, HostConstant, HostDylib};
+   |                                                                    ^^^^^^^^^^^^
+
+warning: type `sqlite3` should have an upper camel case name
+  --> src\libc\sqlite3.rs:31:6
+   |
+31 | type sqlite3 = MutVoidPtr;
+   |      ^^^^^^^ help: convert the identifier to upper camel case (notice the capitalization): `Sqlite3`
+
+warning: type `sqlite3_stmt` should have an upper camel case name
+  --> src\libc\sqlite3.rs:32:6
+   |
+32 | type sqlite3_stmt = MutVoidPtr;
+   |      ^^^^^^^^^^^^ help: convert the identifier to upper camel case: `Sqlite3Stmt`
+
+warning: variable does not need to be mutable
+   --> src\event_inject.rs:238:9
+    |
+238 |     let mut last_ts: Option<u128> = None;
+    |         ----^^^^^^^
+    |         |
+    |         help: remove this `mut`
+    |
+    = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `last_ts`
+   --> src\event_inject.rs:238:9
+    |
+238 |     let mut last_ts: Option<u128> = None;
+    |         ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_last_ts`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: variants `FrameRendered`, `Crash`, and `Log` are never constructed
+  --> src\event_capture.rs:48:5
+   |
+26 | pub enum CapturedEvent {
+   |          ------------- variants in this enum
+...
+48 |     FrameRendered {
+   |     ^^^^^^^^^^^^^
+...
+51 |     Crash {
+   |     ^^^^^
+...
+55 |     Log {
+   |     ^^^
+   |
+   = note: `CapturedEvent` has derived impls for the traits `Clone` and `Debug`, but these are intentionally ignored during dead code analysis
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `path` is never read
+  --> src\event_capture.rs:64:5
+   |
+62 | pub struct EventCapture {
+   |            ------------ field in this struct
+63 |     file: File,
+64 |     path: PathBuf,
+   |     ^^^^
+
+warning: function `is_enabled` is never used
+   --> src\event_capture.rs:172:8
+    |
+172 | pub fn is_enabled() -> bool {
+    |        ^^^^^^^^^^
+
+warning: function `frame_rendered` is never used
+   --> src\event_capture.rs:222:8
+    |
+222 | pub fn frame_rendered() {
+    |        ^^^^^^^^^^^^^^
+
+warning: function `current_frame` is never used
+   --> src\event_capture.rs:232:8
+    |
+232 | pub fn current_frame() -> u64 {
+    |        ^^^^^^^^^^^^^
+
+warning: function `capture_crash` is never used
+   --> src\event_capture.rs:237:8
+    |
+237 | pub fn capture_crash(message: &str, location: Option<&str>) {
+    |        ^^^^^^^^^^^^^
+
+warning: function `capture_log` is never used
+   --> src\event_capture.rs:247:8
+    |
+247 | pub fn capture_log(level: &str, message: &str) {
+    |        ^^^^^^^^^^^
+
+warning: function `is_enabled` is never used
+   --> src\event_inject.rs:309:8
+    |
+309 | pub fn is_enabled() -> bool {
+    |        ^^^^^^^^^^
+
+warning: field `capture_on_event` is never read
+  --> src\frame_capture.rs:34:5
+   |
+32 | pub struct FrameCapture {
+   |            ------------ field in this struct
+33 |     output_dir: PathBuf,
+34 |     capture_on_event: bool,
+   |     ^^^^^^^^^^^^^^^^
+
+warning: function `get_output_dir` is never used
+   --> src\frame_capture.rs:130:8
+    |
+130 | pub fn get_output_dir() -> Option<PathBuf> {
+    |        ^^^^^^^^^^^^^^
+
+warning: constant `kABOperationNotPermittedByStoreError` is never used
+  --> src\frameworks\address_book.rs:25:7
+   |
+25 | const kABOperationNotPermittedByStoreError: i32 = 0;
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type alias `CFWriteStreamRef` is never used
+  --> src\frameworks\cf_network.rs:28:6
+   |
+28 | type CFWriteStreamRef = MutVoidPtr;
+   |      ^^^^^^^^^^^^^^^^
+
+warning: constant `kAudioHardwareUnspecifiedError` is never used
+  --> src\frameworks\core_audio.rs:28:7
+   |
+28 | const kAudioHardwareUnspecifiedError: i32 = 0x77686174; // 'what'
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: constant `kAudioHardwareNotRunningError` is never used
+  --> src\frameworks\core_audio.rs:29:7
+   |
+29 | const kAudioHardwareNotRunningError: i32 = 0x73746f70; // 'stop'
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: type alias `CFArrayRef` is never used
+  --> src\frameworks\security.rs:32:6
+   |
+32 | type CFArrayRef = ConstVoidPtr;
+   |      ^^^^^^^^^^
+
+warning: constant `SQLITE_ERROR` is never used
+  --> src\libc\sqlite3.rs:26:7
+   |
+26 | const SQLITE_ERROR: i32 = 1;
+   |       ^^^^^^^^^^^^
+
+warning: `touchHLE` (lib) generated 28 warnings (run `cargo fix --lib -p touchHLE` to apply 8 suggestions)
+    Finished `release` profile [optimized] target(s) in 1m 23s

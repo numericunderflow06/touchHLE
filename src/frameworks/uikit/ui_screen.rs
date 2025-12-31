@@ -7,6 +7,7 @@
 
 use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
 use crate::objc::{id, msg, objc_classes, ClassExports, TrivialHostObject};
+use crate::window::DeviceOrientation;
 
 #[derive(Default)]
 pub struct State {
@@ -41,10 +42,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 // TODO: more accessors
 
 - (CGRect)bounds {
-    // TODO: once rotation is supported, this must change with the rotation!
+    // Return screen bounds based on current device orientation
+    let (width, height) = match env.window().current_rotation() {
+        DeviceOrientation::Portrait => (320.0, 480.0),
+        DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight => (480.0, 320.0),
+    };
     CGRect {
         origin: CGPoint { x: 0.0, y: 0.0 },
-        size: CGSize { width: 320.0, height: 480.0 },
+        size: CGSize { width, height },
     }
 }
 

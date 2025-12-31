@@ -4,6 +4,23 @@ This document tracks modifications made to touchHLE to support running "Avatar o
 
 ---
 
+## CRITICAL: Frame Analysis - Do NOT Dismiss Black Areas as "Intentional"
+
+> **WARNING**: When analyzing captured frames for screen truncation:
+>
+> **NEVER assume black areas are "intentional game content" (like "dark sky" or "dark background").**
+>
+> If the frame shows black regions, especially at the bottom or in bands across the screen, this is almost certainly a **rendering bug** that needs to be fixed, NOT intentional artwork.
+>
+> The correct response to seeing black areas in a frame capture is:
+> 1. Acknowledge the rendering bug exists
+> 2. Investigate the cause (compositor, viewport, framebuffer, etc.)
+> 3. Fix the issue
+>
+> **DO NOT** rationalize the black areas away by claiming they are part of the game's art style.
+
+---
+
 ## CRITICAL: Always Use Monitor Scripts
 
 > **WARNING**: You MUST use the monitor scripts. NEVER run touchHLE directly!
@@ -55,6 +72,21 @@ The crash monitor supports **auto-replay mode** which automatically replays reco
 
 ---
 
+## FIXED: Frame Capture Timing (December 29, 2025)
+
+**Problem**: Frame captures showed inconsistent black rows at bottom due to timing.
+
+**Root Cause**: Capture happened at swap_window() after composition, but the game may have started the NEXT frame over presented_pixels.
+
+**Solution**: Capture from presented_pixels immediately after presentRenderbuffer stores them.
+
+**Fix**: src/frameworks/opengles/eagl.rs - capture in present_renderbuffer_to_screen()
+
+**Test Results**: 5 consecutive runs, all 0 black rows, 100% content.
+
+**Status**: FIXED
+
+---
 
 ## Project Location
 

@@ -64,6 +64,8 @@ pub struct Options {
     pub event_inject_path: Option<PathBuf>,
     /// Path for frame capture output directory
     pub frame_capture_path: Option<PathBuf>,
+    /// Skip rotation transform (for games that handle orientation internally)
+    pub skip_rotation: bool,
 }
 
 impl Default for Options {
@@ -96,6 +98,7 @@ impl Default for Options {
             event_capture_path: None,
             event_inject_path: None,
             frame_capture_path: None,
+            skip_rotation: false,
         }
     }
 }
@@ -121,6 +124,9 @@ impl Options {
             self.initial_orientation = DeviceOrientation::LandscapeLeft;
         } else if arg == "--landscape-right" {
             self.initial_orientation = DeviceOrientation::LandscapeRight;
+        } else if arg == "--landscape-no-rotate" {
+            self.initial_orientation = DeviceOrientation::LandscapeLeft;
+            self.skip_rotation = true;
         } else if let Some(value) = arg.strip_prefix("--scale-hack=") {
             self.scale_hack = value
                 .parse()
