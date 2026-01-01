@@ -32,6 +32,8 @@ case "$1" in
             EXIT_CODE=$?
             if [ $EXIT_CODE -eq 0 ]; then
                 echo "SUCCESS" > "$BUILD_STATUS_FILE"
+                # Reset run counter on successful build
+                echo "0" > /tmp/touchhle_run_counter
             else
                 echo "FAILED:$EXIT_CODE" > "$BUILD_STATUS_FILE"
             fi

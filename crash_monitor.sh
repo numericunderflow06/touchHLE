@@ -14,8 +14,8 @@
 #
 # RUST_BACKTRACE is automatically enabled for detailed stack traces
 #
-# NOTE: Due to a quirk, touch injection only works on even-numbered runs.
-# The script automatically skips odd runs by killing and restarting.
+# NOTE: Due to a quirk, touch injection only works on odd-numbered runs (1, 3, 5...).
+# The script automatically skips even runs (0, 2, 4...) by killing and restarting.
 
 GAME_DIR="/d/touchHLE_src"
 TOUCHHLE="/d/touchHLE_src/target/release/touchHLE.exe"
@@ -140,15 +140,15 @@ case "$1" in
     auto)
         # Check run counter - odd runs don't work, so skip them
         RUN_COUNT=$(get_run_count)
-        if [ $((RUN_COUNT % 2)) -eq 1 ]; then
-            echo "=== Skipping odd run #$RUN_COUNT (touch injection quirk) ===" >&2
+        if [ $((RUN_COUNT % 2)) -eq 0 ]; then
+            echo "=== Skipping even run #$RUN_COUNT (touch injection quirk) ===" >&2
             increment_run_count
             # Start and immediately kill to advance the counter
             start_game true
             sleep 1
             force_kill_game
             sleep 1
-            echo "=== Restarting on even run ===" >&2
+            echo "=== Restarting on odd run ===" >&2
         fi
 
         echo "=== AUTO-REPLAY MODE ===" >&2
