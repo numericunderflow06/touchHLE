@@ -90,7 +90,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSString
 - (id)systemVersion {
-    ns_string::get_static_str(env, "2.0")
+    ns_string::get_static_str(env, "3.0")
 }
 
 - (id)uniqueIdentifier {

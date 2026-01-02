@@ -934,8 +934,17 @@ fn glFrustumf(
     far: GLfloat,
 ) {
     log_dbg!("glFrustumf(left={}, right={}, bottom={}, top={}, near={}, far={})", left, right, bottom, top, near, far);
+
+    // EXPERIMENTAL: Shift viewing window downward to reveal missing ground content
+    let frustum_height = top - bottom;
+    let shift_offset = frustum_height * 0.025; // Shift down by 2.5% of frustum height
+    let shifted_bottom = bottom - shift_offset;
+    let shifted_top = top - shift_offset;
+    log_dbg!("glFrustumf: shifting window down by {} (bottom: {} -> {}, top: {} -> {})",
+        shift_offset, bottom, shifted_bottom, top, shifted_top);
+
     with_ctx_and_mem(env, |gles, _mem| {
-        unsafe { gles.Frustumf(left, right, bottom, top, near, far) };
+        unsafe { gles.Frustumf(left, right, shifted_bottom, shifted_top, near, far) };
     });
 }
 fn glFrustumx(
