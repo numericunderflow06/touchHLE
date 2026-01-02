@@ -155,6 +155,26 @@ fn glGetError(env: &mut Environment) -> GLenum {
     })
 }
 fn glEnable(env: &mut Environment, cap: GLenum) {
+    // Log important state enables
+    // GL_DEPTH_TEST=0x0B71, GL_CULL_FACE=0x0B44, GL_BLEND=0x0BE2, GL_ALPHA_TEST=0x0BC0
+    // GL_STENCIL_TEST=0x0B90, GL_SCISSOR_TEST=0x0C11, GL_CLIP_PLANE0=0x3000
+    // GL_LIGHTING=0x0B50, GL_FOG=0x0B60, GL_TEXTURE_2D=0x0DE1
+    let cap_name = match cap {
+        0x0B71 => "GL_DEPTH_TEST",
+        0x0B44 => "GL_CULL_FACE",
+        0x0BE2 => "GL_BLEND",
+        0x0BC0 => "GL_ALPHA_TEST",
+        0x0B90 => "GL_STENCIL_TEST",
+        0x0C11 => "GL_SCISSOR_TEST",
+        0x3000..=0x3005 => "GL_CLIP_PLANEx",
+        0x0B50 => "GL_LIGHTING",
+        0x0B60 => "GL_FOG",
+        0x0DE1 => "GL_TEXTURE_2D",
+        _ => "",
+    };
+    if !cap_name.is_empty() {
+        log_dbg!("glEnable({} / {:#x})", cap_name, cap);
+    }
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Enable(cap) };
     });
@@ -163,6 +183,22 @@ fn glIsEnabled(env: &mut Environment, cap: GLenum) -> GLboolean {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.IsEnabled(cap) })
 }
 fn glDisable(env: &mut Environment, cap: GLenum) {
+    let cap_name = match cap {
+        0x0B71 => "GL_DEPTH_TEST",
+        0x0B44 => "GL_CULL_FACE",
+        0x0BE2 => "GL_BLEND",
+        0x0BC0 => "GL_ALPHA_TEST",
+        0x0B90 => "GL_STENCIL_TEST",
+        0x0C11 => "GL_SCISSOR_TEST",
+        0x3000..=0x3005 => "GL_CLIP_PLANEx",
+        0x0B50 => "GL_LIGHTING",
+        0x0B60 => "GL_FOG",
+        0x0DE1 => "GL_TEXTURE_2D",
+        _ => "",
+    };
+    if !cap_name.is_empty() {
+        log_dbg!("glDisable({} / {:#x})", cap_name, cap);
+    }
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Disable(cap) };
     });
@@ -292,12 +328,16 @@ fn glGetString(env: &mut Environment, name: GLenum) -> ConstPtr<GLubyte> {
 
 // Other state manipulation
 fn glAlphaFunc(env: &mut Environment, func: GLenum, ref_: GLclampf) {
+    // GL_NEVER=0x200, GL_LESS=0x201, GL_EQUAL=0x202, GL_LEQUAL=0x203, GL_GREATER=0x204, GL_NOTEQUAL=0x205, GL_GEQUAL=0x206, GL_ALWAYS=0x207
+    log_dbg!("glAlphaFunc(func={:#x}, ref={})", func, ref_);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.AlphaFunc(func, ref_) })
 }
 fn glAlphaFuncx(env: &mut Environment, func: GLenum, ref_: GLclampx) {
+    log_dbg!("glAlphaFuncx(func={:#x}, ref={:#x})", func, ref_);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.AlphaFuncx(func, ref_) })
 }
 fn glBlendFunc(env: &mut Environment, sfactor: GLenum, dfactor: GLenum) {
+    log_dbg!("glBlendFunc(sfactor={:#x}, dfactor={:#x})", sfactor, dfactor);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.BlendFunc(sfactor, dfactor)
     })
@@ -312,32 +352,41 @@ fn glColorMask(
     blue: GLboolean,
     alpha: GLboolean,
 ) {
+    log_dbg!("glColorMask(r={}, g={}, b={}, a={})", red != 0, green != 0, blue != 0, alpha != 0);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.ColorMask(red, green, blue, alpha)
     })
 }
 fn glClipPlanef(env: &mut Environment, plane: GLenum, equation: ConstPtr<GLfloat>) {
+    log_dbg!("glClipPlanef(plane={:#x})", plane);
     with_ctx_and_mem(env, |gles, mem| {
         let equation = mem.ptr_at(equation, 4 /* upper bound */);
         unsafe { gles.ClipPlanef(plane, equation) }
     })
 }
 fn glClipPlanex(env: &mut Environment, plane: GLenum, equation: ConstPtr<GLfixed>) {
+    log_dbg!("glClipPlanex(plane={:#x})", plane);
     with_ctx_and_mem(env, |gles, mem| {
         let equation = mem.ptr_at(equation, 4 /* upper bound */);
         unsafe { gles.ClipPlanex(plane, equation) }
     })
 }
 fn glCullFace(env: &mut Environment, mode: GLenum) {
+    // GL_FRONT=0x0404, GL_BACK=0x0405, GL_FRONT_AND_BACK=0x0408
+    log_dbg!("glCullFace(mode={:#x})", mode);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.CullFace(mode) })
 }
 fn glDepthFunc(env: &mut Environment, func: GLenum) {
+    // GL_NEVER=0x200, GL_LESS=0x201, GL_EQUAL=0x202, GL_LEQUAL=0x203, GL_GREATER=0x204, GL_NOTEQUAL=0x205, GL_GEQUAL=0x206, GL_ALWAYS=0x207
+    log_dbg!("glDepthFunc(func={:#x})", func);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.DepthFunc(func) })
 }
 fn glDepthMask(env: &mut Environment, flag: GLboolean) {
+    log_dbg!("glDepthMask(flag={})", flag != 0);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.DepthMask(flag) })
 }
 fn glDepthRangef(env: &mut Environment, near: GLclampf, far: GLclampf) {
+    log_dbg!("glDepthRangef(near={}, far={})", near, far);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.DepthRangef(near, far) })
 }
 fn glDepthRangex(env: &mut Environment, near: GLclampx, far: GLclampx) {
@@ -375,6 +424,7 @@ fn glScissor(env: &mut Environment, x: GLint, y: GLint, width: GLsizei, height: 
     let factor = env.options.scale_hack.get() as GLsizei;
     let (x, y) = (x * factor, y * factor);
     let (width, height) = (width * factor, height * factor);
+    log_dbg!("glScissor(x={}, y={}, width={}, height={})", x, y, width, height);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.Scissor(x, y, width, height)
     })
@@ -385,6 +435,7 @@ fn glViewport(env: &mut Environment, x: GLint, y: GLint, width: GLsizei, height:
     let factor = env.options.scale_hack.get() as GLsizei;
     let (x, y) = (x * factor, y * factor);
     let (width, height) = (width * factor, height * factor);
+    log_dbg!("glViewport(x={}, y={}, width={}, height={})", x, y, width, height);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.Viewport(x, y, width, height)
     })
@@ -396,11 +447,13 @@ fn glLineWidthx(env: &mut Environment, val: GLfixed) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.LineWidthx(val) })
 }
 fn glStencilFunc(env: &mut Environment, func: GLenum, ref_: GLint, mask: GLuint) {
+    log_dbg!("glStencilFunc(func={:#x}, ref={}, mask={:#x})", func, ref_, mask);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.StencilFunc(func, ref_, mask)
     });
 }
 fn glStencilOp(env: &mut Environment, sfail: GLenum, dpfail: GLenum, dppass: GLenum) {
+    log_dbg!("glStencilOp(sfail={:#x}, dpfail={:#x}, dppass={:#x})", sfail, dpfail, dppass);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.StencilOp(sfail, dpfail, dppass)
     });
@@ -468,6 +521,8 @@ fn glLightx(env: &mut Environment, light: GLenum, pname: GLenum, param: GLfixed)
     })
 }
 fn glLightfv(env: &mut Environment, light: GLenum, pname: GLenum, params: ConstPtr<GLfloat>) {
+    // GL_AMBIENT=0x1200, GL_DIFFUSE=0x1201, GL_SPECULAR=0x1202, GL_POSITION=0x1203
+    log_dbg!("glLightfv(light={:#x}, pname={:#x})", light, pname);
     with_ctx_and_mem(env, |gles, mem| {
         let params = mem.ptr_at(params, 4 /* upper bound */);
         unsafe { gles.Lightfv(light, pname, params) }
@@ -706,12 +761,23 @@ fn glVertexPointer(
     })
 }
 
-// Drawing
+// Drawing - with draw call counting and error checking
+static DRAW_CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
 fn glDrawArrays(env: &mut Environment, mode: GLenum, first: GLint, count: GLsizei) {
+    let call_num = DRAW_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // GL_POINTS=0x0000, GL_LINES=0x0001, GL_LINE_LOOP=0x0002, GL_LINE_STRIP=0x0003
+    // GL_TRIANGLES=0x0004, GL_TRIANGLE_STRIP=0x0005, GL_TRIANGLE_FAN=0x0006
+    log_dbg!("glDrawArrays[{}](mode={:#x}, first={}, count={})", call_num, mode, first, count);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         let fog_state_backup = clamp_fog_state_values(gles);
         gles.DrawArrays(mode, first, count);
         restore_fog_state_values(gles, fog_state_backup);
+        // Check for GL errors after draw
+        let err = gles.GetError();
+        if err != 0 {
+            log!("GL ERROR after DrawArrays[{}]: {:#x}", call_num, err);
+        }
     })
 }
 fn glDrawElements(
@@ -721,6 +787,8 @@ fn glDrawElements(
     type_: GLenum,
     indices: ConstVoidPtr,
 ) {
+    let call_num = DRAW_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    log_dbg!("glDrawElements[{}](mode={:#x}, count={}, type={:#x})", call_num, mode, count, type_);
     with_ctx_and_mem(env, |gles, mem| unsafe {
         let fog_state_backup = clamp_fog_state_values(gles);
         let indices = translate_pointer_or_offset_to_host(
@@ -731,11 +799,23 @@ fn glDrawElements(
         );
         gles.DrawElements(mode, count, type_, indices);
         restore_fog_state_values(gles, fog_state_backup);
+        // Check for GL errors after draw
+        let err = gles.GetError();
+        if err != 0 {
+            log!("GL ERROR after DrawElements[{}]: {:#x}", call_num, err);
+        }
     })
 }
 
 // Clearing
 fn glClear(env: &mut Environment, mask: GLbitfield) {
+    // GL_COLOR_BUFFER_BIT = 0x4000, GL_DEPTH_BUFFER_BIT = 0x100, GL_STENCIL_BUFFER_BIT = 0x400
+    log_dbg!("glClear(mask={:#x}) color={} depth={} stencil={}",
+        mask,
+        (mask & 0x4000) != 0,
+        (mask & 0x100) != 0,
+        (mask & 0x400) != 0
+    );
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.Clear(mask) });
 }
 fn glClearColor(
@@ -745,6 +825,7 @@ fn glClearColor(
     blue: GLclampf,
     alpha: GLclampf,
 ) {
+    log_dbg!("glClearColor({}, {}, {}, {})", red, green, blue, alpha);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.ClearColor(red, green, blue, alpha)
     });
@@ -761,6 +842,7 @@ fn glClearColorx(
     });
 }
 fn glClearDepthf(env: &mut Environment, depth: GLclampf) {
+    log_dbg!("glClearDepthf(depth={})", depth);
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.ClearDepthf(depth) });
 }
 fn glClearDepthx(env: &mut Environment, depth: GLclampx) {
@@ -824,6 +906,7 @@ fn glOrthof(
     near: GLfloat,
     far: GLfloat,
 ) {
+    log_dbg!("glOrthof(left={}, right={}, bottom={}, top={}, near={}, far={})", left, right, bottom, top, near, far);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Orthof(left, right, bottom, top, near, far) };
     });
@@ -850,6 +933,7 @@ fn glFrustumf(
     near: GLfloat,
     far: GLfloat,
 ) {
+    log_dbg!("glFrustumf(left={}, right={}, bottom={}, top={}, near={}, far={})", left, right, bottom, top, near, far);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Frustumf(left, right, bottom, top, near, far) };
     });
@@ -1144,16 +1228,21 @@ fn glCopyTexSubImage2D(
     })
 }
 fn glTexEnvf(env: &mut Environment, target: GLenum, pname: GLenum, param: GLfloat) {
+    // GL_TEXTURE_ENV_MODE=0x2200, GL_COMBINE=0x8570, GL_MODULATE=0x2100, GL_REPLACE=0x1E01, GL_DECAL=0x2101
+    log_dbg!("glTexEnvf(target={:#x}, pname={:#x}, param={})", target, pname, param);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.TexEnvf(target, pname, param)
     })
 }
 fn glTexEnvx(env: &mut Environment, target: GLenum, pname: GLenum, param: GLfixed) {
+    log_dbg!("glTexEnvx(target={:#x}, pname={:#x}, param={:#x})", target, pname, param);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.TexEnvx(target, pname, param)
     })
 }
 fn glTexEnvi(env: &mut Environment, target: GLenum, pname: GLenum, param: GLint) {
+    // GL_TEXTURE_ENV_MODE=0x2200, GL_COMBINE=0x8570, GL_MODULATE=0x2100, GL_REPLACE=0x1E01, GL_DECAL=0x2101
+    log_dbg!("glTexEnvi(target={:#x}, pname={:#x}, param={:#x})", target, pname, param);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.TexEnvi(target, pname, param)
     })
@@ -1231,6 +1320,8 @@ fn glRenderbufferStorageOES(
     // apply scale hack: give the app a larger framebuffer than it asked for
     let factor = env.options.scale_hack.get() as GLsizei;
     let (width, height) = (width * factor, height * factor);
+    // Log format to help debug: GL_DEPTH_COMPONENT16_OES=0x81A5, GL_DEPTH_COMPONENT24_OES=0x81A6
+    log_dbg!("glRenderbufferStorageOES(target={:#x}, format={:#x}, {}x{})", target, internalformat, width, height);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.RenderbufferStorageOES(target, internalformat, width, height)
     })
@@ -1283,7 +1374,10 @@ fn glGetRenderbufferParameterivOES(
         // apply scale hack: scale down the reported size of the framebuffer,
         // assuming the framebuffer's true size is larger than it should be
         if pname == gles11::RENDERBUFFER_WIDTH_OES || pname == gles11::RENDERBUFFER_HEIGHT_OES {
-            unsafe { params.write_unaligned(params.read_unaligned() / factor) }
+            let orig_val = unsafe { params.read_unaligned() };
+            let new_val = orig_val / factor;
+            log_dbg!("glGetRenderbufferParameterivOES: pname={:#x} orig={} scaled={}", pname, orig_val, new_val);
+            unsafe { params.write_unaligned(new_val) }
         }
     })
 }

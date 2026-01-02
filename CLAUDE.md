@@ -4,22 +4,97 @@ This document tracks modifications made to touchHLE to support running "Avatar o
 
 ---
 
+## CURRENT ACTIVE TASK: Screen Truncation Debugging
+
+> **START HERE**: Read `MEMORY.md` first to understand the current issue and what has already been tried. Do NOT duplicate previous research directions.
+
+### The Problem
+The game renders with **screen truncation** - the bottom ~1/3 of the screen is black/missing. Current status: ~42% black pixels (need < 15% to pass).
+
+### Root Cause (Unknown)
+This is **NOT necessarily a rendering issue**. Possible causes include:
+- Unimplemented Foundation/CoreFoundation APIs that level/terrain loaders depend on
+- Device model mismatch (game expects different screen dimensions)
+- Asset loading failures (stubbed functions returning empty data)
+- Missing geometry never submitted for rendering
+
+### Your Workflow Loop (AUTOMATIC)
+
+> **IMPORTANT**: For screen truncation, use `capture` mode (not `auto` mode).
+> - `capture` = analyzes frame, exits in ~20 sec (RIGHT TOOL for this task)
+> - `auto` = waits for crash (WRONG TOOL - no crash to detect here)
+
+```bash
+# 1. Run capture test (completes in ~20 seconds)
+./crash_monitor.sh capture
+
+# 2. If exit code 3 (FAIL): Investigate
+#    - Read the captured PNG visually: captures/session_*/frame_*.png
+#    - Check analysis_results.txt for black pixel percentage
+#    - Read MEMORY.md for context and previous attempts
+#    - Investigate potential causes (see hypotheses in MEMORY.md)
+
+# 3. Make a fix in the source code
+
+# 4. Rebuild (blocks until complete, no polling needed)
+./build_monitor.sh start && ./build_monitor.sh wait
+
+# 5. Loop back to step 1 until exit code 2 (PASS)
+```
+
+| Command | Use For | Time |
+|---------|---------|------|
+| `./crash_monitor.sh capture` | **Screen truncation (CURRENT TASK)** | ~20 sec |
+| `./build_monitor.sh start && ./build_monitor.sh wait` | Rebuilding | ~2-5 min |
+| `./crash_monitor.sh auto` | Crash debugging (different task) | exits on crash |
+
+### Investigation Guidelines
+
+**ALWAYS do these:**
+1. **Read the captured frame visually** - Use the Read tool on `captures/session_*/frame_*.png` to see what's actually rendering. Look for patterns like: only top-left visible, UI works but 3D doesn't, specific areas black, etc.
+
+2. **Check MEMORY.md** - Contains detailed investigation history, what was tried, what worked, what didn't. Avoid repeating failed approaches.
+
+3. **Search online** - Look for similar issues in iOS emulators, OpenGL ES implementations, or touchHLE's own issue tracker. Search terms like "OpenGL ES black screen", "iOS emulator rendering issue", "missing geometry OpenGL".
+
+4. **Be creative** - The issue may not be where you expect. Consider:
+   - Grep for warning/error messages in the game log
+   - Check what stubbed functions are being called
+   - Look for device model or screen size queries
+   - Trace level/asset loading code paths
+
+5. **Document findings** - Update MEMORY.md with each session's findings, even negative results.
+
+### Key Files
+- `MEMORY.md` - Debugging history and hypotheses (READ THIS FIRST)
+- `captures/session_*/` - Captured frames and analysis results
+- `src/frameworks/` - iOS framework implementations (stubs, device info)
+- `src/gles/` - OpenGL ES implementation
+
+---
+
 ## CRITICAL: Always Use Monitor Scripts
 
 > **WARNING**: You MUST use the monitor scripts. NEVER run touchHLE directly!
 >
 > Running touchHLE directly causes crash dialogs requiring manual dismissal.
 
-**ALWAYS use the monitor scripts:**
+**For the CURRENT TASK (screen truncation):**
 
-| Task | Use This | NOT This |
-|------|----------|----------|
-| Build & wait | `./build_monitor.sh start && ./build_monitor.sh wait` | `cargo build --release` |
-| Test & wait for crash | `./crash_monitor.sh auto` | `./touchHLE.exe ...` |
+| Task | Command | Time |
+|------|---------|------|
+| Test screen | `./crash_monitor.sh capture` | ~20 sec |
+| Rebuild | `./build_monitor.sh start && ./build_monitor.sh wait` | ~2-5 min |
 
-**These commands BLOCK until completion** - no need to poll status. The command returns when:
-- Build: finishes (success or failure), **and resets run counter to 0**
-- Game: crashes (returns crash details) or timeout
+**Other available commands (for different tasks):**
+| Task | Command | Behavior |
+|------|---------|----------|
+| Crash debugging | `./crash_monitor.sh auto` | Exits immediately on crash |
+| Manual testing | `./crash_monitor.sh run` | Manual play mode |
+
+**DO NOT use:** `cargo build --release` directly - no counter reset, no blocking.
+
+**All monitor commands BLOCK until completion** - no need to poll status.
 
 ---
 
@@ -59,23 +134,61 @@ cat /tmp/touchhle_run_counter     # Check current counter value
 
 ---
 
-## Automated Debugging Workflow
+## Automated Debugging Workflows
 
-The crash monitor supports **auto-replay mode** which automatically replays recorded clicks to trigger crashes.
+Two automated workflows are available: **crash debugging** and **black screen debugging**.
 
 **RUST_BACKTRACE=1** is automatically enabled for detailed Rust stack traces.
 
+---
+
+### Workflow 1: Crash Debugging
+
+The crash monitor supports **auto-replay mode** which automatically replays recorded clicks to trigger crashes.
+
 ```bash
-# AUTOMATED DEBUG CYCLE:
+# CRASH DEBUG CYCLE:
 ./crash_monitor.sh auto    # Replays clicks, waits for crash, reports details
 # ... analyze crash, fix code ...
 ./build_monitor.sh start && ./build_monitor.sh wait   # Rebuild (resets counter automatically)
-./crash_monitor.sh auto    # Test again
+./crash_monitor.sh auto    # Repeat until exit code 1 (no crash)
 ```
 
 **Exit codes for `./crash_monitor.sh auto`:**
 - `0` = Crash detected (SUCCESS - the bug was triggered, analyze the output)
-- `1` = No crash (timeout or clean exit - investigate why)
+- `1` = No crash (timeout or clean exit - bug is fixed!)
+
+---
+
+### Workflow 2: Screen Truncation / Black Screen Debugging
+
+The capture mode injects clicks to enter gameplay, captures a frame, and analyzes black pixel percentage.
+
+> **Note**: See "CURRENT ACTIVE TASK" section at the top for detailed investigation guidelines.
+
+```bash
+# SCREEN TRUNCATION DEBUG CYCLE:
+./crash_monitor.sh capture    # Injects 2 clicks, captures frame, analyzes
+# ... if exit 3: read PNG visually, check MEMORY.md, investigate ...
+# ... fix the issue (may be rendering, stubs, device info, asset loading, etc.) ...
+./build_monitor.sh start && ./build_monitor.sh wait   # Rebuild (resets counter automatically)
+./crash_monitor.sh capture    # Repeat until exit code 2 (pass)
+```
+
+**Exit codes for `./crash_monitor.sh capture`:**
+- `2` = PASS (black pixels < 15% - screen renders correctly!)
+- `3` = FAIL (black pixels >= 15% - needs investigation, see MEMORY.md)
+- `1` = Capture failed (no frame detected)
+
+**Session folder structure:**
+```
+captures/session_YYYY-MM-DD_HH-MM-SS/
+├── frame_0000.ppm        # Raw PPM capture
+├── frame_0000.png        # Converted PNG (for viewing)
+└── analysis_results.txt  # Verdict + percentage details
+```
+
+---
 
 **Recording new click sequences:**
 ```bash
@@ -148,8 +261,9 @@ cd D:/touchHLE_src
 ```bash
 cd D:/touchHLE_src
 
-# PRIMARY - use this to test with auto-replay:
-./crash_monitor.sh auto
+# PRIMARY - use these for automated testing:
+./crash_monitor.sh auto         # Crash debugging: replay clicks, wait for crash
+./crash_monitor.sh capture      # Black screen debugging: capture frame, analyze
 
 # Secondary commands:
 ./crash_monitor.sh run          # Manual play mode (no auto-replay)

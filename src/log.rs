@@ -93,4 +93,8 @@ macro_rules! echo {
 
 /// Put modules to enable [log_dbg] for here, e.g. "touchHLE::mem" to see when
 /// memory is allocated and freed.
-pub const ENABLED_MODULES: &[&str] = &[];
+pub const ENABLED_MODULES: &[&str] = &[
+    "touchHLE::frameworks::opengles::gles_guest",
+    "touchHLE::frameworks::opengles::eagl",
+    "touchHLE::frameworks::core_animation::composition",
+];

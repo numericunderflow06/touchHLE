@@ -547,6 +547,10 @@ unsafe fn composite_layer_recursive(
     if need_update {
         let original_host_obj = env.objc.borrow_mut::<CALayerHostObject>(layer);
         if let Some((ref mut pixels, width, height)) = original_host_obj.presented_pixels {
+            log_dbg!(
+                "CAEAGLLayer composition: pixels {}x{}, layer bounds {:?}",
+                width, height, original_host_obj.bounds
+            );
             // The pixels are always RGBA, but if the layer is opaque then the
             // alpha channel is meant to be ignored. glTexImage2D() has no
             // option to ignore it, so let's manually set them to 255.

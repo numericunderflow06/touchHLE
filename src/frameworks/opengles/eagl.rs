@@ -227,6 +227,7 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     // FIXME: get width and height from the layer!
     let (width, height) = window.size_unrotated_scalehacked();
+    log!("[renderbufferStorage] Creating renderbuffer with size {}x{}", width, height);
 
     // Unclear from documentation if this method requires an appropriate context
     // to already be active, but that seems to be the case in practice?
@@ -545,6 +546,7 @@ unsafe fn present_renderbuffer(gles: &mut dyn GLES, window: &mut Window) {
 
     let renderbuffer: GLuint = get_int(gles, gles11::RENDERBUFFER_BINDING_OES) as _;
     let (width, height) = get_renderbuffer_size(gles);
+    log_dbg!("[present_renderbuffer] Renderbuffer {} size: {}x{}", renderbuffer, width, height);
 
     // To avoid confusing the guest app, we need to be able to undo any
     // state changes we make.

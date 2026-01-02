@@ -1031,11 +1031,23 @@ impl GLES for GLES1OnGL2 {
         )
     }
     unsafe fn Materialf(&mut self, face: GLenum, pname: GLenum, param: GLfloat) {
+        // Accept FRONT/BACK and treat as FRONT_AND_BACK for compatibility
+        let face = if face == gl21::FRONT || face == gl21::BACK {
+            gl21::FRONT_AND_BACK
+        } else {
+            face
+        };
         assert!(face == gl21::FRONT_AND_BACK);
         MATERIAL_PARAMS.assert_component_count(pname, 1);
         gl21::Materialf(face, pname, param);
     }
     unsafe fn Materialx(&mut self, face: GLenum, pname: GLenum, param: GLfixed) {
+        // Accept FRONT/BACK and treat as FRONT_AND_BACK for compatibility
+        let face = if face == gl21::FRONT || face == gl21::BACK {
+            gl21::FRONT_AND_BACK
+        } else {
+            face
+        };
         assert!(face == gl21::FRONT_AND_BACK);
         MATERIAL_PARAMS.setx(
             |param| gl21::Materialf(face, pname, param),
@@ -1045,20 +1057,25 @@ impl GLES for GLES1OnGL2 {
         )
     }
     unsafe fn Materialfv(&mut self, face: GLenum, pname: GLenum, params: *const GLfloat) {
-        if face == gl21::FRONT || face == gl21::BACK {
-            log!(
-                "App is calling glMaterialfv({:#x}, {:#x}, {:?}) with wrong face value, ignoring",
-                face,
-                pname,
-                params
-            );
-            return;
-        }
+        // OpenGL ES 1.1 spec says only FRONT_AND_BACK is valid, but some apps
+        // (written for desktop GL) pass FRONT or BACK. Accept these and treat
+        // as FRONT_AND_BACK to avoid silently ignoring material settings.
+        let face = if face == gl21::FRONT || face == gl21::BACK {
+            gl21::FRONT_AND_BACK
+        } else {
+            face
+        };
         assert!(face == gl21::FRONT_AND_BACK);
         MATERIAL_PARAMS.assert_known_param(pname);
         gl21::Materialfv(face, pname, params);
     }
     unsafe fn Materialxv(&mut self, face: GLenum, pname: GLenum, params: *const GLfixed) {
+        // Accept FRONT/BACK and treat as FRONT_AND_BACK for compatibility
+        let face = if face == gl21::FRONT || face == gl21::BACK {
+            gl21::FRONT_AND_BACK
+        } else {
+            face
+        };
         assert!(face == gl21::FRONT_AND_BACK);
         MATERIAL_PARAMS.setxv(
             |params| gl21::Materialfv(face, pname, params),
