@@ -198,6 +198,17 @@ export CMAKE="/path/to/cmake"
 cargo build --release
 ```
 
+### CMake 4.x compatibility error
+```
+CMake Error at externals/robin-map/CMakeLists.txt:1 (cmake_minimum_required):
+  Compatibility with CMake < 3.5 has been removed from CMake.
+```
+**Solution:** CMake 4.x removed support for older cmake_minimum_required versions. Set this environment variable:
+```bash
+export CMAKE_POLICY_VERSION_MINIMUM=3.5
+cargo build --release
+```
+
 ### MSVC linker errors
 **Solution:** Run from "Developer Command Prompt for VS 2019/2022" or ensure `cl.exe` is in PATH.
 

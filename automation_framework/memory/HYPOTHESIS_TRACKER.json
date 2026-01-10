@@ -1,0 +1,131 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-01-10",
+  "description": "Tracks hypotheses formulated and their outcomes across sessions",
+
+  "hypotheses": [
+    {
+      "id": "H001",
+      "session": "session_2026-01-01_18-31-39",
+      "hypothesis": "Black screen is caused by incorrect lighting configuration",
+      "test_method": "Log glMaterial and glLight calls, check parameters",
+      "expected_outcomes": {
+        "if_params_wrong": "Incorrect lighting causing objects to render black",
+        "if_params_correct": "Lighting not the cause, look elsewhere"
+      },
+      "actual_result": "glMaterial GL_FRONT_AND_BACK was being passed incorrectly",
+      "conclusion": "PARTIALLY_CONFIRMED - Fixed lighting, improved 97% -> 63%",
+      "useful": true
+    },
+    {
+      "id": "H002",
+      "session": "session_2026-01-01_18-48-47",
+      "hypothesis": "Remaining black area caused by frustum clipping",
+      "test_method": "Log glFrustumf parameters, compare to expected values",
+      "expected_outcomes": {
+        "if_frustum_wrong": "Geometry being clipped due to incorrect near/far planes or aspect",
+        "if_frustum_correct": "Frustum not the cause, missing geometry elsewhere"
+      },
+      "actual_result": "Frustum params: left=-0.1924, right=0.1924, bottom=-0.2887, top=0.2887, near=0.5, far=1500. Aspect matches 320/480.",
+      "conclusion": "NOT_CONFIRMED - Frustum appears correct, shift hack removed",
+      "useful": true
+    },
+    {
+      "id": "H003",
+      "session": "research_2026-01-10_12-35-40",
+      "hypothesis": "Missing decodeBytesForKey:returnedLength: causes terrain data decode failure",
+      "test_method": "Implement method with [DIAG-H1] logging, check if called",
+      "expected_outcomes": {
+        "if_called_terrain_appears": "This WAS the root cause",
+        "if_called_still_truncated": "Game uses method but issue elsewhere",
+        "if_never_called": "Game doesn't use this method",
+        "if_crash": "Implementation error, fix and retry"
+      },
+      "actual_result": "BUILD FAILED - 3 consecutive sessions blocked by infrastructure",
+      "conclusion": "INCONCLUSIVE - Not tested due to build failures",
+      "useful": null
+    },
+    {
+      "id": "H004",
+      "session": "research_2026-01-10_12-35-40",
+      "hypothesis": "Game uses other missing NSCoder decode methods",
+      "test_method": "Add [DIAG-H2] logging for missing keys in get_value_to_decode_for_key",
+      "expected_outcomes": {
+        "if_many_missing_keys": "Archive contains data, decode methods missing",
+        "if_no_missing_keys": "Keys found, data being decoded",
+        "if_warnings_only_menu": "Terrain uses different loading mechanism"
+      },
+      "actual_result": "BUILD FAILED - 3 consecutive sessions blocked by infrastructure",
+      "conclusion": "INCONCLUSIVE - Not tested due to build failures",
+      "useful": null
+    },
+    {
+      "id": "H005",
+      "session": "research_2026-01-10_12-35-40",
+      "hypothesis": "Terrain geometry loaded from separate files via NSData, not archives",
+      "test_method": "Add [DIAG-H3] logging to NSBundle and NSData file loading",
+      "expected_outcomes": {
+        "if_terrain_files_loaded": "Game uses file-based loading",
+        "if_no_terrain_files": "Terrain is embedded in archives or generated",
+        "if_file_returns_nil": "File path resolution wrong"
+      },
+      "actual_result": "BUILD FAILED - 3 consecutive sessions blocked by infrastructure",
+      "conclusion": "INCONCLUSIVE - Not tested due to build failures",
+      "useful": null
+    },
+    {
+      "id": "H006",
+      "session": "research_2026-01-10_13-43-50",
+      "hypothesis": "Game queries device model and expects different screen dimensions",
+      "test_method": "Add [DIAG-DEV] logging to UIDevice model/systemVersion and UIScreen bounds/applicationFrame",
+      "expected_outcomes": {
+        "if_model_queries_then_different_loading": "Game loads device-specific resources",
+        "if_no_model_queries": "Game doesn't check device model - not the cause",
+        "if_screen_size_queries": "Game expects different resolution"
+      },
+      "actual_result": "BUILD FAILED - session blocked by infrastructure",
+      "conclusion": "INCONCLUSIVE - Not tested due to build failure",
+      "useful": null
+    }
+  ],
+
+  "pending_questions": [
+    "Does game call decodeBytesForKey:returnedLength:? (H003 - blocked 3 times)",
+    "Are there missing keys during terrain loading? (H004 - blocked 3 times)",
+    "Does game load terrain from files via NSData? (H005 - blocked 3 times)",
+    "Does game query UIDevice model? (H006 - blocked 1 time)",
+    "Are there other unimplemented NSKeyedUnarchiver methods being called?",
+    "Why is build infrastructure failing repeatedly?"
+  ],
+
+  "patterns_observed": {
+    "successful_hypothesis_traits": [
+      "Specific and testable",
+      "Based on concrete observations (logs, values)",
+      "Led to actionable code changes",
+      "Used clear diagnostic logging prefixes ([DIAG-*])"
+    ],
+    "unsuccessful_hypothesis_traits": [
+      "Too vague",
+      "Not enough diagnostic data to confirm/refute"
+    ],
+    "infrastructure_issues": [
+      "Build failures can prevent hypothesis testing entirely",
+      "Linker errors (0xc0000142) are environmental, not code issues",
+      "Stale build status (build_monitor.sh reading old .build_status) blocks testing",
+      "THREE consecutive sessions blocked by infrastructure, diagnostic code never executed",
+      "Exit code -1 indicates build_monitor.sh issues, not code issues"
+    ]
+  },
+
+  "diagnostic_code_status": {
+    "ready_to_test": true,
+    "prefixes_in_place": [
+      "[DIAG-H1] - decodeBytesForKey in ns_keyed_unarchiver.rs",
+      "[DIAG-H2] - Missing keys in ns_keyed_unarchiver.rs",
+      "[DIAG-H3] - File loading in ns_bundle.rs and ns_data.rs",
+      "[DIAG-DEV] - Device model in ui_device.rs and ui_screen.rs"
+    ],
+    "never_executed_due_to": "build infrastructure failures"
+  }
+}

@@ -72,7 +72,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (id)model {
     // TODO: Hardcoded to iPhone for now
-    ns_string::get_static_str(env, "iPhone")
+    let model = "iPhone";
+    log!("[DIAG-DEV] UIDevice.model queried, returning: '{}'", model);
+    ns_string::get_static_str(env, model)
 }
 - (id)localizedModel {
     // TODO: localization
@@ -90,7 +92,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 // NSString
 - (id)systemVersion {
-    ns_string::get_static_str(env, "3.0")
+    let version = "3.0";
+    log!("[DIAG-DEV] UIDevice.systemVersion queried, returning: '{}'", version);
+    ns_string::get_static_str(env, version)
 }
 
 - (id)uniqueIdentifier {

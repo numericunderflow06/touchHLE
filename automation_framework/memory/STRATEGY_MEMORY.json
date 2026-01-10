@@ -1,0 +1,176 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-01-10",
+  "description": "Tracks effectiveness of debugging and search strategies across sessions",
+
+  "debugging_strategies": {
+    "glFrustum_adjustment": {
+      "description": "Adjusting glFrustum parameters to fix clipping",
+      "times_tried": 3,
+      "successes": 0,
+      "partial_improvements": 1,
+      "notes": "Reduced black pixels from 97% to 42% with glMaterial fix found via this approach. Frustum shift hack removed in 2026-01-10 session.",
+      "last_used": "2026-01-10"
+    },
+    "viewport_investigation": {
+      "description": "Investigating viewport settings and bounds",
+      "times_tried": 2,
+      "successes": 0,
+      "partial_improvements": 0,
+      "notes": "Viewport found to be correct (320x480)",
+      "last_used": "2026-01-01"
+    },
+    "depth_buffer_analysis": {
+      "description": "Analyzing depth buffer configuration",
+      "times_tried": 1,
+      "successes": 0,
+      "partial_improvements": 0,
+      "notes": "Depth settings appear correct",
+      "last_used": "2026-01-01"
+    },
+    "nskeyedunarchiver_decode_methods": {
+      "description": "Implementing missing NSKeyedUnarchiver decode methods",
+      "times_tried": 3,
+      "successes": 0,
+      "partial_improvements": 0,
+      "notes": "Added decodeBytesForKey:returnedLength: but build failed 3 consecutive sessions. Code is valid and ready for testing.",
+      "last_used": "2026-01-10"
+    },
+    "diagnostic_logging": {
+      "description": "Adding [DIAG-*] prefixed logging for hypothesis testing",
+      "times_tried": 3,
+      "successes": 0,
+      "partial_improvements": 0,
+      "notes": "Good approach - added logging to ns_keyed_unarchiver, ns_bundle, ns_data, ui_device, ui_screen. Build failed 3 times before test. All code is in place and ready.",
+      "last_used": "2026-01-10"
+    },
+    "device_model_investigation": {
+      "description": "Adding diagnostic logging to UIDevice/UIScreen to check device model queries",
+      "times_tried": 1,
+      "successes": 0,
+      "partial_improvements": 0,
+      "notes": "Added [DIAG-DEV] logging in session 13-43-50. Build failed before test. Logging covers model, systemVersion, bounds, applicationFrame.",
+      "last_used": "2026-01-10"
+    }
+  },
+
+  "search_strategies": {
+    "github_issues_search": {
+      "description": "Searching GitHub issues for similar problems",
+      "times_tried": 0,
+      "useful_results": 0,
+      "queries_tried": [],
+      "notes": ""
+    },
+    "opengl_forums": {
+      "description": "Searching OpenGL/graphics forums for rendering issues",
+      "times_tried": 0,
+      "useful_results": 0,
+      "queries_tried": [],
+      "notes": ""
+    },
+    "touchhle_upstream": {
+      "description": "Checking touchHLE upstream repo for related fixes",
+      "times_tried": 0,
+      "useful_results": 0,
+      "queries_tried": [],
+      "notes": "Should check for decodeBytesForKey implementation upstream"
+    }
+  },
+
+  "hypotheses_tested": {
+    "lighting_bug": {
+      "hypothesis": "Black screen caused by lighting misconfiguration",
+      "tested_in_session": "session_2026-01-01_18-31-39",
+      "result": "PARTIALLY_CONFIRMED",
+      "details": "glMaterial face parameter was wrong, fixing improved from 97% to 63% black"
+    },
+    "frustum_clipping": {
+      "hypothesis": "Bottom of screen clipped by frustum settings",
+      "tested_in_session": "session_2026-01-01_19-39-58",
+      "result": "NOT_CONFIRMED",
+      "details": "Frustum parameters look correct. 2.5% shift hack removed as ineffective."
+    },
+    "decodeBytesForKey_missing": {
+      "hypothesis": "Missing decodeBytesForKey:returnedLength: causes terrain decode failure",
+      "tested_in_session": "research_2026-01-10_13-43-50",
+      "result": "NOT_TESTED",
+      "details": "Implementation added but build failed 3 consecutive sessions. Code is valid and ready for testing."
+    },
+    "missing_nscoder_methods": {
+      "hypothesis": "Other missing NSCoder decode methods cause silent failures",
+      "tested_in_session": "research_2026-01-10_13-43-50",
+      "result": "NOT_TESTED",
+      "details": "Diagnostic logging added but build failed 3 consecutive sessions. Code ready for testing."
+    },
+    "file_based_terrain_loading": {
+      "hypothesis": "Terrain loaded from files via NSData, not archives",
+      "tested_in_session": "research_2026-01-10_13-43-50",
+      "result": "NOT_TESTED",
+      "details": "Diagnostic logging added to NSBundle/NSData but build failed 3 consecutive sessions. Code ready for testing."
+    },
+    "device_model_mismatch": {
+      "hypothesis": "Game queries device model and expects different screen dimensions",
+      "tested_in_session": "research_2026-01-10_13-43-50",
+      "result": "NOT_TESTED",
+      "details": "Added [DIAG-DEV] logging to UIDevice and UIScreen in session 13-43-50. Build failed before test."
+    }
+  },
+
+  "effective_keywords": {
+    "high_success": [],
+    "moderate_success": [],
+    "low_success": []
+  },
+
+  "recommendations": {
+    "try_next": [
+      "FIX BUILD INFRASTRUCTURE FIRST - this is the primary blocker",
+      "Try manual cargo build --release to isolate build_monitor.sh issues",
+      "Once build works: run capture and analyze [DIAG-H1], [DIAG-H2], [DIAG-H3], [DIAG-DEV] logs",
+      "DO NOT add more diagnostic code - sufficient logging already exists"
+    ],
+    "avoid": [
+      "Adding more diagnostic code (already have enough)",
+      "Further viewport adjustments (confirmed correct)",
+      "Basic depth buffer changes (confirmed correct)",
+      "glFrustum shift hacks (removed, not effective)"
+    ]
+  },
+
+  "build_issues": {
+    "linker_error_0xc0000142": {
+      "first_seen": "2026-01-10",
+      "description": "link.exe returned exit code 0xc0000142",
+      "cause": "Windows linker infrastructure error, not code error",
+      "resolution": "Retry build, or repair Visual Studio build tools if persistent"
+    },
+    "stale_build_status": {
+      "first_seen": "2026-01-10",
+      "description": "build_monitor.sh reads stale .build_status file instead of running new build",
+      "cause": "Pipeline infrastructure issue - build_monitor.sh not properly resetting/running builds",
+      "symptoms": "Build completes in ~5s (too fast), .build_status shows SUCCESS but pipeline reports FAILED",
+      "resolution": "Fix build_monitor.sh to clear .build_status before starting build, ensure build actually runs"
+    },
+    "exit_code_minus_1": {
+      "first_seen": "2026-01-10",
+      "description": "Build returned exit code -1",
+      "cause": "Unknown - possibly related to build_monitor.sh infrastructure",
+      "symptoms": "Build status FAILED, no detailed error output",
+      "resolution": "Try manual cargo build --release to get actual error output"
+    }
+  },
+
+  "infrastructure_status": {
+    "last_successful_build": "unknown",
+    "consecutive_build_failures": 3,
+    "blocking_issue": "build_infrastructure",
+    "code_ready_to_test": true,
+    "diagnostic_logging_ready": true,
+    "sessions_blocked_by_infrastructure": [
+      "research_2026-01-10_12-35-40",
+      "research_2026-01-10_13-16-02",
+      "research_2026-01-10_13-43-50"
+    ]
+  }
+}

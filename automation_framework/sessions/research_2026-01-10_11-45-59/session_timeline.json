@@ -1,0 +1,142 @@
+{
+  "session_id": "research_2026-01-10_11-45-59",
+  "session_type": "research_pipeline",
+  "started_at": "2026-01-10T11:46:00.006078",
+  "ended_at": "",
+  "status": "running",
+  "total_events": 8,
+  "total_phases": 2,
+  "total_claude_calls": 1,
+  "total_cost_usd": 0.0,
+  "initial_black_pct": 0,
+  "final_black_pct": 0.0,
+  "builds_attempted": 0,
+  "tests_run": 1,
+  "events": [
+    {
+      "event_id": 1,
+      "timestamp": "2026-01-10T11:46:00.006078",
+      "event_type": "session_start",
+      "phase": "",
+      "step": "",
+      "description": "Session research_2026-01-10_11-45-59 started",
+      "file": "",
+      "details": {
+        "session_type": "research_pipeline"
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 2,
+      "timestamp": "2026-01-10T11:46:00.102647",
+      "event_type": "test_start",
+      "phase": "testing",
+      "step": "",
+      "description": "Starting test (crash_monitor.sh capture)",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 3,
+      "timestamp": "2026-01-10T11:46:00.393080",
+      "event_type": "test_end",
+      "phase": "testing",
+      "step": "",
+      "description": "Test result: ERROR",
+      "file": "",
+      "details": {
+        "exit_code": 1,
+        "status": "ERROR",
+        "black_pct": null,
+        "output_length": 105
+      },
+      "duration_seconds": 0.2864358425140381,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 4,
+      "timestamp": "2026-01-10T11:46:00.397272",
+      "event_type": "phase_start",
+      "phase": "planning",
+      "step": "",
+      "description": "Steps 1-6: Research and planning",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 5,
+      "timestamp": "2026-01-10T11:46:00.426951",
+      "event_type": "claude_prompt",
+      "phase": "planning",
+      "step": "planning",
+      "description": "Sent prompt to Claude Code",
+      "file": "events/005_claude_prompt.md",
+      "details": {
+        "prompt_length": 5290
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 6,
+      "timestamp": "2026-01-10T11:53:00.194944",
+      "event_type": "claude_response",
+      "phase": "planning",
+      "step": "planning",
+      "description": "Received response from Claude Code",
+      "file": "events/006_claude_response.md",
+      "details": {
+        "response_length": 1978,
+        "is_error": false,
+        "num_turns": 0,
+        "prompt_event_id": null,
+        "claude_session_id": ""
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0
+    },
+    {
+      "event_id": 7,
+      "timestamp": "2026-01-10T11:53:00.198946",
+      "event_type": "phase_end",
+      "phase": "planning",
+      "step": "",
+      "description": "Planning complete",
+      "file": "",
+      "details": {
+        "success": true
+      },
+      "duration_seconds": 419.801674,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 8,
+      "timestamp": "2026-01-10T11:53:00.210115",
+      "event_type": "phase_start",
+      "phase": "implementation",
+      "step": "",
+      "description": "Step 7: Code implementation",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    }
+  ],
+  "phases": [
+    {
+      "phase": "planning",
+      "success": true,
+      "duration_seconds": 419.801674,
+      "event_ids": [
+        4,
+        7
+      ],
+      "summary": "Planning complete"
+    }
+  ]
+}

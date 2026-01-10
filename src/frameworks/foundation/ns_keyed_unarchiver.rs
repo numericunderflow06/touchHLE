@@ -18,7 +18,7 @@ use crate::frameworks::foundation::{NSInteger, NSUInteger};
 use crate::frameworks::uikit::ui_geometry::{
     CGPointFromString, CGRectFromString, CGSizeFromString,
 };
-use crate::mem::{ConstVoidPtr, GuestUSize, MutVoidPtr};
+use crate::mem::{ConstVoidPtr, GuestUSize, MutPtr, MutVoidPtr};
 use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
     NSZonePtr,
@@ -202,7 +202,49 @@ pub const CLASSES: ClassExports = objc_classes! {
     get_value_to_decode_for_key(env, this, key).is_some()
 }
 
-// TODO: add more decode methods
+// decodeBytesForKey:returnedLength: - decodes raw byte data from archive
+// This is critical for loading terrain/level binary data
+- (ConstVoidPtr)decodeBytesForKey:(id)key // NSString *
+                   returnedLength:(MutPtr<NSUInteger>)length_out {
+    let key_str = to_rust_string(env, key);
+    log!("[DIAG-H1] decodeBytesForKey:returnedLength: key='{}'", key_str);
+
+    let Some(value) = get_value_to_decode_for_key(env, this, key) else {
+        log!("[DIAG-H1] decodeBytesForKey: key='{}' NOT FOUND, returning null", key_str);
+        if !length_out.is_null() {
+            env.mem.write(length_out, 0);
+        }
+        return ConstVoidPtr::null();
+    };
+
+    // The value should be binary data in the plist
+    let Some(data) = value.as_data() else {
+        log!("[DIAG-H1] decodeBytesForKey: key='{}' is not Data type, returning null", key_str);
+        if !length_out.is_null() {
+            env.mem.write(length_out, 0);
+        }
+        return ConstVoidPtr::null();
+    };
+
+    let bytes = data.to_vec();
+    let len: GuestUSize = bytes.len().try_into().unwrap();
+
+    log!("[DIAG-H1] decodeBytesForKey: key='{}' decoded {} bytes successfully", key_str, len);
+
+    // Allocate memory for the bytes and copy them
+    // The caller is responsible for the returned memory
+    // (typically autoreleased via the unarchiver's lifecycle)
+    let guest_bytes: MutVoidPtr = env.mem.alloc(len);
+    env.mem
+        .bytes_at_mut(guest_bytes.cast(), len)
+        .copy_from_slice(bytes.as_slice());
+
+    if !length_out.is_null() {
+        env.mem.write(length_out, len);
+    }
+
+    guest_bytes.cast_const()
+}
 
 // These come from a category in UIKit's UIGeometry.h
 - (CGPoint)decodeCGPointForKey:(id)key { // NSString*
@@ -237,7 +279,13 @@ fn get_value_to_decode_for_key(env: &mut Environment, unarchiver: id, key: id) -
     }
     .as_dictionary()
     .unwrap();
-    scope.get(&key)
+
+    // [DIAG-H2] Log when keys are not found
+    let result = scope.get(&key);
+    if result.is_none() {
+        log!("[DIAG-H2] NSKeyedUnarchiver: key '{}' NOT FOUND in current scope", key);
+    }
+    result
 }
 
 /// The core of the implementation: unarchive something by its uid.

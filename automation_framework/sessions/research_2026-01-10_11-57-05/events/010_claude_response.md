@@ -1,0 +1,32 @@
+# Claude Response
+
+**Event ID:** 10
+**Phase:** implementation
+**Step:** implementation
+**Timestamp:** 2026-01-10T12:16:49.920293
+**Cost:** $0.0000
+**Turns:** 0
+**Success:** True
+**Prompt Event:** N/A
+
+---
+
+**IMPLEMENTATION COMPLETE**
+
+## Files Modified
+
+1. **`src/frameworks/opengles/gles_guest.rs`** - Added frame-level draw call statistics with `[DIAG-H1]` prefix:
+   - Frame counter and per-frame draw call/vertex statistics
+   - Helper function to categorize draws by primitive type
+   - Frame boundary logging triggered by `glClear` with color buffer bit
+
+2. **`src/frameworks/uikit/ui_device.rs`** - Added device query logging with `[DIAG-H2]` prefix:
+   - Logging for `model`, `localizedModel`, `name`, `systemName`, `systemVersion`
+
+3. **`src/frameworks/uikit/ui_screen.rs`** - Added screen query logging with `[DIAG-H2]` prefix:
+   - Logging for `bounds` and `applicationFrame`
+
+All changes compile successfully. The diagnostic logging will help identify whether the screen truncation issue is caused by:
+- Missing geometry submission (H1 - watch for low draw calls/vertices)
+- Wrong device/screen configuration (H2 - watch for device/screen queries)
+

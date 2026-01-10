@@ -330,6 +330,47 @@ case "$1" in
         else
             echo "=== CAPTURE FAILED ===" >&2
             echo "No new frame detected" >&2
+
+            # Check if game crashed or was killed (memory issue)
+            CRASH_INFO_FILE="$SESSION_DIR/crash_info.txt"
+            if [ -f "$PID_FILE" ]; then
+                PID=$(cat "$PID_FILE")
+                if ! ps -p $PID > /dev/null 2>&1; then
+                    echo "Game process $PID is no longer running" >&2
+
+                    # Check for panic in log
+                    if grep -q "panicked at" "$LOG_FILE" 2>/dev/null; then
+                        echo "CRASH_TYPE=PANIC" > "$CRASH_INFO_FILE"
+                        echo "=== RUST PANIC DETECTED ===" >&2
+                        grep -B 5 -A 30 "panicked at" "$LOG_FILE" >> "$CRASH_INFO_FILE"
+                        grep -B 5 -A 30 "panicked at" "$LOG_FILE" >&2
+                    elif grep -q "out of memory\|OOM\|memory allocation" "$LOG_FILE" 2>/dev/null; then
+                        echo "CRASH_TYPE=OOM" > "$CRASH_INFO_FILE"
+                        echo "=== OUT OF MEMORY ===" >&2
+                        tail -50 "$LOG_FILE" >> "$CRASH_INFO_FILE"
+                    else
+                        echo "CRASH_TYPE=KILLED" > "$CRASH_INFO_FILE"
+                        echo "=== PROCESS KILLED (likely memory) ===" >&2
+                        echo "Process was killed before frame capture completed." >&2
+                        echo "This often indicates memory exhaustion." >&2
+                    fi
+
+                    # Save last 100 lines of log
+                    echo "" >> "$CRASH_INFO_FILE"
+                    echo "=== LAST 100 LINES OF LOG ===" >> "$CRASH_INFO_FILE"
+                    tail -100 "$LOG_FILE" >> "$CRASH_INFO_FILE" 2>/dev/null
+
+                    # Save diagnostic logs if present
+                    echo "" >> "$CRASH_INFO_FILE"
+                    echo "=== DIAGNOSTIC LOGS ===" >> "$CRASH_INFO_FILE"
+                    grep "\[DIAG-" "$LOG_FILE" >> "$CRASH_INFO_FILE" 2>/dev/null || echo "(none found)" >> "$CRASH_INFO_FILE"
+
+                    echo "Crash info saved to: $CRASH_INFO_FILE" >&2
+                    force_kill_game
+                    exit 4  # New exit code: crash/kill detected
+                fi
+            fi
+
             force_kill_game
             exit 1
         fi
@@ -387,6 +428,7 @@ case "$1" in
         echo "  1 = No crash (timeout or clean exit) / Capture failed"
         echo "  2 = BLACK SCREEN TEST PASSED (black pixels < ${BLACK_PIXEL_THRESHOLD}%)"
         echo "  3 = BLACK SCREEN TEST FAILED (black pixels >= ${BLACK_PIXEL_THRESHOLD}%) - fix needed"
+        echo "  4 = CRASH/KILLED during capture (memory issue) - see crash_info.txt"
         echo ""
         echo "DEBUGGING WORKFLOWS:"
         echo "  Crash loop:        auto -> fix -> rebuild -> auto (until exit 1)"

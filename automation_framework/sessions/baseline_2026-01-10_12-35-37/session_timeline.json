@@ -1,0 +1,80 @@
+{
+  "session_id": "baseline_2026-01-10_12-35-37",
+  "session_type": "research_pipeline",
+  "started_at": "2026-01-10T12:35:37.806165",
+  "ended_at": "2026-01-10T12:35:40.876553",
+  "status": "completed",
+  "total_events": 4,
+  "total_phases": 0,
+  "total_claude_calls": 0,
+  "total_cost_usd": 0.0,
+  "initial_black_pct": 0.0,
+  "final_black_pct": 0.0,
+  "builds_attempted": 0,
+  "tests_run": 1,
+  "events": [
+    {
+      "event_id": 1,
+      "timestamp": "2026-01-10T12:35:37.806165",
+      "event_type": "session_start",
+      "phase": "",
+      "step": "",
+      "description": "Session baseline_2026-01-10_12-35-37 started",
+      "file": "",
+      "details": {
+        "session_type": "research_pipeline"
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 2,
+      "timestamp": "2026-01-10T12:35:37.810163",
+      "event_type": "test_start",
+      "phase": "testing",
+      "step": "",
+      "description": "Starting test (crash_monitor.sh capture)",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 3,
+      "timestamp": "2026-01-10T12:35:40.873531",
+      "event_type": "test_end",
+      "phase": "testing",
+      "step": "",
+      "description": "Test result: ERROR",
+      "file": "",
+      "details": {
+        "exit_code": 1,
+        "status": "ERROR",
+        "black_pct": null,
+        "output_length": 105
+      },
+      "duration_seconds": 3.0602619647979736,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 4,
+      "timestamp": "2026-01-10T12:35:40.876553",
+      "event_type": "session_end",
+      "phase": "",
+      "step": "",
+      "description": "Baseline test",
+      "file": "",
+      "details": {
+        "total_events": 3,
+        "total_cost_usd": 0.0,
+        "initial_black_pct": 0.0,
+        "final_black_pct": 0.0,
+        "builds_attempted": 0,
+        "tests_run": 1
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    }
+  ],
+  "phases": []
+}

@@ -27,6 +27,8 @@ case "$1" in
 
         # Start build in background
         export PATH="/c/Users/cs06t/.cargo/bin:$PATH"
+        # CMake 4.x compatibility fix
+        export CMAKE_POLICY_VERSION_MINIMUM=3.5
         (
             cargo build --release -j 2 > "$BUILD_LOG" 2>&1
             EXIT_CODE=$?

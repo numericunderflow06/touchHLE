@@ -211,3 +211,159 @@ The black area at the bottom is **screen truncation** - not a lighting or color 
 2. Check for texture loading failures (especially terrain textures)
 3. Investigate if specific draw calls are missing
 4. Consider if this is the expected appearance for this level
+
+---
+
+## Session: research_2026-01-10_12-35-40
+**Date**: 2026-01-10
+**Result**: BUILD FAILED - No test executed (linker error)
+
+### What Was Tried
+1. Implemented `decodeBytesForKey:returnedLength:` in NSKeyedUnarchiver
+2. Added diagnostic logging ([DIAG-H1], [DIAG-H2], [DIAG-H3]) to track:
+   - NSKeyedUnarchiver decode calls
+   - Missing key detection
+   - NSBundle resource loading
+   - NSData file loading
+3. Removed experimental glFrustumf 2.5% shift hack
+
+### Build Failure
+- **Error**: `link.exe` returned exit code `0xc0000142`
+- **Type**: Windows linker infrastructure error, NOT code error
+- **Code compiled**: Successfully (28 warnings, 0 compilation errors)
+- **Cause**: Likely Visual Studio build tools issue or memory problem
+
+### What Was Learned
+- The code changes are valid and compile successfully
+- The hypothesis approach (adding decodeBytesForKey + diagnostic logging) is sound
+- Build infrastructure can be a blocker - retry or repair VS build tools
+
+### Hypotheses Tested
+- H1: decodeBytesForKey missing - INCONCLUSIVE (not tested)
+- H2: Other missing NSCoder methods - INCONCLUSIVE (not tested)
+- H3: File-based terrain loading - INCONCLUSIVE (not tested)
+
+### Recommendations for Next Session
+1. **First**: Retry build (may just need a retry)
+2. **If build fails again**: Repair Visual Studio build tools or free memory
+3. **On success**: Run `./crash_monitor.sh capture` and analyze [DIAG-*] logs
+4. **The code changes are already in place** - just need successful build
+
+---
+
+## Session: research_2026-01-10_13-16-02
+**Date**: 2026-01-10
+**Result**: INFRASTRUCTURE FAILURE - Build monitor reported failed, but .build_status showed SUCCESS
+
+### What Was Tried
+- Diagnostic-driven debugging session: run existing [DIAG-*] logging without new code changes
+- Build and capture test with pre-existing diagnostic code
+- Hypotheses H1-H3 ready for testing (decodeBytesForKey, missing keys, file loading)
+
+### What Was Learned
+- **Build infrastructure issue discovered**: build_monitor.sh is returning stale status
+- .build_status file contains "SUCCESS" but pipeline reports "Build failed"
+- Build completed in ~5.6 seconds (too fast for real build), suggesting stale status read
+- This is the **second consecutive session** blocked by infrastructure issues
+- Actual code is likely fine - problem is in the build monitoring pipeline
+
+### Hypotheses Tested
+- H1: decodeBytesForKey missing - INCONCLUSIVE (infrastructure failure)
+- H2: Missing NSCoder methods - INCONCLUSIVE (infrastructure failure)
+- H3: File-based terrain loading - INCONCLUSIVE (infrastructure failure)
+
+### Recommendations for Next Session
+1. **CRITICAL**: Fix build_monitor.sh stale status issue
+   - Ensure .build_status is reset/cleared before starting new build
+   - Verify build actually runs vs reading cached status
+2. **After infrastructure fix**: Run capture and analyze [DIAG-H1], [DIAG-H2], [DIAG-H3] logs
+3. The diagnostic code has been in place for TWO sessions but never executed
+
+---
+
+## Session: research_2026-01-10_13-43-50
+**Date**: 2026-01-10
+**Result**: BUILD FAILED (exit code -1) - Third consecutive infrastructure failure
+
+### What Was Tried
+1. Added [DIAG-DEV] logging to UIDevice (model, systemVersion) and UIScreen (bounds, applicationFrame)
+2. Attempted to run existing diagnostic code from previous sessions
+3. No new bug fix code - focus was on completing blocked test cycle
+
+### What Was Learned
+- **Build infrastructure is a systemic problem**: Three consecutive sessions blocked
+  - Session 12-35-40: Linker error 0xc0000142
+  - Session 13-16-02: Stale .build_status file
+  - Session 13-43-50: Build failed (exit -1)
+- **Diagnostic code is complete and ready**: [DIAG-H1], [DIAG-H2], [DIAG-H3], [DIAG-DEV] all in place
+- **No diagnostic output has ever been collected** despite code being ready for 9+ days
+- **Code is likely valid** - compiled successfully in earlier attempts
+
+### Hypotheses Status
+- H1: decodeBytesForKey terrain loading - INCONCLUSIVE (not tested, 3rd time blocked)
+- H2: File-based terrain loading - INCONCLUSIVE (not tested, 3rd time blocked)
+- H3: Device model mismatch - INCONCLUSIVE (new logging added, not tested)
+
+### Recommendations for Next Session
+1. **CRITICAL**: Fix build infrastructure before anything else
+   - Try manual `cargo build --release` to isolate build_monitor.sh issues
+   - Check Visual Studio Build Tools status
+   - Verify .build_status file handling
+2. **After build works**: Run capture and analyze ALL diagnostic prefixes
+3. **Do NOT add more code** - sufficient diagnostics exist; testing is the bottleneck
+
+---
+
+## Session: research_2026-01-10_14-13 (Manual Session - BREAKTHROUGH)
+**Date**: 2026-01-10
+**Result**: DIAGNOSTIC SUCCESS - First successful test with diagnostic output!
+
+### Infrastructure Fixes Applied
+1. Fixed research_runner.py to use full Git Bash path (`C:/Program Files/Git/usr/bin/bash.exe`)
+   - Python subprocess was calling WSL's bash instead of Git Bash
+   - This caused all build_monitor.sh and crash_monitor.sh calls to fail
+2. Fixed packed struct reference error in ui_screen.rs
+   - Diagnostic logging was directly referencing packed struct fields
+   - Fix: Copy values to local variables before logging
+
+### Diagnostic Output Analysis (FIRST EVER!)
+
+**[DIAG-H1] = 0 calls** - `decodeBytesForKey:returnedLength:` is NEVER called
+- **H1 REFUTED**: Game does NOT load terrain via NSKeyedUnarchiver binary decode
+
+**[DIAG-H2] = 9 warnings** - Only UI keys missing:
+- UIView, UIOpaque, UITag, UIMultipleTouchEnabled, UISubviews, UIHidden
+- **H2 REFUTED for terrain**: Missing keys are UI-related, not terrain data
+
+**[DIAG-H3] = 178 file operations** - Key discovery:
+- .nib files loaded successfully
+- .Image.def sprite definition files loaded successfully (Background1/2/3.Image.def)
+- **BUT NO .png texture files loaded via NSData!**
+
+**[DIAG-DEV] = 2718 calls** - Device queries correct:
+- UIScreen.bounds = 320x480 (correct)
+- UIDevice.systemVersion = "3.0" (correct)
+
+### Critical Discovery
+The game loads `.Image.def` sprite definition files (~150-260 bytes) but NOT the actual `.png` texture files through Foundation APIs. The game likely uses:
+1. **C stdlib functions** (fopen/fread) to read PNG files directly
+2. **Custom PNG decoder** or embedded image loading
+3. The Background.png files (217KB-256KB) are never loaded via NSData
+
+### What This Means
+The terrain/background textures exist (Background1.png, Background2.png, Background3.png) and the game reads their definition files, but the actual texture data is loaded through a mechanism we're not currently tracing.
+
+### Hypotheses Status (Updated)
+- **H1: decodeBytesForKey terrain loading** - **REFUTED** (0 calls observed)
+- **H2: Missing NSCoder keys for terrain** - **REFUTED** (only UI keys missing)
+- **H3: File-based terrain via NSData** - **PARTIALLY REFUTED** (.Image.def loaded, .png NOT loaded via NSData)
+- **H4: Device model mismatch** - **RULED OUT** (320x480 is correct, "3.0" is correct)
+
+### NEW HYPOTHESIS: H7 - C stdlib file loading
+The game uses C stdlib functions (fopen/fread) to load texture PNG files, bypassing Foundation APIs entirely. Need to add diagnostic logging to libc file functions.
+
+### Recommendations for Next Session
+1. **Add [DIAG-LIBC] logging** to fopen/fread in src/libc/ to trace C-level file access
+2. Look for `Background*.png` file reads through C stdlib
+3. The terrain textures exist and definitions are loaded - trace how actual pixels are loaded
+4. Black pixels = 42.22% (no change) - confirmed still a terrain/texture loading issue

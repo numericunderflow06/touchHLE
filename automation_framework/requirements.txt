@@ -1,0 +1,5 @@
+# TouchHLE Automation Framework Python Dependencies
+# Python 3.12+
+
+pyyaml>=6.0.0      # For config.yaml parsing
+pillow>=10.0.0     # For image analysis (analyze_frame.py)

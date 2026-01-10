@@ -161,6 +161,12 @@ pub const CLASSES: ClassExports = objc_classes! {
           inDirectory:(id)directory { // NSString*
     assert!(name != nil); // TODO
 
+    // [DIAG-H3] Log resource path lookups
+    let name_str = ns_string::to_rust_string(env, name);
+    let ext_str = if extension != nil { ns_string::to_rust_string(env, extension) } else { std::borrow::Cow::from("(nil)") };
+    let dir_str = if directory != nil { ns_string::to_rust_string(env, directory) } else { std::borrow::Cow::from("(nil)") };
+    log!("[DIAG-H3] NSBundle pathForResource: name='{}' type='{}' inDirectory='{}'", name_str, ext_str, dir_str);
+
     // TODO: cache result of lookups
 
     let path = path_for_resource_helper(env, this, name, nil, directory, extension);

@@ -154,12 +154,14 @@ pub const CLASSES: ClassExports = objc_classes! {
         return nil;
     }
     let path = to_rust_string(env, path);
-    log_dbg!("[(NSData*){:?} initWithContentsOfFile:{:?}]", this, path);
+    log!("[DIAG-H3] NSData initWithContentsOfFile: path='{}'", path);
     let Ok(bytes) = env.fs.read(GuestPath::new(&path)) else {
+        log!("[DIAG-H3] NSData initWithContentsOfFile: FAILED to read '{}'", path);
         release(env, this);
         return nil;
     };
     let size = bytes.len().try_into().unwrap();
+    log!("[DIAG-H3] NSData initWithContentsOfFile: SUCCESS path='{}' size={} bytes", path, size);
     let alloc = env.mem.alloc(size);
     let slice = env.mem.bytes_at_mut(alloc.cast(), size);
     slice.copy_from_slice(&bytes);

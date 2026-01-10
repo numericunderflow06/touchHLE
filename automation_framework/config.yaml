@@ -1,0 +1,82 @@
+# TouchHLE Research Pipeline Configuration
+# ==========================================
+
+general:
+  working_dir: "D:/touchHLE_src"
+  max_retries: 20
+  session_timeout_seconds: 1800  # 30 minutes per Claude call
+  retry_delay_seconds: 10
+
+claude:
+  model: "opus"
+  cmd: "C:/Users/cs06t/AppData/Roaming/npm/claude.cmd"
+  # cmd: "claude"  # Use this on Unix systems
+
+testing:
+  # Commands
+  build_command: "./build_monitor.sh"
+  test_command: "./crash_monitor.sh capture"
+
+  # Exit codes
+  pass_exit_code: 2
+  fail_exit_code: 3
+  crash_exit_code: 0
+  error_exit_code: 1
+
+  # Thresholds
+  black_pixel_threshold: 15  # Percentage below which test passes
+
+# Files that Claude must NEVER modify
+# The orchestrator will refuse to run if these are changed
+protected_files:
+  - "crash_monitor.sh"
+  - "build_monitor.sh"
+  - "analyze_frame.py"
+  - "auto_replay.sh"
+  - "capture_game.ps1"
+  - "click_recorder.sh"
+  - "process_recording.sh"
+  - "replay_sequence.sh"
+
+# Files Claude should read for context
+context_files:
+  - "MEMORY.md"
+  - "CLAUDE.md"
+  - "SETUP.md"
+
+logging:
+  save_all_prompts: true
+  save_all_responses: true
+  max_output_length: 5000  # Truncate Claude output display
+
+# Phase configuration
+phases:
+  planning:
+    name: "Planning Phase (Steps 1-6)"
+    steps:
+      - "Read Context"
+      - "Create Solution Plan"
+      - "Check Duplicates"
+      - "Formulate Hypotheses"
+      - "Design Search Strategy"
+      - "Check Search Duplicates"
+
+  implementation:
+    name: "Implementation Phase (Step 7)"
+    steps:
+      - "Implement Bug Fix"
+      - "Add Diagnostic Logging"
+
+  testing:
+    name: "Automated Testing"
+    steps:
+      - "Build"
+      - "Run Test"
+      - "Analyze Results"
+
+  reflection:
+    name: "Reflection Phase (Step 8)"
+    steps:
+      - "Evaluate Hypotheses"
+      - "Assess Strategies"
+      - "Update Memory"

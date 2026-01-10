@@ -1,0 +1,58 @@
+{
+  "session_id": "research_2026-01-10_14-06-59",
+  "session_type": "research_pipeline",
+  "started_at": "2026-01-10T14:06:59.791995",
+  "ended_at": "",
+  "status": "running",
+  "total_events": 3,
+  "total_phases": 1,
+  "total_claude_calls": 1,
+  "total_cost_usd": 0.0,
+  "initial_black_pct": 42.22,
+  "final_black_pct": 0.0,
+  "builds_attempted": 0,
+  "tests_run": 0,
+  "events": [
+    {
+      "event_id": 1,
+      "timestamp": "2026-01-10T14:06:59.792516",
+      "event_type": "session_start",
+      "phase": "",
+      "step": "",
+      "description": "Session research_2026-01-10_14-06-59 started",
+      "file": "",
+      "details": {
+        "session_type": "research_pipeline"
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 2,
+      "timestamp": "2026-01-10T14:06:59.868604",
+      "event_type": "phase_start",
+      "phase": "planning",
+      "step": "",
+      "description": "Steps 1-6: Research and planning",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 3,
+      "timestamp": "2026-01-10T14:06:59.883042",
+      "event_type": "claude_prompt",
+      "phase": "planning",
+      "step": "planning",
+      "description": "Sent prompt to Claude Code",
+      "file": "events/003_claude_prompt.md",
+      "details": {
+        "prompt_length": 5294
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    }
+  ],
+  "phases": []
+}

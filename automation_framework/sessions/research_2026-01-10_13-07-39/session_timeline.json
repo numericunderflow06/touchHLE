@@ -1,0 +1,87 @@
+{
+  "session_id": "research_2026-01-10_13-07-39",
+  "session_type": "research_pipeline",
+  "started_at": "2026-01-10T13:07:39.976911",
+  "ended_at": "",
+  "status": "running",
+  "total_events": 5,
+  "total_phases": 1,
+  "total_claude_calls": 1,
+  "total_cost_usd": 0.0,
+  "initial_black_pct": 0,
+  "final_black_pct": 0.0,
+  "builds_attempted": 0,
+  "tests_run": 1,
+  "events": [
+    {
+      "event_id": 1,
+      "timestamp": "2026-01-10T13:07:39.976911",
+      "event_type": "session_start",
+      "phase": "",
+      "step": "",
+      "description": "Session research_2026-01-10_13-07-39 started",
+      "file": "",
+      "details": {
+        "session_type": "research_pipeline"
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 2,
+      "timestamp": "2026-01-10T13:07:40.074963",
+      "event_type": "test_start",
+      "phase": "testing",
+      "step": "",
+      "description": "Starting test (crash_monitor.sh capture)",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 3,
+      "timestamp": "2026-01-10T13:07:43.639812",
+      "event_type": "test_end",
+      "phase": "testing",
+      "step": "",
+      "description": "Test result: ERROR",
+      "file": "",
+      "details": {
+        "exit_code": 1,
+        "status": "ERROR",
+        "black_pct": null,
+        "output_length": 105
+      },
+      "duration_seconds": 3.5599000453948975,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 4,
+      "timestamp": "2026-01-10T13:07:43.656329",
+      "event_type": "phase_start",
+      "phase": "planning",
+      "step": "",
+      "description": "Steps 1-6: Research and planning",
+      "file": "",
+      "details": {},
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    },
+    {
+      "event_id": 5,
+      "timestamp": "2026-01-10T13:07:43.673410",
+      "event_type": "claude_prompt",
+      "phase": "planning",
+      "step": "planning",
+      "description": "Sent prompt to Claude Code",
+      "file": "events/005_claude_prompt.md",
+      "details": {
+        "prompt_length": 5290
+      },
+      "duration_seconds": 0.0,
+      "cost_usd": 0.0
+    }
+  ],
+  "phases": []
+}

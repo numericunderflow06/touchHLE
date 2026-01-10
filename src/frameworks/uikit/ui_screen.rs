@@ -42,10 +42,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (CGRect)bounds {
     // TODO: once rotation is supported, this must change with the rotation!
-    CGRect {
+    let bounds = CGRect {
         origin: CGPoint { x: 0.0, y: 0.0 },
         size: CGSize { width: 320.0, height: 480.0 },
-    }
+    };
+    // Copy to local vars to avoid packed struct field reference issues
+    let (w, h) = (bounds.size.width, bounds.size.height);
+    log!("[DIAG-DEV] UIScreen.bounds queried, returning: {}x{}", w, h);
+    bounds
 }
 
 - (CGRect)applicationFrame {
@@ -55,6 +59,9 @@ pub const CLASSES: ClassExports = objc_classes! {
         bounds.origin.y += STATUS_BAR_HEIGHT;
         bounds.size.height -= STATUS_BAR_HEIGHT;
     }
+    // Copy to local vars to avoid packed struct field reference issues
+    let (w, h, x, y) = (bounds.size.width, bounds.size.height, bounds.origin.x, bounds.origin.y);
+    log!("[DIAG-DEV] UIScreen.applicationFrame queried, returning: {}x{} at ({},{})", w, h, x, y);
     bounds
 }
 
