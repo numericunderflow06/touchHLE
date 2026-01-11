@@ -1,0 +1,45 @@
+{
+  "number": 200,
+  "title": "Only a white screen is displayed on PowerVR devices",
+  "state": "open",
+  "created_at": "2023-11-11T07:47:03Z",
+  "updated_at": "2026-01-02T20:07:32Z",
+  "closed_at": null,
+  "labels": [
+    "bug (supported app)",
+    "usability enhancement",
+    "bug (unsupported app)"
+  ],
+  "author": "creeper451",
+  "body": "I tried using touchHLE on my old phone, but when I start it, I only see a white screen. I've tried different OpenGL options, but the result is always the same. Here is the logcat file from the phone. Thank you for this great app.\r\n[logcat.txt](https://github.com/hikari-no-yume/touchHLE/files/13324908/logcat.txt)\r\n\r\n",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "Hi, could you upload the log.txt file from the touchHLE directory? I think it is in /sdcard/Android/data/org.touchhle.android/files.",
+      "created_at": "2023-11-11T12:29:45Z"
+    },
+    {
+      "author": "creeper451",
+      "body": "Alright\r\n[log.txt](https://github.com/hikari-no-yume/touchHLE/files/13325582/log.txt)\r\n",
+      "created_at": "2023-11-11T13:18:13Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Thanks!\r\n\r\nFrom the log I can see what GPU you have:\r\n\r\n```\r\ntouchHLE::window: Driver info: OpenGL ES-CM 1.1 / Imagination Technologies / PowerVR Rogue GE8100\r\n```\r\n\r\n[I'd previously gotten a report from someone else that had this problem](https://github.com/hikari-no-yume/touchHLE/issues/148#issuecomment-1702525485), and they also had a PowerVR GPU. So this issue has something to do with PowerVR.\r\n\r\nI don't have a PowerVR device myself, so I probably can't fix this quickly, but thank you for telling me about it. I might contact you at some point in order to try to debug this.",
+      "created_at": "2023-11-11T13:36:32Z"
+    },
+    {
+      "author": "creeper451",
+      "body": "Sure! 👍",
+      "created_at": "2023-11-12T09:01:00Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Btw @ciciplusplus may have found the problem: NPOT textures. At least, that is the problem on iOS, so it might be on Android. Fixing touchHLE's code so it doesn't need NPOT texture sizes is a bit tedious, but doable. Not a priority for me.",
+      "created_at": "2024-03-01T22:23:40Z"
+    }
+  ],
+  "comments_count": 5,
+  "url": "https://github.com/touchHLE/touchHLE/issues/200",
+  "fetched_at": "2026-01-11T14:50:05.317887Z"
+}

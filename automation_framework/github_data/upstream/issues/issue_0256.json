@@ -1,0 +1,43 @@
+{
+  "number": 256,
+  "title": "Issues with Tony Hawk's Pro Skater 2",
+  "state": "open",
+  "created_at": "2024-02-29T04:05:31Z",
+  "updated_at": "2026-01-08T19:10:02Z",
+  "closed_at": null,
+  "labels": [
+    "bug (supported app)"
+  ],
+  "author": "joao678",
+  "body": "On Windows, the latest release \"v0.2.1: All treat, no trick!\" of touchHLE, it does not run at all.\r\nBy grabbing the latest release from GitHub Actions and placing the .exe overriding the previous one a different error pops up.\r\n\r\n```\r\nUnexpected I/O failure when trying to access real path \"touchHLE_dylibs/libstdc++.6.0.9.dylib\": O sistema não pode encontrar o arquivo especificado. (os error 2). This might indicate that files needed by touchHLE are missing, or were moved while it was running.\r\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\r\n```\r\n\r\nNote that the file \"libstdc++.6.0.4.dylib\" comes inside the \"touchHLE_dylibs\" folder, renaming this file to \"libstdc++.6.0.9.dylib\" makes it work.\r\n\r\nHowever there are more issues.\r\nCompleting the first level and saving the game results in a error\r\n```\r\nUnexpected I/O failure when trying to access real path \"touchHLE_sandbox\\\\com.activision.thps2\\\\Documents\\\\THPS2 CAREER- Bob 2-29-24 4:0:11 $0.SAV\": A sintaxe do nome do arquivo, do nome do diretório ou do rótulo do volume está incorreta. (os error 123). This might indicate that files needed by touchHLE are missing, or were moved while it was running.\r\n```\r\nThis does not happen on android using the latest release, I suspect this happens because touchHLE tries to create a file with the name containg \":\" which is not possible on windows under normal circumstances",
+  "comments": [
+    {
+      "author": "nighto",
+      "body": "Hi João,\r\n\r\nfirst of all THPS2 not working on 0.2.1 is expected because when that version was launched, that game wasn't supported yet.\r\n\r\nThen, you should not rename libstdc++ to a different number, but rather get the correct version of it; that might be the issue. Dependencies might change between versions (and have changed since 0.2.1 release), and the action generated zip file only includes the .exe binary without any of the needed dependencies.\r\n\r\n(@hikari-no-yume @ciciplusplus maybe we could create another action that makes a zip file ready to be used, including `vendor` directory?)\r\n\r\nJust tried running `trunk` version on Windows with `cmd` and indeed, when saving career, this error happens (copying again because OP posted their error message in portuguese):\r\n\r\n```\r\ntouchHLE::fs: Warning: attempt to create file at path GuestPath(\"/THPS2 CAREER- Tony 2-29-24 8:18:45 $0.SAV\"), but directory is read-only\r\nthread 'main' panicked at 'Unexpected I/O failure when trying to access real path \"touchHLE_sandbox\\\\com.activision.thps2\\\\Documents\\\\THPS2 CAREER- Tony 2-29-24 8:18:45 $0.SAV\": The filename, directory name, or volume label syntax is incorrect. (os error 123). This might indicate that files needed by touchHLE are missing, or were moved while it was running.', src\\fs.rs:340:19\r\n```\r\n\r\nThe same error happens with PowerShell and Git Bash as well; tested on Windows 11.\r\n\r\nReproduce path:\r\n\r\n1. Open touchHLE and open THPS2\r\n2. Click on Career Mode, New Career, choose whatever player and start the first level\r\n3. Open Menu (top **i** button) and choose End Run, Continue\r\n4. Press Save Career, Yes and touch on **--Empty Slot--**",
+      "created_at": "2024-02-29T08:24:09Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Yeah the dylibs issue is because the set of bundled dylibs changed since last release. Not including those in CI builds was deliberate but I didn't have any particularly good reason, so I might change it.\r\n\r\nThe save data path issue is interesting however. I've been afraid we'd run into this eventually. Hmm.",
+      "created_at": "2024-02-29T08:27:00Z"
+    },
+    {
+      "author": "nighto",
+      "body": "@hikari-no-yume I'll create a side issue just so it doesn't get buried here :)",
+      "created_at": "2024-02-29T08:44:05Z"
+    },
+    {
+      "author": "joao678",
+      "body": "Thanks for the quick responses guys, hope this gets fixed soon. Valeu! 🤙",
+      "created_at": "2024-03-01T21:19:52Z"
+    },
+    {
+      "author": "Catarax",
+      "body": "Still can't save on touchHLE v0.2.3 (windows)",
+      "created_at": "2026-01-08T19:10:02Z"
+    }
+  ],
+  "comments_count": 5,
+  "url": "https://github.com/touchHLE/touchHLE/issues/256",
+  "fetched_at": "2026-01-11T14:49:53.361654Z"
+}

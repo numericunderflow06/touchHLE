@@ -1,0 +1,89 @@
+{
+  "description": "Suggested search terms for finding relevant issues and PRs",
+  "categories": {
+    "rendering_issues": {
+      "description": "General rendering and display problems",
+      "searches": [
+        "black screen",
+        "blank screen",
+        "rendering",
+        "display",
+        "graphics",
+        "visual"
+      ]
+    },
+    "opengl_specific": {
+      "description": "OpenGL ES related issues",
+      "searches": [
+        "OpenGL",
+        "OpenGL ES",
+        "GLES",
+        "glMaterial",
+        "glFrustum",
+        "glViewport",
+        "glScissor",
+        "glClear",
+        "glDraw",
+        "texture",
+        "framebuffer",
+        "renderbuffer"
+      ]
+    },
+    "file_loading": {
+      "description": "File and resource loading issues",
+      "searches": [
+        "file loading",
+        "resource",
+        "NSData",
+        "NSBundle",
+        "fopen",
+        "texture load",
+        "image load",
+        "PNG",
+        "PVRTC"
+      ]
+    },
+    "ios_apis": {
+      "description": "iOS framework implementation issues",
+      "searches": [
+        "NSKeyedUnarchiver",
+        "NSKeyedArchiver",
+        "NSCoder",
+        "decode",
+        "unarchive",
+        "UIDevice",
+        "UIScreen"
+      ]
+    },
+    "game_specific": {
+      "description": "Specific game compatibility issues",
+      "searches": [
+        "Avatar of War",
+        "game compatibility",
+        "crash",
+        "hang",
+        "freeze"
+      ]
+    },
+    "screen_issues": {
+      "description": "Screen size and viewport issues",
+      "searches": [
+        "screen size",
+        "resolution",
+        "viewport",
+        "bounds",
+        "clipping",
+        "truncation",
+        "bottom cut off"
+      ]
+    }
+  },
+  "priority_searches": [
+    "black screen",
+    "rendering issue",
+    "glMaterial",
+    "texture loading",
+    "OpenGL ES",
+    "viewport"
+  ]
+}

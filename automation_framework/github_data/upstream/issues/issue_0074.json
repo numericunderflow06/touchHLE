@@ -1,0 +1,168 @@
+{
+  "number": 74,
+  "title": "New host platform: iOS/iPadOS",
+  "state": "closed",
+  "created_at": "2023-03-06T18:59:04Z",
+  "updated_at": "2025-11-08T20:05:22Z",
+  "closed_at": "2025-04-13T13:34:10Z",
+  "labels": [
+    "new platform support"
+  ],
+  "author": "Spidy123222",
+  "body": "It would be ideal and make sense to have a port for apple devices. iOS doesn't support 32bit apps and some apps that were great back then just no longer able to be ran. Games I wanted to play like minibash (toribash mobile) and geodefence no longer possible. You can sideload apps via things like AltStore and sidestore to install ipa's. If needed you can allow jit ability using a debugger which both these programs can use. There is automatic activation for those too called altkit and sidekit. It is early on project just wanted to mention, Has it been attempted to build this rust program to \"aarch64-apple-ios\"?",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "iOS is still a very closed and locked-down platform, so even though I am an iOS user and I totally understand the appeal, I'm not very enthusiastic about the idea of trying to port to it, it would probably be a pain and not useful to many people in practice.\r\n\r\nThere's a bunch of practical hurdles right now… JIT might be possible via hacky setups, but I doubt dynarmic supports it, and I don't want to try to implement that myself. Then there would be some pain relating to getting OpenGL ES working, though that'll be solved when I eventually try to port this to Android, I guess.",
+      "created_at": "2023-03-06T19:06:54Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "With that said, if the changes aren't too intrusive, I'm not going to stop someone if they want to try to port it and contribute the changes upstream. (Please don't fork the project though…)",
+      "created_at": "2023-03-06T19:11:02Z"
+    },
+    {
+      "author": "upintheairsheep",
+      "body": "I thought you were saying to add support for emulating latest iOS apps, needs a title change.",
+      "created_at": "2023-03-06T19:20:04Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> iOS is still a very closed and locked-down platform, so even though I am an iOS user and I totally understand the appeal, I'm not very enthusiastic about the idea of trying to port to it, it would probably be a pain and not useful to many people in practice.\n> \n> \n> \n> There's a bunch of practical hurdles right now… JIT might be possible via hacky setups, but I doubt dynarmic supports it, and I don't want to try to implement that myself. Then there would be some pain relating to getting OpenGL ES working, though that'll be solved when I eventually try to port this to Android, I guess.\n\nThere is also stuff about iOS 17 having offical sideloading support. About arm64 jit, It requires swapping between w^x and r^x using a seperate thread to sync properly. You can look at how dolphiniOS and pojavlauncher does this. Currently helping (with info I don't develop apps but modify them usually) with getting citra to build on iOS which also uses dynarmic. From seeing their progress it's not fully done but seemed like person making emuthreeDS got jit portion working fast and is mostly just working on moltenvk stuff. This is great work btw and I bet other people will also try help out including maybe porting to iOS.",
+      "created_at": "2023-03-06T19:27:23Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Yeah I'm hoping the rumours of iOS opening up a bit, perhaps in response to EU pressure, are true. If that happens for real then of course I'll try to port to iOS.",
+      "created_at": "2023-03-06T19:29:40Z"
+    },
+    {
+      "author": "duckfromdiscord",
+      "body": "> Has it been attempted to build this rust program to \"aarch64-apple-ios\"?\r\n\r\nI am trying to do this right now, or at least to find out what the build issues are. Apologies for bumping an old issue but I would like to help if I can",
+      "created_at": "2023-09-01T16:53:40Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> > Has it been attempted to build this rust program to \"aarch64-apple-ios\"?\n> \n> \n> \n> I am trying to do this right now, or at least to find out what the build issues are. Apologies for bumping an old issue but I would like to help if I can\n\nIt's completely fine. Infact I'm still interested as it essentially would start restoring 32bit app support for games. From my experience building with Linux and hearing others on iOS development on other emulators. You will have a bit of struggle using sdl2. Sdl2 does say it supports iOS so maybe just needs a bit of a touch up idk. ",
+      "created_at": "2023-09-01T19:20:29Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "> I am trying to do this right now, or at least to find out what the build issues are. Apologies for bumping an old issue but I would like to help if I can\r\n\r\ntouchHLE tries to be platform-independent as much as possible. There's very little platform-specific code in touchHLE itself, and all the libraries used should work on multiple platforms. In theory, if you build it for iOS, the build should succeed with minimal tinkering.\r\n\r\nThe problem is just that iOS is a very locked-down target:\r\n\r\n- touchHLE relies on Dynarmic for the CPU emulation, and Dynarmic is a JIT compiler, but iOS doesn't allow normal apps to use JIT.\r\n- touchHLE currently uses 4GiB of virtual address space for the guest app's memory. iOS won't let you allocate that much. (It could be relatively easily changed to use, say, 1GiB, which might be small enough?)\r\n- iOS sandboxes file access, but in fairness so does Android, and the way iOS does it is much nicer for emulators, so this may be no big deal.\r\n\r\nAlso, touchHLE requires OpenGL ES 1.1 support. That's deprecated on modern iOS, but is it _removed_? Are new apps allowed to link to it?\r\n",
+      "created_at": "2023-09-01T19:44:31Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "> From my experience building with Linux and hearing others on iOS development on other emulators. You will have a bit of struggle using sdl2. Sdl2 does say it supports iOS so maybe just needs a bit of a touch up idk.\r\n\r\nI don't know what SDL2 is like on iOS, but using it on Android has been a huge pain in certain ways, so I might know what you mean. iOS is a bit more normal of an OS compared to Android though, so I'd expect less issues overall with SDL2. SDL2 has to do some horrible things to work on Android that aren't necessary on iOS, I think.",
+      "created_at": "2023-09-01T19:46:08Z"
+    },
+    {
+      "author": "duckfromdiscord",
+      "body": "> touchHLE relies on Dynarmic for the CPU emulation, and Dynarmic is a JIT compiler, but iOS doesn't allow normal apps to use JIT.\r\n\r\nYes. This is true and there isn't much we can do about this. We can enable JIT for certain apps for a limited amount of time using AltJIT/SideJIT/DirtyJIT. I'm personally hoping JIT is officially allowed by Apple within the next few years but who knows.\r\n\r\n> Also, touchHLE requires OpenGL ES 1.1 support. That's deprecated on modern iOS, but is it removed? Are new apps allowed to link to it?\r\n\r\nI'm fairly certain OpenGL ES 1.1 is just fine. I was able to get 2.3 contexts thru `SDL_GL_CreateContext` just fine about a year ago.\r\n\r\n-----\r\n\r\n> Has it been attempted to build this rust program to \"aarch64-apple-ios\"?\r\n\r\nI was able to compile most of the dependencies immediately, except for some issues with Rust-SDL2. See https://github.com/Rust-SDL2/rust-sdl2/issues/1331 . I also got some issues with the OpenAL, STB and Dynarmic wrappers. The STB wrapper issue was fixed by changing the minimum iOS version from 7(?!?!) to 16 but I can't figure out how to trick the compiler and CMake into doing this automatically.",
+      "created_at": "2023-09-01T20:30:42Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> > I am trying to do this right now, or at least to find out what the build issues are. Apologies for bumping an old issue but I would like to help if I can\n> \n> \n> \n> touchHLE tries to be platform-independent as much as possible. There's very little platform-specific code in touchHLE itself, and all the libraries used should work on multiple platforms. In theory, if you build it for iOS, the build should succeed with minimal tinkering.\n> \n> \n> \n> The problem is just that iOS is a very locked-down target:\n> \n> \n> \n> - touchHLE relies on Dynarmic for the CPU emulation, and Dynarmic is a JIT compiler, but iOS doesn't allow normal apps to use JIT.\n> \n> - touchHLE currently uses 4GiB of virtual address space for the guest app's memory. iOS won't let you allocate that much. (It could be relatively easily changed to use, say, 1GiB, which might be small enough?)\n> \n> - iOS sandboxes file access, but in fairness so does Android, and the way iOS does it is much nicer for emulators, so this may be no big deal.\n> \n> \n> \n> Also, touchHLE requires OpenGL ES 1.1 support. That's deprecated on modern iOS, but is it _removed_? Are new apps allowed to link to it?\n> \n> \n\niOS has not been limited to 1gb of addressing space in a long time. You could get 4gb of address space using a 4g ram device. There is also entitlements for people that can get a lot more via paid developer accounts on lower end devices (10+ on a iPhone 8 Plus for example which is 3gb ram). Dolphinios is a port of dolphin for example as it uses 8gb of address space. There was that limit so some developer halfed the needed address space as a hacky fastmem (no longer needed since softmmu exists now) which allowed 4gb ram devices to run it without jailbreak or added entitlements that needs a paid developer account.\n\nDynarmic has been ported to iOS a few times already via things like emuthreeds and other arm device based emulators. Even qemu has been ported via utm. ",
+      "created_at": "2023-09-01T22:37:01Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> > touchHLE relies on Dynarmic for the CPU emulation, and Dynarmic is a JIT compiler, but iOS doesn't allow normal apps to use JIT.\n> \n> \n> \n> Yes. This is true and there isn't much we can do about this. We can enable JIT for certain apps for a limited amount of time using AltJIT/SideJIT/DirtyJIT. I'm personally hoping JIT is officially allowed by Apple within the next few years but who knows.\n> \n> \n> \n> > Also, touchHLE requires OpenGL ES 1.1 support. That's deprecated on modern iOS, but is it removed? Are new apps allowed to link to it?\n> \n> \n> \n> I'm fairly certain OpenGL ES 1.1 is just fine. I was able to get 2.3 contexts thru `SDL_GL_CreateContext` just fine about a year ago.\n> \n> \n> \n> -----\n> \n> \n> \n> > Has it been attempted to build this rust program to \"aarch64-apple-ios\"?\n> \n> \n> \n> I was able to compile most of the dependencies immediately, except for some issues with Rust-SDL2. See https://github.com/Rust-SDL2/rust-sdl2/issues/1331 . I also got some issues with the OpenAL, STB and Dynarmic wrappers. The STB wrapper issue was fixed by changing the minimum iOS version from 7(?!?!) to 16 but I can't figure out how to trick the compiler and CMake into doing this automatically.\n\nThe jit methods are enabled via debugger. Wasn't sure if you didn't know because of the libraries you mentioned like sidejit,altjit,dirtyjit. I am one of the people that helps develop sidestore (currently working on sidekit for auto debugging apps) and helped on jitstreamer.\n\nHave you though of doing the tricks you mention in a shell script. Have you tried lower minimum iOS version like 15 or 14?\n\nFor dynarmic I might have to refer to somone for that but there is available info for it to work on iOS. You could join the discord us in sidestore hangout in to ask antique using dynarmic for emuthreeds. You can also directly contact me in sidestore discord with same name.",
+      "created_at": "2023-09-01T22:43:02Z"
+    },
+    {
+      "author": "duckfromdiscord",
+      "body": "> Have you though of doing the tricks you mention in a shell script. Have you tried lower minimum iOS version like 15 or 14?\r\n\r\nThe issue is that I don't know how to set the minimum iOS version. The fix for the STB wrapper issue I was talking about came from me copy-pasting one of the commands CMake gave me and changing it. I don't know how to actually apply it to everything, and when I did run the command, Cargo & CMake didn't use that compiled result.\r\n\r\n> For dynarmic I might have to refer to somone for that but there is available info for it to work on iOS.\r\n\r\nYeah. ",
+      "created_at": "2023-09-02T01:14:10Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> The issue is that I don't know how to set the minimum iOS version. The fix for the STB wrapper issue I was talking about came from me copy-pasting one of the commands CMake gave me and changing it. I don't know how to actually apply it to everything, and when I did run the command, Cargo & CMake didn't use that compiled result.\n\nDid you manage to get around these issues? Also it's very likely you will need to modify those wrappers if you cannot get them working without touching them.",
+      "created_at": "2023-09-28T20:52:34Z"
+    },
+    {
+      "author": "duckfromdiscord",
+      "body": "> Did you manage to get around these issues?\r\n\r\nSadly, no. Help would be appreciated 😅 CMake is a mystery to me\r\n\r\n> Also it's very likely you will need to modify those wrappers if you cannot get them working without touching them.\r\n\r\nProbably true. Not quite sure how to go about this.",
+      "created_at": "2023-09-28T23:43:41Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> > Did you manage to get around these issues?\n> \n> \n> \n> Sadly, no. Help would be appreciated 😅 CMake is a mystery to me\n> \n> \n> \n> > Also it's very likely you will need to modify those wrappers if you cannot get them working without touching them.\n> \n> \n> \n> Probably true. Not quite sure how to go about this.\n\nI should be able to get you some help in discord. Since your username has discord in name I'm guessing you might have one. Join our hangout server as we have some emulator devs for iOS that could help out. This link expires in 1 day. I go by the same name. https://discord.gg/m6SDtvrG",
+      "created_at": "2023-09-29T00:32:34Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "I have a working proof of concept on my branch here https://github.com/ciciplusplus/touchHLE/tree/tmp-ios\r\nDemo video https://www.youtube.com/watch?v=f_wfLFaKgoE (orientation bug was fixed later)\r\n\r\nI tested with Super Monkey Ball and Wolf3d\r\nI can confirm that you need to have an attached debugger from Xcode to work.\r\n(and also an Apple's dev account for running on a device)\r\n\r\n![GEUlCrAWkAAJQk4](https://github.com/hikari-no-yume/touchHLE/assets/91161081/f0680f39-863d-4e2c-aece-33ba449c3993)\r\n![GEUkq6OXkAEXGrK](https://github.com/hikari-no-yume/touchHLE/assets/91161081/47164384-3151-402e-b3eb-7f8ba16d10e4)\r\n\r\n\r\nP.S. rough explanation of how i get it working https://x.com/ciciplusplus/status/1748732428116517263?s=20",
+      "created_at": "2024-01-20T23:25:39Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> I have a working proof of concept on my branch here https://github.com/ciciplusplus/touchHLE/tree/tmp-ios\n> \n> Demo video https://www.youtube.com/watch?v=f_wfLFaKgoE (orientation bug was fixed later)\n> \n> \n> \n> I tested with Super Monkey Ball and Wolf3d\n> \n> I can confirm that you need to have an attached debugger from Xcode to work.\n> \n> (and also an Apple's dev account for running on a device)\n> \n> \n> \n> ![GEUlCrAWkAAJQk4](https://github.com/hikari-no-yume/touchHLE/assets/91161081/f0680f39-863d-4e2c-aece-33ba449c3993)\n> \n> ![GEUkq6OXkAEXGrK](https://github.com/hikari-no-yume/touchHLE/assets/91161081/47164384-3151-402e-b3eb-7f8ba16d10e4)\n> \n> \n> \n> \n> \n> P.S. rough explanation of how i get it working https://x.com/ciciplusplus/status/1748732428116517263?s=20\n\nIs there a reason you need paid developer account. It doesn't feel like such low end apps would use up more than what is needed for them to run with jit. Is this not related to extended virtual addressing? Also is there any special build instructions you need to build it? Also I'm sure you can get the app size smaller. I believe one time I saw somone built it and it had debug symbols with it.\n\nWhat idevice is it. It could be possible your device just has low ammount of unified memory.",
+      "created_at": "2024-01-21T22:50:36Z"
+    },
+    {
+      "author": "duckfromdiscord",
+      "body": "> I believe one time I saw somone built it and it had debug symbols with it.\r\n\r\nYeah, make sure to build the Rust project with `--release`.",
+      "created_at": "2024-01-22T00:30:48Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "> > I have a working proof of concept on my branch here https://github.com/ciciplusplus/touchHLE/tree/tmp-ios\r\n> > Demo video https://www.youtube.com/watch?v=f_wfLFaKgoE (orientation bug was fixed later)\r\n> > I tested with Super Monkey Ball and Wolf3d\r\n> > I can confirm that you need to have an attached debugger from Xcode to work.\r\n> > (and also an Apple's dev account for running on a device)\r\n> > ![GEUlCrAWkAAJQk4](https://private-user-images.githubusercontent.com/91161081/298312344-f0680f39-863d-4e2c-aece-33ba449c3993.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDYxODQxMjcsIm5iZiI6MTcwNjE4MzgyNywicGF0aCI6Ii85MTE2MTA4MS8yOTgzMTIzNDQtZjA2ODBmMzktODYzZC00ZTJjLWFlY2UtMzNiYTQ0OWMzOTkzLmpwZWc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwMTI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDEyNVQxMTU3MDdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT05MGQyZmJmZmYxMzY3NjVhMTdlOWQxNmJlMDNjZGNkMmE2NjA3MjllYWE0YmI4Y2U4ZTY1YzcxMTI0ZDQwYzFkJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.f32vHBAyO_LjgLJvh5jLxKtiIRVTFGyQEj6sQrBaGPs)\r\n> > ![GEUkq6OXkAEXGrK](https://private-user-images.githubusercontent.com/91161081/298312346-47164384-3151-402e-b3eb-7f8ba16d10e4.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDYxODQxMjcsIm5iZiI6MTcwNjE4MzgyNywicGF0aCI6Ii85MTE2MTA4MS8yOTgzMTIzNDYtNDcxNjQzODQtMzE1MS00MDJlLWIzZWItN2Y4YmExNmQxMGU0LmpwZWc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwMTI1JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDEyNVQxMTU3MDdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT01Y2NiOTE3ZTg0MmM5Zjc3N2YzMjhkOTIyMGU0ZGU4MDEyZjlkY2ZhNTJkYzVjN2U4MDhjMzE3ZWY1OWU4YjkyJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.OlmTvGUBByDjfHqAP6_GxBhvFdAbos9ez946I5XiSYQ)\r\n> > P.S. rough explanation of how i get it working https://x.com/ciciplusplus/status/1748732428116517263?s=20\r\n> \r\n> Is there a reason you need paid developer account. It doesn't feel like such low end apps would use up more than what is needed for them to run with jit. Is this not related to extended virtual addressing? Also is there any special build instructions you need to build it? Also I'm sure you can get the app size smaller. I believe one time I saw somone built it and it had debug symbols with it.\r\n> \r\n> What idevice is it. It could be possible your device just has low ammount of unified memory.\r\n\r\n---\r\n\r\n> Is there a reason you need paid developer account.\r\n\r\nI'm not aware of any other way to install a custom app on non-jailbroken device.\r\n\r\n> Also is there any special build instructions you need to build it?\r\n\r\nThere is a XCode project inside `ios-host` folder on my branch, it should be straightforward to build\r\n\r\n> Also I'm sure you can get the app size smaller.\r\n\r\nNot my goal here. I need debug symbols anyway to debug crashes.\r\n\r\n> What idevice is it.\r\n\r\niPhone SE 1st gen, iOS 15.8",
+      "created_at": "2024-01-25T12:03:10Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> I'm not aware of any other way to install a custom app on non-jailbroken device.\n\nPeople usually use AltStore, SideStore (I work on this project with others), sideloady. \n\nEven then, Xcode can install apps without paid developer accounts. Just matters if you need certain entitlements. Extended virtual addressing is one of the entitlements that need paid developer accounts. Dynarmic on other iOS apps like limon which is a port of citra doesn't need it for example. ",
+      "created_at": "2024-01-25T19:02:27Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> I have a working proof of concept on my branch here https://github.com/ciciplusplus/touchHLE/tree/tmp-ios Demo video https://www.youtube.com/watch?v=f_wfLFaKgoE (orientation bug was fixed later)\r\n> \r\n> I tested with Super Monkey Ball and Wolf3d I can confirm that you need to have an attached debugger from Xcode to work. (and also an Apple's dev account for running on a device)\r\n> \r\n> ![GEUlCrAWkAAJQk4](https://private-user-images.githubusercontent.com/91161081/298312344-f0680f39-863d-4e2c-aece-33ba449c3993.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTI4MTkwMTAsIm5iZiI6MTcxMjgxODcxMCwicGF0aCI6Ii85MTE2MTA4MS8yOTgzMTIzNDQtZjA2ODBmMzktODYzZC00ZTJjLWFlY2UtMzNiYTQ0OWMzOTkzLmpwZWc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwNDExJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDQxMVQwNjU4MzBaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT04YmNmYjEyYTE4N2E4NjBkYzJmNjVlYzAwNjIyMzhmNTBkM2E5MTIzYmI1MTM1MzcwMWU2NDg0MjdjNzczZWE2JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.y_CzWIeV34Hkub_F6jG-M4BlqSEL5w3Gs0R2Dcs4Rds) ![GEUkq6OXkAEXGrK](https://private-user-images.githubusercontent.com/91161081/298312346-47164384-3151-402e-b3eb-7f8ba16d10e4.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MTI4MTkwMTAsIm5iZiI6MTcxMjgxODcxMCwicGF0aCI6Ii85MTE2MTA4MS8yOTgzMTIzNDYtNDcxNjQzODQtMzE1MS00MDJlLWIzZWItN2Y4YmExNmQxMGU0LmpwZWc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjQwNDExJTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI0MDQxMVQwNjU4MzBaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT0wMTdmN2JmNmUyOGEyZGExNDU3NGFiMDRhNzgxZjU0YTMzNThmYjQ2ZmQ3YmQ1M2I4NjkyYzNiYzA2OGU2OWY3JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZhY3Rvcl9pZD0wJmtleV9pZD0wJnJlcG9faWQ9MCJ9.L-fCpWogtpl-Bnt3IR6My6B5zX1RzgTo2bUSTkb2n8E)\r\n> \r\n> P.S. rough explanation of how i get it working https://x.com/ciciplusplus/status/1748732428116517263?s=20\r\n\r\nso I managed to get a proper device as my last one has lots of troubles but seems to be fixed using a newer device to compile. so I am having an issue compiling your repo. essentially its missing a SDL2.Framework file and few other sdl files. trying to git recurse submodules as I notice dynarmic isn't getting pulled properly and doesn't seem to work anymore. any ideas? \n\nEdit: I found I needed to manually download the dependencies as it wasn't being installed. It now gets stuck at compiling via rust.\n\nfatal error: 'dynarmic/interface/A32/context.h' file not found\n Edit2: I managed to find the file and just moved them and got past it. Compiling in cargo gives an error about not able to compile the app as it panicked at build.rs:92:74. I did update the branch to latest if that matters after a bit to see if it helped but no different outcome.\n\nIt's probably messed up, I can't get the exact commits for the dependancies which is likely the problem but not sure completely. ",
+      "created_at": "2024-04-11T07:39:11Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "The original repo for dynarmic no longer exists. There is a fork that we are using now. You may need to check out the fork.",
+      "created_at": "2024-04-11T10:48:37Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> The original repo for dynarmic no longer exists. There is a fork that we are using now. You may need to check out the fork.\n\nYeah I added that one in place since the latest touchHLE used it. I pretty much just did the default branch for all of them but did sdl2 branch for sdl.",
+      "created_at": "2024-04-11T18:21:20Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "Seems like iOS can have emulators on AppStore now. It's possible that it could get on AppStore if it was using an interpreter also. Their review stuff does mention providing files so would need to be homebrew. Retro console emulation is kinda broad in a way and idk if Apple considers old iOS games as retro console? ",
+      "created_at": "2024-05-08T19:17:17Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Having a commercial relationship with Apple could be troublesome for a project like this. I don't think touchHLE will ever be on the App Store.",
+      "created_at": "2024-05-08T20:09:09Z"
+    },
+    {
+      "author": "Raypuia",
+      "body": "> Having a commercial relationship with Apple could be troublesome for a project like this. I don't think touchHLE will ever be on the App Store.\r\n\r\nWould AltStore be an alternative?\r\nIt obviously doesn't need to be a paid app (which would make it a easy target for DMCA)",
+      "created_at": "2024-05-09T00:06:20Z"
+    },
+    {
+      "author": "Spidy123222",
+      "body": "> Having a commercial relationship with Apple could be troublesome for a project like this.\n\nI could understand not wanting a relationship with Apple as the emulator emulates old iOS programs. I'm not sure exactly sure how it would be troublesome as they don't have any right to the touchHLE code unless I'm missing something here.\n\nAs mentioned above, there is using third party app marketplaces (eu only) like altstore pal but you will have to find a way to get around core technology fee (paid fee or like ads for getting around it). There's using sideloading stores like altstore global and SideStore's stores (connect is in beta rn) or just provide an ipa and people can deal with it themselves.\n\nIf it was planned to go any route, I would atleast try AppStore/testflight and if not being accepted for being an iOS 4 emulator or not a console emulator then go to any suggested stuff above.",
+      "created_at": "2024-05-09T03:18:42Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "The EU version of AltStore is not really an alternative, for the same reason. That _also_ requires me to have a commercial relationship with Apple due to the notarisation process.",
+      "created_at": "2024-05-09T16:45:46Z"
+    },
+    {
+      "author": "Raypuia",
+      "body": "If the fear of confronting Apple is a concern.\r\nI think the only reasonable approach would be just giving a build and let the userbase figure out by themselves.\r\nI mean, emulators and game source ports on iOS have existed for quite a while by \"jailbreaking\" devices.",
+      "created_at": "2024-05-10T02:24:16Z"
+    }
+  ],
+  "comments_count": 30,
+  "url": "https://github.com/touchHLE/touchHLE/issues/74",
+  "fetched_at": "2026-01-11T14:50:29.503766Z"
+}

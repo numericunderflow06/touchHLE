@@ -1,0 +1,36 @@
+{
+  "number": 181,
+  "title": "Why Never 64bit iOS?",
+  "state": "closed",
+  "created_at": "2023-10-24T03:18:23Z",
+  "updated_at": "2026-01-05T00:49:20Z",
+  "closed_at": "2023-10-24T12:19:47Z",
+  "labels": [],
+  "author": "sekkit",
+  "body": "\r\nIs there any reason to never have a 64bit iOS support?",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "Hi, thanks for your question. There's three parts to it really:\r\n\r\n* Realistic expectations. It is already very difficult to get early (iPhone OS 2) games working, and each new iOS version we support will only increase the difficulty; the OS and apps for it only get more complex with time. 64-bit support first appears in iOS 7, but it would be a miracle if touchHLE could support even iOS 6.\r\n* Implementation simplicity. touchHLE's code assumes 32-bit throughout. Making it support both 32-bit and 64-bit would make many things more complicated.\r\n* Lack of interest in that era of apps. The touchHLE project exists to preserve an older, less cynical era of mobile gaming. By the time you have 64-bit-only iOS games coming out, the mobile app space had fully decayed into its current freemium economy where good games are rare. Moreover, later titles are usually available on Android too, and there's plenty of good emulation solutions for Android titles.\r\n\r\nI hope that gives you some insight!",
+      "created_at": "2023-10-24T12:19:47Z"
+    },
+    {
+      "author": "LunatiKK13",
+      "body": "Touchhle is a miracle in itself. As soon as the YouTuber Mr. Sujano spoke of this emulator I immediately became happy. I'm like wow, at some point I'll be able to play cod zombies again. That game was fun to play when I was in high school. I grew up on early iOS games so as an android user it's nice to have a way to play them again. I never thought I'd see iOS emulation on Android. That is amazing. Thank you for all your work. ",
+      "created_at": "2025-05-12T08:19:31Z"
+    },
+    {
+      "author": "Adamillo",
+      "body": "Does that mean that support for iOS 10.3.4 is probably not gonna be implemented either, since this is the last versions that supported 32-bit?",
+      "created_at": "2026-01-03T20:31:48Z"
+    },
+    {
+      "author": "lylythechosenone",
+      "body": "As @hikari-no-yume said, even iOS 6 support would be a miracle. iOS 10 is never happening.",
+      "created_at": "2026-01-05T00:49:20Z"
+    }
+  ],
+  "comments_count": 4,
+  "url": "https://github.com/touchHLE/touchHLE/issues/181",
+  "fetched_at": "2026-01-11T14:49:59.147603Z"
+}

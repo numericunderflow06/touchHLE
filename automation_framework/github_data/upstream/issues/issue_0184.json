@@ -1,0 +1,53 @@
+{
+  "number": 184,
+  "title": "Menus in some games are overly sensitive to finger movement, hard to use",
+  "state": "open",
+  "created_at": "2023-11-01T11:01:10Z",
+  "updated_at": "2026-01-11T02:48:21Z",
+  "closed_at": null,
+  "labels": [
+    "emulation quality"
+  ],
+  "author": "hikari-no-yume",
+  "body": "Doom II RPG and Wolfenstein RPG have a particular problem with this, but it's not limited to them. For example, with my hacks that get Spore: Origins working, its menu has the same problem. We don't have scrolling support in UIKit yet, so all these games must have similar custom scrolling menu implementations.\r\n\r\nSymptoms: trying to tap on a menu item to advance ends up scrolling the menu instead. Tapping menu items is therefore harder than it should be.\r\n\r\nThis was so bad for game controller virtual cursor input that I added smoothing as a workaround: 0ac486370b285884a6203903d669fa5064bb6d89.\r\n\r\nPresumably this wasn't so bad on the original hardware, though I haven't tested it. If that's true, then here's some things that we could investigate:\r\n\r\n- Does iPhone OS have less frequent touch updates?\r\n- Does iPhone OS have less precise touch co-ordinates?\r\n- Does iPhone OS do some sort of OS-level smoothing of touch inputs?\r\n- Does iPhone OS avoid reporting movement unless it's over a certain threshold?",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "For me on a Nexus 5X, it's annoying (sometimes need to double-tap) but not too bad in Doom II RPG, but for @nighto (who has a Galaxy S9) it's apparently far worse, many attempts are needed to tap through things.",
+      "created_at": "2023-11-01T11:26:32Z"
+    },
+    {
+      "author": "thundergun1",
+      "body": "On my Samsung Galaxy A42 it is noticeable but a couple of quick taps gets me into the game okay",
+      "created_at": "2023-11-01T11:38:41Z"
+    },
+    {
+      "author": "ghost",
+      "body": "For me on Redmi Note 9 it's present but it's insignificant. The scroll wheel in Wolf RPG works fine. Doom II RPG has this problem a bit more pronounced. At most it doesn't read my input",
+      "created_at": "2023-11-01T12:07:02Z"
+    },
+    {
+      "author": "thundergun1",
+      "body": "Apologies for necroing an old issue, but this is becoming apparent in more games that are becoming playable in the trunk.\r\n\r\nBoggle, CSI Miami and and Rise of Lost Kingdoms are seemingly affected. In Boggle it's only the menu but with CSI Miami being a point and click it's impacted a lot, and in Rise of Lost Kingdoms it prevents you from selecting multiple units at once which is required to pass the first level. THPS2 is also very slightly affected funnily enough, but only when activating the Weight cheat, since that requires scrolling.",
+      "created_at": "2024-07-30T22:27:59Z"
+    },
+    {
+      "author": "SRC267",
+      "body": ">  CSI Miami being a point and click it's impacted a lot.\n\nI tried CSI Miami with the new update, it works fine on PC, but on android, when it asks you to enable sound, tapping does not respond to touch, on Adreno devices. It has been reported to work though on other platforms looking at the compatibility report.\n",
+      "created_at": "2026-01-06T01:34:29Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Adreno should have nothing to do with it, it's not a GPU issue.",
+      "created_at": "2026-01-06T03:22:52Z"
+    },
+    {
+      "author": "SRC267",
+      "body": "> Adreno should have nothing to do with it, it's not a GPU issue.\n\nMaybe I will try with a gamepad, because getting past that initial screen doesn't work for me (SD Gen1) other games work, that are supported \n\n\nEdit: works with gamepad, R1 key on my DS3.",
+      "created_at": "2026-01-06T04:18:28Z"
+    }
+  ],
+  "comments_count": 7,
+  "url": "https://github.com/touchHLE/touchHLE/issues/184",
+  "fetched_at": "2026-01-11T14:49:49.617482Z"
+}

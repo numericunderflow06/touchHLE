@@ -1,0 +1,28 @@
+{
+  "number": 424,
+  "title": "GLES1-on-GL2 layer missing features mean certain games only work on Android (which has native OpenGL ES)",
+  "state": "closed",
+  "created_at": "2025-02-18T16:31:40Z",
+  "updated_at": "2025-12-28T18:02:50Z",
+  "closed_at": "2025-12-28T16:10:17Z",
+  "labels": [
+    "missing or incomplete iPhone OS API"
+  ],
+  "author": "backgamon",
+  "body": "### Describe the feature or issue.\n\nSome games seems to only working on Android version of TouchHLE.\nBy ex:\nHero of Sparta.\n\nOn Windows build the game crash few seconds after launching with that error:\n\n![Image](https://github.com/user-attachments/assets/f0068213-b891-43c3-9897-5d7d9cca3220)\n\nBut on Android (with Noxplayer) games seem to run well.\n\n![Image](https://github.com/user-attachments/assets/49204b28-8312-493d-b6bd-1aa5b2fa5771)\n\nThe only thing are with controls making it unplayable.\n\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "backgamon",
+      "body": "Now it work on latest preview version - great work!",
+      "created_at": "2025-12-28T16:10:17Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "This is thanks to @ciciplusplus's work in 629c5001ffdc41b83314e0ce81f4293af07b5d95.\n\nWe might need another issue for other limitations of the layer, but this was the biggest one so I'm fine with us closing it for now.",
+      "created_at": "2025-12-28T18:02:49Z"
+    }
+  ],
+  "comments_count": 2,
+  "url": "https://github.com/touchHLE/touchHLE/issues/424",
+  "fetched_at": "2026-01-11T14:50:11.633716Z"
+}

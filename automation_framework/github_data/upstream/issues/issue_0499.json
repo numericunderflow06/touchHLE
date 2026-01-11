@@ -1,0 +1,26 @@
+{
+  "number": 499,
+  "title": "Cut The Rope Crashes Due to \"NSKeyedArchiver\" & \"arg.is_null()\" Issue",
+  "state": "closed",
+  "created_at": "2025-09-20T08:10:46Z",
+  "updated_at": "2025-12-30T22:02:04Z",
+  "closed_at": "2025-09-24T15:45:06Z",
+  "labels": [],
+  "author": "kiratmust-bit",
+  "body": "Cut The Rope Crashes Due to \"NSKeyedArchiver\" & \"arg.is_null()\" Issue\n\nCut The Rope Version 1.5 (Emulator Version: touchHLE PREWIEW 0.2.2-942-g06e8302)\nThere are two different reports for this version. In one, the game crashes on due to the missing archiveRootObject:toFile: method of the NSKeyedArchiver class. (However, the game can still be played as long as you don't click on some buttons.) In the other, it crashes with an \"assertion failed: arg.is_null()\" error when trying to change the game's language settings.\n\nhttps://github.com/user-attachments/assets/47c0174b-0622-4b69-95ff-f20cc5348f8d\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "It doesn't seem like this is a 5-star game, so I guess this isn't a regression: https://appdb.touchhle.org/apps/124",
+      "created_at": "2025-09-24T15:45:06Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Language change crash was fixed there https://github.com/touchHLE/touchHLE/commit/978ef756d2aa3ba76851d5be0837b8efea11f643",
+      "created_at": "2025-12-30T22:02:04Z"
+    }
+  ],
+  "comments_count": 2,
+  "url": "https://github.com/touchHLE/touchHLE/issues/499",
+  "fetched_at": "2026-01-11T14:50:10.362526Z"
+}

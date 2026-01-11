@@ -1,0 +1,99 @@
+{
+  "number": 388,
+  "title": "Broken rendering because of missing affine transformations support",
+  "state": "open",
+  "created_at": "2024-11-22T22:58:19Z",
+  "updated_at": "2026-01-08T11:34:54Z",
+  "closed_at": null,
+  "labels": [
+    "missing or incomplete iPhone OS API",
+    "emulation quality"
+  ],
+  "author": "ciciplusplus",
+  "body": "### Describe the feature or issue.\n\nRight now toucHLE doesn't support affine transformations on the views (e.g. rotation on 90 degrees) as indicated by the following logs:\r\n\r\n```\r\ntouchHLE::frameworks::uikit::ui_view: TODO: [0x374f9610 setTransform:CGAffineTransform { a: 1.1924881e-8, b: 1.0, c: -1.0, d: 1.1924881e-8, tx: -5.7239426e-6, ty: -480.0 }]\r\n```\r\n\r\nFor some games it does result in the incorrect UI rendering.\r\n\r\nThis issue aims to keep track of the games with such issues, so we can re-test them as soon as affine transformations are supported.\r\n\r\n- City name screen in the SimCity\r\n<img width=\"592\" alt=\"Screenshot 2024-11-22 at 23 50 01\" src=\"https://github.com/user-attachments/assets/4850e26c-84bd-4a5a-a3ec-bf4871c3f5fe\">\r\n\r\n- Share replay screen in the SkaterNation\r\n<img width=\"592\" alt=\"Screenshot 2024-11-22 at 23 55 03\" src=\"https://github.com/user-attachments/assets/731f5db8-c36b-4f04-b492-4196d6133023\">\r\n\n\n### By submitting this issue, I certify that…\n\n- [X] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [X] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "There are several games that use an affine transform to rotate the main view they're using to display things (probably a `CAEAGLLayer`-backed view). One example is Capcom's Ghosts 'n Goblins (`jp.co.capcom.makaikus`), which doesn't actually work on trunk currently (as of c542a8bfb0787148b23417b8be5852fb3075c676) but with these stubs you can get it to run for long enough to briefly see the rotation:\n\n<details><summary>patch</summary>\n\n```diff\ndiff --git a/src/frameworks/uikit/ui_activity_indicator_view.rs b/src/frameworks/uikit/ui_activity_indicator_view.rs\nindex caaa108..82b7bfe 100644\n--- a/src/frameworks/uikit/ui_activity_indicator_view.rs\n+++ b/src/frameworks/uikit/ui_activity_indicator_view.rs\n@@ -33,6 +33,8 @@ pub const CLASSES: ClassExports = objc_classes! {\n     // TODO\n }\n \n+- (())setActivityIndicatorViewStyle:(id)_x {}\n+\n @end\n \n };\ndiff --git a/src/frameworks/uikit/ui_view/ui_label.rs b/src/frameworks/uikit/ui_view/ui_label.rs\nindex 44fbcc2..ba371df 100644\n--- a/src/frameworks/uikit/ui_view/ui_label.rs\n+++ b/src/frameworks/uikit/ui_view/ui_label.rs\n@@ -118,6 +118,9 @@ pub const CLASSES: ClassExports = objc_classes! {\n \n // TODO: initWithCoder:\n \n+- (())setShadowColor:(id)_x {}\n+- (())setShadowOffset:(id)_x {}\n+\n - (id)text {\n     env.objc.borrow::<UILabelHostObject>(this).text\n }\n```\n</details>\n\nFor titles like these, you would currently get a 320×320 cropped region of the screen visible, with no rotation, and the bottom 320×160 region of the screen is some background colour.\n\nI've seen screenshots of titles where instead the landscape screen gets stretched (in an aspect-ratio-disrespecting way) into portrait in a similar way. This is presumably a result of the incorrect clipping behaviour that was fixed in 421234fd1f2fd982193d16ba2396ac8fc88a46e9.",
+      "created_at": "2025-02-16T20:04:15Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Another example: \"Heroes Lore III\", v1.0.3\n\nNote: there are not affine transformation warning in the logs\n\n<img width=\"548\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/c7b76b7d-0bb8-4d59-8353-c83084dd50c1\" />\n<img width=\"592\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/8aca1517-9447-4387-8145-19d0362f7e1d\" />",
+      "created_at": "2025-04-12T12:15:15Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Just going by the screenshot, maybe [Shark Island](https://appdb.touchhle.org/apps/859) is one of these:\n\n![Screenshot of the Shark Island menu screen, but only part of it is visible because it's not rotated properly.](https://appdb.touchhle.org/reports/1444/screenshot)",
+      "created_at": "2025-04-16T19:30:18Z"
+    },
+    {
+      "author": "ghost",
+      "body": "This also happens in \"Paper Airplane\".\n\n![Image](https://github.com/user-attachments/assets/e849cca5-24cb-4d5f-ac41-9a8add847df6)",
+      "created_at": "2025-04-24T21:59:22Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "\"Seed Fantasy\" is impacted as well.\n(not currently supported on the trunk)\n\n<img width=\"592\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/88902938-2fc6-4ae2-bf18-23bb912ac071\" />\n<img width=\"592\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/10182fd5-2dc5-460f-98e9-1a14b7b19a52\" />\n<img width=\"592\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/2add5cad-193f-4a97-82d5-5b960822c6f0\" />",
+      "created_at": "2025-07-01T18:09:37Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "\"Bugdom 2\" labels rendering\n(not currently supported on the trunk)\n\n`touchHLE::frameworks::uikit::ui_view: TODO: [0x3057b5e0 setTransform:CGAffineTransform { a: -4.371139e-8, b: 1.0, c: -1.0, d: -4.371139e-8, tx: 0.0, ty: 0.0 }]`\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/023816a9-d7e7-45e2-8986-024946192aad\" />",
+      "created_at": "2025-07-13T18:36:48Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "This is, at long, long last, fixed in https://github.com/touchHLE/touchHLE/commit/58773d6b49cca1b0ad54ebd1dd31452757f1b989. That took several days of hard work… ^^;\n\nHere you can see it's fixed the SimCity issue:\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/0a62c57f-fda8-4c71-b102-9dbf5c31b00b\" />\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/b048a3f0-88a0-4280-b495-60253664cbab\" />\n\nI haven't tested any of the other games in this issue, and I can't promise they're all fixed. It's possible that some of them need support for iOS's auto-rotation/supported interface orientations feature, for which affine transform support is a prerequisite, so this still gets us closer to supporting those. :)",
+      "created_at": "2025-10-26T17:24:13Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Great to hear this being fixed finally! Congrats 💪 \n\nI tested few more from the above list, there are indeed seems to be fixed:\n\n- SeedFantasy\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/6a8d56ef-0965-4666-8c47-4627882262d4\" />\n\n- Bugdom 2\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/d7dceeb6-62bf-4f5a-a395-e753fe21fb03\" />",
+      "created_at": "2025-10-26T19:24:44Z"
+    },
+    {
+      "author": "roninspin",
+      "body": "> Another example: \"Heroes Lore III\", v1.0.3\n\nAndroid 15. TouchHLE 0.2.3 release.\nHeroes Lore III\n\n![Image](https://github.com/user-attachments/assets/27937879-7f29-41c2-b7ae-ffd6e26f7e9d)\n\nIf enable \"portrait-left\", the orientation gets normal and the artifacts (banding) disappear, but the image is \"cropped\"\n\n![Image](https://github.com/user-attachments/assets/04d0ef47-0163-4ac0-9bf4-ce6ece1a84d8)",
+      "created_at": "2026-01-03T15:35:08Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Re-opening this issue so we can keep track of some related issues with landscape rendering in certain titles, since the CALayer affineTransform support didn't fully fix this cluster of problems.\n\nHere's one bug I just fixed: https://github.com/touchHLE/touchHLE/commit/0574db20979b11b49ca16aff32352f624d0fa7b4.\n\nYou can see how it affects DMC4 Refrain (`jp.co.capcom.devil4us`, version `1.05.01`):\n\nBefore fix:\n\n<img width=\"432\" height=\"620\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/48cdf5f9-8b49-491d-a514-3b7580661a98\" />\n\nAfter fix:\n\n<img width=\"432\" height=\"620\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/1d5e8e99-8069-4a8c-a555-02e5dbb2a014\" />",
+      "created_at": "2026-01-07T20:34:39Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "I've now added some limited support for UIKit's auto-rotation: https://github.com/touchHLE/touchHLE/commit/b8180557b83e8dd4adf2aa3fdbef7a47e399d409\n\nThis gets DMC4 Refrain fully working, complete with scale hack:\n\n<img width=\"1072\" height=\"780\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/8c69d204-bbaa-468f-81f4-35d4644be685\" />\n\nWould be interested to see how well it works in other titles.",
+      "created_at": "2026-01-07T23:26:51Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "The bug fix has dealt with the stretch issue in Seed Fantasy:\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/8ed7875c-58a6-4ab5-850d-4eb454e57144\" />",
+      "created_at": "2026-01-08T01:19:36Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "By contrast, Heroes Lore III (v1.0.1) is unchanged by the bugfix, but seems to benefit from the auto-rotation support:\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/3529dba2-4825-4cab-a25b-7267fbf1860b\" />\n\nHere's what it looks like without the auto-rotation commit:\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/ee87ff5f-97da-4dd9-977d-358ad08eaf10\" />",
+      "created_at": "2026-01-08T01:30:19Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Paper Airplane must have been fixed already by the affine transformations support, it doesn't need the two new things:\n\n<img width=\"592\" height=\"460\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/cb8d2d75-5719-4c48-b8ab-d6d5c37f04e5\" />",
+      "created_at": "2026-01-08T01:33:11Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Shark Island isn't fixed by any of these, huh.\n\n<img width=\"432\" height=\"620\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/417b835c-4928-494c-bbf3-103ae29d9a03\" />",
+      "created_at": "2026-01-08T01:38:00Z"
+    },
+    {
+      "author": "roninspin",
+      "body": "> By contrast, Heroes Lore III (v1.0.1) is unchanged by the bugfix\n\nFor me it works perfectly now (the game version is 1.0.3).\n\n![Image](https://github.com/user-attachments/assets/37293d3d-cd67-4fd5-8082-089d820603a1)",
+      "created_at": "2026-01-08T11:34:54Z"
+    }
+  ],
+  "comments_count": 16,
+  "url": "https://github.com/touchHLE/touchHLE/issues/388",
+  "fetched_at": "2026-01-11T14:49:56.262940Z"
+}

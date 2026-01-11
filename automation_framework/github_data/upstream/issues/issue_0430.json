@@ -1,0 +1,33 @@
+{
+  "number": 430,
+  "title": "\"Metal Gear Solid Touch\" only works with Japanese language",
+  "state": "closed",
+  "created_at": "2025-03-14T21:38:05Z",
+  "updated_at": "2025-11-29T20:11:00Z",
+  "closed_at": "2025-11-29T20:11:00Z",
+  "labels": [
+    "bug (supported app)"
+  ],
+  "author": "ciciplusplus",
+  "body": "### App DB report link\n\nhttps://appdb.touchhle.org/apps/122\n\n### App name\n\nMGSTouch\n\n### App version\n\n1.0.0\n\n### touchHLE version\n\nv0.2.2-653-g12419373\n\n### Operating system\n\nmacOS\n\n### GPU\n\nApple M1 GPU\n\n### What is the problem with the app?\n\nIf English is used and more logs are enabled:\n\n```\ntouchHLE::frameworks::foundation::ns_property_list_serialization: Reading plist from GuestPath(\"/var/mobile/Applications/00000000-0000-0000-0000-000000000000/METAL GEAR SOLID TOUCH.app/English.lproj/Localizable.strings\").\ntouchHLE::frameworks::foundation::ns_property_list_serialization: Couldn't parse plist, returning nil: InvalidTrailerObjectOffsetSize (offset 77894)\n```\n\nChecking with plutil confirms that file is OK:\n\n```\n% plutil English.lproj/Localizable.strings\nEnglish.lproj/Localizable.strings: OK\n```\n\nThe issue is probaly comes from `plist` crate. it's reproducable with both 1.3.1 and 1.7.0 versions\n\n### If touchHLE crashed, please paste the log output.\n\n```text\n\n```\n\n### By submitting this issue, I certify that…\n\n- [x] I have tested that this version of this app is at least partially working in a previous version of touchHLE.\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "ciciplusplus",
+      "body": "The current mitigation is to use JA language in the default options for MGST https://github.com/touchHLE/touchHLE/commit/ec88d4bf32cb1df286d1c164e796ef2cd970bda1",
+      "created_at": "2025-03-14T21:39:37Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "> By the way it doesn't work in mission 4\n\nThis is an off-topic to the current issue, open a separate one.",
+      "created_at": "2025-03-15T09:42:05Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Fixed in https://github.com/touchHLE/touchHLE/commit/b71b6d78b3ba2ea2f020f3ef5ed3e94c7d2dc136",
+      "created_at": "2025-11-29T20:11:00Z"
+    }
+  ],
+  "comments_count": 3,
+  "url": "https://github.com/touchHLE/touchHLE/issues/430",
+  "fetched_at": "2026-01-11T14:50:26.903651Z"
+}

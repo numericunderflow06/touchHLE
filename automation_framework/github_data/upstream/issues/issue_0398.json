@@ -1,0 +1,43 @@
+{
+  "number": 398,
+  "title": "Display graphical error message when touchHLE crashes",
+  "state": "closed",
+  "created_at": "2024-12-05T15:11:22Z",
+  "updated_at": "2026-01-02T20:06:39Z",
+  "closed_at": "2026-01-02T20:06:39Z",
+  "labels": [
+    "usability enhancement"
+  ],
+  "author": "hikari-no-yume",
+  "body": "I don't know if we can do this without it causing serious stability issues, but we should at least attempt it. Basically, we can try making the panic handler trigger an SDL2 message box.",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "There should also be some way to disable graphical errors because they'll potentially be very annoying for development.",
+      "created_at": "2024-12-05T15:13:34Z"
+    },
+    {
+      "author": "abnormalmaps",
+      "body": "see https://review.gerrithub.io/c/touchHLE/touchHLE/+/1206356",
+      "created_at": "2024-12-26T20:11:22Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "I finally got round to testing and merging @abnormalmaps' contribution, it's now on trunk as 50a49293f866c9d31f4561d419f9683482e2d09d:\n\n![Screenshot of the new error message box in touchHLE](https://github.com/user-attachments/assets/fbc2cb55-72fb-4f64-8f15-8d9178897a19)\n\nThank you!\n\nI still need to remember to update the changelog, and I want to ensure we have similar message boxes for non-panic errors, but this is a great step forward.",
+      "created_at": "2025-04-14T20:54:23Z"
+    },
+    {
+      "author": "sheva2281",
+      "body": "in some games doesnt work",
+      "created_at": "2025-09-15T10:48:38Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Finally added to the changelog: afd6ac2f414ccf6c93e572174fd0c378e9e88b7d.",
+      "created_at": "2026-01-02T20:06:39Z"
+    }
+  ],
+  "comments_count": 5,
+  "url": "https://github.com/touchHLE/touchHLE/issues/398",
+  "fetched_at": "2026-01-11T14:50:06.557113Z"
+}

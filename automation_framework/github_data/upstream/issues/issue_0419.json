@@ -1,0 +1,23 @@
+{
+  "number": 419,
+  "title": "Make certain warnings use a graphical message box",
+  "state": "open",
+  "created_at": "2025-02-13T20:56:01Z",
+  "updated_at": "2026-01-02T20:07:58Z",
+  "closed_at": null,
+  "labels": [
+    "usability enhancement"
+  ],
+  "author": "hikari-no-yume",
+  "body": "Similar to https://github.com/touchHLE/touchHLE/issues/398 but for warnings that we expect will cause the emulator to crash, before a crash actually happens. Some examples are:\n\n* If the app's minimum iOS version is too high.\n* If the app is encrypted.\n\nThis should reduce user confusion. It shouldn't be necessary to check the log to see that one has a “bad” app.\n\nLike for https://github.com/touchHLE/touchHLE/issues/398 there should be a command-line flag to disable this for development (the flag can be shared).",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "Oh, apparently the encryption one is already a hard failure? So that might get covered by #398.",
+      "created_at": "2025-02-14T13:06:10Z"
+    }
+  ],
+  "comments_count": 1,
+  "url": "https://github.com/touchHLE/touchHLE/issues/419",
+  "fetched_at": "2026-01-11T14:50:04.029626Z"
+}

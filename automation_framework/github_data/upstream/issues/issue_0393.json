@@ -1,0 +1,68 @@
+{
+  "number": 393,
+  "title": "Android file permission issues",
+  "state": "open",
+  "created_at": "2024-11-28T01:02:31Z",
+  "updated_at": "2025-12-06T21:09:20Z",
+  "closed_at": null,
+  "labels": [
+    "usability enhancement"
+  ],
+  "author": "hikari-no-yume",
+  "body": "As exemplified by https://github.com/touchHLE/touchHLE/issues/392, we have had repeated reports of Android users managing to copy files to touchHLE_apps, but them not showing up due to incorrect UNIX permissions. Certain methods of copying files don't seem to cause this problem. We don't know what causes this or if it's in our power to fix it, but maybe we can. It would be good to at least understand why it's happening.",
+  "comments": [
+    {
+      "author": "Balachandarsmr",
+      "body": "I use zarchiever file manager to copy files to android/data/touchHLE_apps folder. It works on android 14 ",
+      "created_at": "2024-12-29T22:18:01Z"
+    },
+    {
+      "author": "alexmaurizio",
+      "body": "Just adding some more context.\r\n\r\nAndroid 14, Samsung S24 Ultra, OneUI 6.1\r\n\r\nSo, what I did:\r\n1) Moving files with ZArchiver will cause the software to detect the IPA files but fail via Permission Error OS 13.\r\n\r\nLogfile:\r\n```\r\ntouchHLE v0.2.2 — https://touchhle.org/\r\n\r\ntouchHLE: Base path for touchHLE files: /storage/emulated/0/Android/data/org.touchhle.android/files\r\nNo app specified, opening app picker. Use the --help flag to see command-line usage.\r\ntouchHLE::app_picker: Warning: couldn't open app bundle /storage/emulated/0/Android/data/org.touchhle.android/files/touchHLE_apps/Defender-Chronicles-v1-4-3.ipa: Could not open IPA file: Permission denied (os error 13) (skipping)\r\ntouchHLE::app_picker: Warning: couldn't open app bundle /storage/emulated/0/Android/data/org.touchhle.android/files/touchHLE_apps/Defender.Chronicles.HD.v1.5.ipa.ipa: Could not open IPA file: Permission denied (os error 13) (skipping)\r\ntouchHLE::app_picker: Warning: couldn't open app bundle /storage/emulated/0/Android/data/org.touchhle.android/files/touchHLE_apps/Crash Bandicoot Nitro Kart 1.0.ipa: Could not open IPA file: Permission denied (os error 13) (skipping)\r\ntouchHLE::window: Accelerometer detected: lsm6dsv LSM6DSV Accelerometer Non-wakeup.\r\ntouchHLE::gles: Creating an OpenGL ES 1.1 context:\r\ntouchHLE::gles: Trying: Native OpenGL ES 1.1\r\ntouchHLE::gles: => Success!\r\ntouchHLE::window: Driver info: OpenGL ES-CM 1.1 / Qualcomm / Adreno (TM) 750\r\nOpened file manager at \"content://org.touchhle.android.provider/root/root\", exiting.\r\n```\r\n\r\n2) using the internal manager will crash when doing any file operation\r\n\r\n3) using the provided \"file\" app in the linked issue works without issues.\r\n\r\nNote that the files are copied on 770 perms while using ZArchiver and 660 when using File app (which, honestly, does not make a lot of sense as for a permission inaccessibility. Maybe chown/user issue?)\r\n\r\nVia ZArchiver\r\n![Screenshot_20250101_163912_ZArchiver](https://github.com/user-attachments/assets/85375430-5c00-49a1-b4dd-8652e20ef1c9)\r\n\r\nVia Files\r\n![Screenshot_20250101_164306_ZArchiver](https://github.com/user-attachments/assets/f60edb05-6562-4d18-af34-f6a2eaf64ab5)\r\n\r\n\r\n",
+      "created_at": "2025-01-01T15:48:45Z"
+    },
+    {
+      "author": "acieslewicz",
+      "body": "Some extra info. It seems certain file managers actually move original file which preserves the media_rw group, while others seem to do a pseudo copy (which changes the group). This seems to prevent the app from interacting with the file due to the scoped file permissions. Given file management is restricted on non rooted devices, I'm not sure there is anything we can do internally to fix this silently. I did try creating a shadow copy of the ipa and that doesn't work. Perhaps there is a solution out there but I don't know enough about Android to implement it.\n![Image](https://github.com/user-attachments/assets/59a0bb7e-8793-4d8e-92aa-9b9285506dd2)",
+      "created_at": "2025-06-23T22:11:24Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "@acieslewicz This is very useful, thank you! That finally makes it start to make sense, I hadn't considered that somehow the UID and GID could be wrong, not just the permissions. Why is this even possible…\n\nI assume you reproduced this on your own device? If so, I would really appreciate it if you could try a few things:\n\n- Can you try adding some code (on the _Rust_ side; have a look at `paths.rs`, that's probably the right place to hack something in) that does a `chmod` or `chown` on these files?\n- Can you try (again on the Rust side) setting the setuid and setgid bits on the `touchHLE_apps` directory? _If_ that works, I think it would mean that future copies/moves into the directory would inherit the correct UID/GID.",
+      "created_at": "2025-06-25T09:01:33Z"
+    },
+    {
+      "author": "acieslewicz",
+      "body": "Did a bit more poking around. So the uid of the ipa doesn't matter just the gid. I attempted to use chown in order to change the group on the file (operation is not permitted). I attempted to change the group of the parent folder which worked but didn't solve the access issue for the IPA (I think this is because we already own the folder). I also tried to run a shell command to copy the file, but I get a permission denied error. It seems we can't really interact with files that have the media_rw group.\n\nFrom some extra poking around I did it seems that the File app that works provides access via the storage access framework while zarchiver doesn't? I'm happy to test any ideas as needed.",
+      "created_at": "2025-06-26T14:19:40Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "@acieslewicz Can you chmod the folder to set the setgid bit though?",
+      "created_at": "2025-06-26T18:30:22Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Oh I had somehow missed that, in the screenshot, the setgid bit is already set. Damn.\n\nI guess this is just a bug in Android that we can't fix. :(\n\nI'll remove the milestone…",
+      "created_at": "2025-07-01T15:43:54Z"
+    },
+    {
+      "author": "FizoArin",
+      "body": "https://github.com/user-attachments/assets/9bd82092-84a6-43cd-8b1c-aa7320258b21\n\nI found a way to make the game detected",
+      "created_at": "2025-07-17T09:15:24Z"
+    },
+    {
+      "author": "iced-coffeez",
+      "body": "yo uh random question:\n\ncan you use ln to make a symlink to a directory where u can copy files to?",
+      "created_at": "2025-12-06T21:07:47Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "A symlink can't bypass permissions, so I would expect that not to be useful whatsoever.",
+      "created_at": "2025-12-06T21:09:20Z"
+    }
+  ],
+  "comments_count": 10,
+  "url": "https://github.com/touchHLE/touchHLE/issues/393",
+  "fetched_at": "2026-01-11T14:50:21.857525Z"
+}

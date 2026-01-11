@@ -1,0 +1,33 @@
+{
+  "number": 503,
+  "title": "Iron man 2 crashing",
+  "state": "closed",
+  "created_at": "2025-10-01T04:26:27Z",
+  "updated_at": "2025-11-30T11:27:51Z",
+  "closed_at": "2025-11-30T11:27:31Z",
+  "labels": [
+    "issue does not meet guidelines"
+  ],
+  "author": "kyojuro32278-ui",
+  "body": "### App DB report link\n\nhttps://appdb.touchhle.org/apps/1\n\n### App name\n\nIron man 2\n\n### App version\n\n1.0.0\n\n### touchHLE version\n\nV.0.2.2\n\n### Operating system\n\nAndroid \n\n### GPU\n\nMali-G52 MC2\n\n### What is the problem with the app?\n\nWhenever i download the most recommended version of iron man 2 it just keeps crashing..i downloaded iron man 2 v 1.0.0 ios 2.2.1 and still didnt work..i keep trying everything but still it keeps crashing\n\n### If touchHLE crashed, please paste the log output.\n\n```text\nIdk how to paste it here\n```\n\n### By submitting this issue, I certify that…\n\n- [x] I have tested that this version of this app is at least partially working in a previous version of touchHLE.\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "nighto",
+      "body": "You are probably using a very old version (last release 0.2.2) instead of preview version. Get the newest preview version by downloading here: https://touchhle.org/download/",
+      "created_at": "2025-10-01T08:51:50Z"
+    },
+    {
+      "author": "kyojuro32278-ui",
+      "body": "Hello, i have downloaded the current version yet it didn't work.\r\n\r\nOn Wed, Oct 1, 2025, 4:52 PM Arlindo Pereira ***@***.***>\r\nwrote:\r\n\r\n> *nighto* left a comment (touchHLE/touchHLE#503)\r\n> <https://github.com/touchHLE/touchHLE/issues/503#issuecomment-3355365942>\r\n>\r\n> You are probably using a very old version (last release 0.2.2) instead of\r\n> preview version. Get the newest preview version by downloading here:\r\n> https://touchhle.org/download/\r\n>\r\n> —\r\n> Reply to this email directly, view it on GitHub\r\n> <https://github.com/touchHLE/touchHLE/issues/503#issuecomment-3355365942>,\r\n> or unsubscribe\r\n> <https://github.com/notifications/unsubscribe-auth/BYEGU55UXL7EO722KR4SJTL3VOI3XAVCNFSM6AAAAACH63DRKKVHI2DSMVQWIX3LMV43OSLTON2WKQ3PNVWWK3TUHMZTGNJVGM3DKOJUGI>\r\n> .\r\n> You are receiving this because you authored the thread.Message ID:\r\n> ***@***.***>\r\n>\r\n",
+      "created_at": "2025-10-02T16:07:04Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Just checked on the lastest trunk build, Iron Man 2 is working as expected.",
+      "created_at": "2025-11-30T11:27:31Z"
+    }
+  ],
+  "comments_count": 3,
+  "url": "https://github.com/touchHLE/touchHLE/issues/503",
+  "fetched_at": "2026-01-11T14:50:24.368979Z"
+}

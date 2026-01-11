@@ -1,0 +1,21 @@
+{
+  "number": 528,
+  "title": "Build fails on modern GCC (>13) due to outdated OpenAL vendor",
+  "state": "open",
+  "created_at": "2026-01-04T16:14:51Z",
+  "updated_at": "2026-01-04T18:26:24Z",
+  "closed_at": null,
+  "labels": [],
+  "author": "kouta-kun",
+  "body": "### Describe the feature or issue.\n\nHi! I wanted to report that currently touchHLE cannot be built on modern GCC distributions due to the version of OpenAL being vendored (related to issue https://github.com/kcat/openal-soft/issues/846).\n\nUpdating the git submodule to the latest revision fixes the issue with no regressions as far as I can tell.\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "ciciplusplus",
+      "body": "> Updating the git submodule to the latest revision fixes the issue with no regressions as far as I can tell.\n\nOn which platforms have you tested? \n\nOtherwise, feel free to submit a patchset with an update and open the PR to validate the CI build. ",
+      "created_at": "2026-01-04T18:26:24Z"
+    }
+  ],
+  "comments_count": 1,
+  "url": "https://github.com/touchHLE/touchHLE/issues/528",
+  "fetched_at": "2026-01-11T14:50:00.390847Z"
+}

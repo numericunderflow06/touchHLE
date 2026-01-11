@@ -1,0 +1,166 @@
+{
+  "number": 77,
+  "title": "Release binaries for desktop-ish Linux: how? AppImage/Flatpak/something else?",
+  "state": "open",
+  "created_at": "2023-03-07T00:50:02Z",
+  "updated_at": "2026-01-02T15:07:54Z",
+  "closed_at": null,
+  "labels": [],
+  "author": "ghost",
+  "body": "Linux AppImage/Flatpak support for this would be neat.\r\n",
+  "comments": [
+    {
+      "author": "upintheairsheep",
+      "body": "Does not support Linux, please use wine.",
+      "created_at": "2023-03-07T02:08:51Z"
+    },
+    {
+      "author": "ghost",
+      "body": "Will close for now, but please think about adding Linux support in the future.",
+      "created_at": "2023-03-07T17:26:45Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Uh, to be clear, this project does “support” Linux, in the sense that you can build it for Linux, it's just not something we promise will be easy or work well, for the time being at least.\r\n\r\nThere was an existing discussion about Linux support in https://github.com/hikari-no-yume/touchHLE/issues/3.\r\n\r\nI don't really want to do Linux binary releases, it's not a single platform in the way that Windows or macOS are. But I am willing to make it easier to build yourself on Linux.",
+      "created_at": "2023-03-07T20:02:17Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Also, if you hit any problems while building it yourself, please tell us about them (probably in the thread I linked).",
+      "created_at": "2023-03-07T20:13:25Z"
+    },
+    {
+      "author": "ghost",
+      "body": "Thanks for the clarification",
+      "created_at": "2023-03-08T17:10:28Z"
+    },
+    {
+      "author": "WingofaGriffin",
+      "body": "I want to revive this discussion a bit.\r\n\r\nIt seems that the biggest objection to Linux binaries being released is due to all the different distros and dependencies that differ. I would argue that Flatpak and AppImage seek to solve that issue directly, by specifically being distro agnostic.\r\n\r\nLiterally from the [AppImage front page](https://appimage.org):\r\n> \"As a user, I want to download an application from the original author, and run it on my Linux desktop system just like I would do with a Windows or Mac application.\"\r\n>\"As an application author, I want to provide packages for Linux desktop systems, without the need to get it 'into' a distribution and without having to build for gazillions of different distributions.\"\r\n\r\nThese two package types bundle the deps in with the binary (a bit more complicated than that, but you get the jist). When paired with a CI tool like GitHub actions, which you already seem to be using, it should be pretty easy to automate a new set of builds, especially with the GitHub provided Ubuntu instance.\r\n\r\nLet me know if you want to discuss further, I appriciate the existing Linux support you do have, and have given, but want to see if we can make this easier for all of us :)",
+      "created_at": "2023-04-30T05:21:04Z"
+    },
+    {
+      "author": "LunaTheFoxgirl",
+      "body": "I'd recommend going with flatpak if anything for touchHLE, AppImage's main developer can be a living nightmare to deal with, he has a tendency to harass other devs, drop AppImage PRs without any will to maintain them. + Flatpak has the upside of being a stable environment to have your app in and does de-duplication of dependencies.",
+      "created_at": "2023-05-08T11:12:27Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Ah, thanks for the heads up.\r\n\r\nUnrelated: I wonder if I can avoid using any of these imaging formats. I've refused to have “Linux” builds because it doesn't seem like a well-defined platform to me, but actually, touchHLE probably only needs glibc, SDL 2, and maybe a handful of other things. That's a small enough surface area that I think imaging/containerisation/etc is superfluous. I should do some experiments.",
+      "created_at": "2023-05-08T11:16:21Z"
+    },
+    {
+      "author": "LunaTheFoxgirl",
+      "body": "If you build on something like debian, then yeah it might just work, both glibc and SDL2 has backwards compatibility built in",
+      "created_at": "2023-05-08T11:18:09Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Maybe I should look into what the Steam runtime provides. touchHLE is very similar to a typical game in terms of what stuff it needs, and it's probably all in there. If there are distros where Steam support is unrealistic, I would say binaries for touchHLE are also unrealistic there.",
+      "created_at": "2023-05-08T11:20:22Z"
+    },
+    {
+      "author": "LunaTheFoxgirl",
+      "body": "> Maybe I should look into what the Steam runtime provides. touchHLE is very similar to a typical game in terms of what stuff it needs, and it's probably all in there. If there are distros where Steam support is unrealistic, I would say binaries for touchHLE are also unrealistic there.\r\n\r\nSteam runtime provides basically a old ubuntu container, last time I checked it was 18.04",
+      "created_at": "2023-05-08T11:38:51Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "If I stick to SDL2, glibc and libstdc++, say, should it work also on stuff that's not Debian-derived, assuming I use reasonably old minimum versions?",
+      "created_at": "2023-05-08T11:41:24Z"
+    },
+    {
+      "author": "LunaTheFoxgirl",
+      "body": "More or less, once you get UI in to touchHLE I would recommend releasing it as a flatpak, means it's one package that just works on linux systems, even non-glibc ones as flatpak ships its containers with it that anyone can download on virtually any distro.",
+      "created_at": "2023-05-08T11:43:00Z"
+    },
+    {
+      "author": "ghost",
+      "body": "A flatpak would be amazing!\r\nflatpak is a single platform that is platform agnostic, and is much like Android or macOS!\r\nit solves many issues and nightmares with Linux both for developers and users, and is generally amazing!\r\nplus, a flatpak release would mean compatibility with the Steam Deck too!\r\nyou can ship it to flathub or as a .flatpak, whichever you prefer",
+      "created_at": "2023-09-06T12:24:59Z"
+    },
+    {
+      "author": "puigru",
+      "body": "Agreed, flatpak support would be great",
+      "created_at": "2023-12-20T19:18:22Z"
+    },
+    {
+      "author": "Twig6943",
+      "body": "Whilst the devs are waiting upon making a GUI for the app first (see https://github.com/touchHLE/touchHLE/issues/3#issuecomment-1423806750) I'll try start doing some packaging here soon https://github.com/Twig6943/touchhle-packaging PRS are welcome\n\n( @DCNick3 tell me if you have some leftover stuff)",
+      "created_at": "2025-11-05T18:06:31Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "I can't stop you, but please don't use a namespace that doesn't belong to you (`touchhle.github.io`).",
+      "created_at": "2025-11-05T18:22:21Z"
+    },
+    {
+      "author": "Twig6943",
+      "body": "> I can't stop you, but please don't use a namespace that doesn't belong to you (`touchhle.github.io`).\n\nIt's a placeholder, I won't actually publish it unless you tell me to",
+      "created_at": "2025-11-05T18:42:13Z"
+    },
+    {
+      "author": "Twig6943",
+      "body": " @Samueru-sama has packaged the app as an AppImage. Please give feedback https://github.com/pkgforge-dev/TouchHLE-AppImage",
+      "created_at": "2025-11-05T20:00:22Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "That one seems to rely on some touchHLE packaging effort in AUR by yet another person.",
+      "created_at": "2025-11-05T20:11:28Z"
+    },
+    {
+      "author": "Samueru-sama",
+      "body": "> That one seems to rely on some touchHLE packaging effort in AUR by yet another person.\n\nyeah I took the [AUR package](https://github.com/pkgforge-dev/TouchHLE-AppImage/blob/17fc36ebf4c44efc54c7abeba193280ffd4ad435/get-dependencies.sh#L40-L47) to build the binary.\n\nBtw reading the other comments here, you don't have to build the binary on old systems to target linux, if you use [sharun](https://github.com/VHSgunzo/sharun) it makes them able to work on any linux system, here it is running on alpine linux (no glibc distro).\n\n\n<img width=\"800\" height=\"797\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/4f20fc0f-316b-4342-8b1f-e1f1730ae3d5\" />\n",
+      "created_at": "2025-11-05T20:43:33Z"
+    },
+    {
+      "author": "Twig6943",
+      "body": "> That one seems to rely on some touchHLE packaging effort in AUR by yet another person.\n\nI emailed the person behind the PKGBUILD about it. I'm 99% sure they're okay with it but will still report what he says.",
+      "created_at": "2025-11-05T20:47:22Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "Having read a bit of the AppImage documentation I'm not really convinced of the quality of that particular system. Since an AppImage is just an executable anyway, maybe we could just ship a static build of touchHLE if people really want that. Flatpak looks better-designed, though the particular way it handles GPU drivers is quite unfortunate.\n\nTo be honest, though, I don't really want to maintain Linux packaging, and I question what the actual benefit to users would be. touchHLE works well in WINE and I can recommend running it that way. ",
+      "created_at": "2025-11-05T21:52:37Z"
+    },
+    {
+      "author": "27hectormanuel",
+      "body": "I'd like to use it on Steam deck\r\n\r\nOn Wed, Nov 5, 2025, 4:53 PM hikari_no_yume ***@***.***>\r\nwrote:\r\n\r\n> *hikari-no-yume* left a comment (touchHLE/touchHLE#77)\r\n> <https://github.com/touchHLE/touchHLE/issues/77#issuecomment-3493669371>\r\n>\r\n> Having read a bit of the AppImage documentation I'm not really convinced\r\n> of the quality of that particular system. Since an AppImage is just an\r\n> executable anyway, maybe we could just ship a static build of touchHLE if\r\n> people really want that. Flatpak looks better-designed, though the\r\n> particular way it handles GPU drivers is quite unfortunate.\r\n>\r\n> To be honest, though, I don't really want to maintain Linux packaging, and\r\n> I question what the actual benefit to users would be. touchHLE works well\r\n> in WINE and I can recommend running it that way.\r\n>\r\n> —\r\n> Reply to this email directly, view it on GitHub\r\n> <https://github.com/touchHLE/touchHLE/issues/77#issuecomment-3493669371>,\r\n> or unsubscribe\r\n> <https://github.com/notifications/unsubscribe-auth/AFOLQTYWUILBHGXYZXPE55D33JWT7AVCNFSM6AAAAACLHXUCN2VHI2DSMVQWIX3LMV43OSLTON2WKQ3PNVWWK3TUHMZTIOJTGY3DSMZXGE>\r\n> .\r\n> You are receiving this because you are subscribed to this thread.Message\r\n> ID: ***@***.***>\r\n>\r\n",
+      "created_at": "2025-11-05T22:12:14Z"
+    },
+    {
+      "author": "Samueru-sama",
+      "body": "> Having read a bit of the AppImage documentation I'm not really convinced of the quality of that particular system.\n\nRead this instead: https://github.com/pkgforge-dev/Anylinux-AppImages/blob/main/HOW-TO-MAKE-THESE.md\n\nThe AppImage documentation is abandoned and says a lot of things that are not true anymore, it does not even make mention of [Go-appimage](https://github.com/probonopd/go-appimage) which works similar to sharun.\n\nSee also https://github.com/AppImage/docs.appimage.org/pull/102\n\nEDIT: This specific AppImage even uses a runtime [that does not need FUSE at all](https://github.com/VHSgunzo/uruntime) to work\n\n>maybe we could just ship a static build of touchHLE if people really want that. \n\nSure, if you can make a fully static binary that works better than AppImage, however that means: \n\n* You will have to link mesa statically (in this AppImage I ship a smaller version that makes the final AppImage **less than 30 MiB**). \n\n* You will not have hardware acceleration with nvidia, because the proprietary nvidia driver is massive and cannot be bundled due to its license.\n",
+      "created_at": "2025-11-05T22:21:08Z"
+    },
+    {
+      "author": "Twig6943",
+      "body": "> > That one seems to rely on some touchHLE packaging effort in AUR by yet another person.\n> \n> I emailed the person behind the PKGBUILD about it. I'm 99% sure they're okay with it but will still report what he says.\n\nHe told me he's okay with it.\n",
+      "created_at": "2025-11-05T22:22:10Z"
+    },
+    {
+      "author": "hikari-no-yume",
+      "body": "The whole concept of bundling your own graphics driver (Mesa in this case) into a Flatpak runtime or AppImage is absurd to me. This is why people don't take Linux seriously! Every 3D graphics API is designed with a stable ABI for dynamic linking, so that you aren't locked into a particular vendor for your hardware or drivers. Why would you sacrifice that willingly… it's a great way to ensure that the app won't work with next year's hardware.",
+      "created_at": "2025-11-05T22:28:39Z"
+    },
+    {
+      "author": "Samueru-sama",
+      "body": "> so that you aren't locked into a particular vendor for your hardware or drivers.\n\n>  it's a great way to ensure that the app won't work with next year's hardware.\n\n**You are not locked into a specific version with sharun!** You also don't need to include mesa drivers either, however that means that hardware acceleration is broken in non-glibc systems. \n\nI used to not ship mesa, but then got these issues: \n\n* https://github.com/pkgforge-dev/mpv-AppImage/issues/19\n\n* https://github.com/pkgforge-dev/Citron-AppImage/issues/14\n\nSo now using the host mesa is locked behind an env variable in sharun.\n\nBy default with `aarch64` we still allow using the host mesa drivers, because those often have vendor specific patches that have not been upstreamed. \n\n**EDIT:** [Also with nvidia we always use the nvidia driver of the host.](https://github.com/pkgforge-dev/Anylinux-AppImages/blob/main/HOW-TO-MAKE-THESE.md#what-about-nvidia)\n",
+      "created_at": "2025-11-05T22:34:36Z"
+    },
+    {
+      "author": "nighto",
+      "body": "Seems to be running fine on Ubuntu:\n\n<img width=\"1042\" height=\"629\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/31a5a7d0-d627-4543-827b-a78934ce3935\" />\n\n<img width=\"1042\" height=\"629\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/efcd1b71-8679-4ed1-b218-5f9e669ee9f3\" />",
+      "created_at": "2025-11-06T10:29:03Z"
+    },
+    {
+      "author": "nighto",
+      "body": "<img width=\"668\" height=\"365\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/3d82c8cf-2448-49f6-bef2-6d3966c5d29b\" />\n\nbtw this keeps popping up even after pressing yes to allow, appeared maybe 5 times, including 1 time after closing the app",
+      "created_at": "2025-11-06T10:30:36Z"
+    }
+  ],
+  "comments_count": 30,
+  "url": "https://github.com/touchHLE/touchHLE/issues/77",
+  "fetched_at": "2026-01-11T14:50:07.894163Z"
+}

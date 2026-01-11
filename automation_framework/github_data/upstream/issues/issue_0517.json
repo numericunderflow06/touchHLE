@@ -1,0 +1,33 @@
+{
+  "number": 517,
+  "title": "Garbled Text",
+  "state": "closed",
+  "created_at": "2025-12-03T08:37:31Z",
+  "updated_at": "2025-12-12T19:25:15Z",
+  "closed_at": "2025-12-12T19:25:15Z",
+  "labels": [
+    "bug (supported app)"
+  ],
+  "author": "Mike20242",
+  "body": "### App DB report link\n\nhttps://appdb.touchhle.org/apps/124\n\n### App name\n\nCut the Rope Holiday Gift\n\n### App version\n\n1.0\n\n### touchHLE version\n\nLatest action build\n\n### Operating system\n\nAndroid 15\n\n### GPU\n\nMediatek\n\n### What is the problem with the app?\n\nThe text mostly got garbled, and it needs to be fixed though.\n\n### If touchHLE crashed, please paste the log output.\n\n```text\n\n```\n\n### By submitting this issue, I certify that…\n\n- [x] I have tested that this version of this app is at least partially working in a previous version of touchHLE.\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "CuretheToony",
+      "body": "<img width=\"1080\" height=\"2400\" alt=\"Image\" src=\"https://github.com/user-attachments/assets/cfd6a7a7-d96c-468d-b611-c4de8a2ee878\" />\n\nIt happens to me, too.\n\ni tired reinstalling the game or removing my saves it did not help.",
+      "created_at": "2025-12-04T04:09:06Z"
+    },
+    {
+      "author": "ciciplusplus",
+      "body": "Could be fixed in the latest preview build (last commit from @RMZeroFour )\n\n@Mike20242 @CuretheToony can you check please? ",
+      "created_at": "2025-12-07T18:49:46Z"
+    },
+    {
+      "author": "RMZeroFour",
+      "body": "Tested on my end, fixed in commit af3624.",
+      "created_at": "2025-12-12T17:59:03Z"
+    }
+  ],
+  "comments_count": 3,
+  "url": "https://github.com/touchHLE/touchHLE/issues/517",
+  "fetched_at": "2026-01-11T14:50:19.311288Z"
+}

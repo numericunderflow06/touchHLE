@@ -1,0 +1,21 @@
+{
+  "number": 532,
+  "title": "Support for .slang / .slangp and librashader",
+  "state": "open",
+  "created_at": "2026-01-09T21:33:03Z",
+  "updated_at": "2026-01-10T02:18:41Z",
+  "closed_at": null,
+  "labels": [],
+  "author": "AhayriSG",
+  "body": "### Describe the feature or issue.\n\nI'd love to see [librashader](https://github.com/SnowflakePowered/librashader) integrated into touchHLE.\nIt would let us load and run .slang shaders and .slangp presets on a bunch of modern backends (OpenGL 3.3+, Vulkan, Metal, Direct3D, etc.). Early iPhone games (320×480 and similar low resolutions) look unnaturally sharp and blocky when upscaled on modern high-resolution desktop monitors. Original ~3.5\" iPhone screens viewed at 25–40 cm. Many modern displays (e.g., 27\"1440p at typical viewing distance) make the upscaled pixels appear huge and overly crisp, losing the authentic close-up handheld LCD feel. Emulators like PPSSPP solve this with LCD filters/shaders. Adding similar visual customization to touchHLE would greatly improve immersion and authenticity for many users.\n\nIt would open the door for users to apply cool stuff like:\n* Popular handheld/LCD-style filters such as lcd-grid-v2 or pixel_transparency-lcd3x\n* Custom bezels and overlays with reflections, glass effects, and so on (Mega Bezel style presets)\n* Load custom/user-created shader chains\n\nExamples;\n* Classic LCD grid effect:\n[lcd-grid-v2.slangp](https://github.com/Themaister/slang-shaders/blob/master/handheld/lcd-grid-v2.slangp)\n[pixel_transparency-lcd3x.slangp](https://git.libretro.com/libretro-assets/slang-shaders/-/blob/master/presets/pixel_transparency/pixel_transparency-lcd3x.slangp)\n* Bezel with reflection + LCD grid combo:\n[MBZ__0__SMOOTH-ADV-GLASS__LCD-GRID.slangp](https://github.com/HyperspaceMadness/Mega_Bezel/blob/main/Presets/Base_CRT_Presets/Root_Presets/MBZ__0__SMOOTH-ADV-GLASS__LCD-GRID.slangp)\n[Duimon's GBA-[ADV]-[LCD-GRID]-[Night].slangp](https://github.com/Duimon/Duimon-Mega-Bezel/blob/main/Presets/Advanced/Nintendo_GBA/GBA-%5BADV%5D-%5BLCD-GRID%5D-%5BNight%5D.slangp)\n\nI get that this is pretty niche for an emulator focused on early iPhone OS apps. Compatibility, performance and getting more stuff to actually run are way more important right now. Still, shader customization is one of those things a lot of people really enjoy in other emulators. Once the core emulation is more solid, having the option for some visual flair and immersion would be awesome, even if it's just a \"nice to have\" feature. No pressure at all, just putting the idea out there for whenever someone feels like looking into it down the line. 😊 Big thanks to the touchHLE team, the work you've done so far is seriously impressive. It's easily one of the most promising classic iOS emulators out there right now.\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "> It would let us load and run .slang shaders and .slangp presets on a bunch of modern backends (OpenGL 3.3+, Vulkan, Metal, Direct3D, etc.)\n\nWell, touchHLE doesn't use any of those. This is an emulator for obsolete games that relied on obsolete graphics technology and therefore relies on OpenGL ES 1.1, which doesn't have any support for shaders whatsoever. On desktop platforms we use OpenGL 2.1 compatibility profile instead, which _does_ support an early version of GLSL, but presumably is incompatible with the library you mention.\n\nMaybe if we eventually switch to ANGLE we'll be able to integrate modern niceties like this, but I wouldn't hold my breath.",
+      "created_at": "2026-01-09T23:05:12Z"
+    }
+  ],
+  "comments_count": 1,
+  "url": "https://github.com/touchHLE/touchHLE/issues/532",
+  "fetched_at": "2026-01-11T14:49:50.863424Z"
+}

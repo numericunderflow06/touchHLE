@@ -1,0 +1,72 @@
+{
+  "query": "black screen",
+  "repo": "touchHLE/touchHLE",
+  "fetched_at": "2026-01-11T14:19:33.019088Z",
+  "total_count": 8,
+  "results": [
+    {
+      "number": 366,
+      "title": "Silent Hill: The Escape",
+      "state": "open",
+      "is_pr": true,
+      "url": "https://github.com/touchHLE/touchHLE/pull/366",
+      "body_preview": "### Tested Versions\r\n\r\n1.0.0\r\n\r\n### Known Issues\r\n\r\n- Replacement fonts are used in place of the original UIKit fonts\r\n- Most menus don't work\r\n- Some menus show as a mostly black screen but they do r"
+    },
+    {
+      "number": 262,
+      "title": "Marmalade SDK games (RE: Degeneration, COD Zombies, Pandemonium...)",
+      "state": "open",
+      "is_pr": true,
+      "url": "https://github.com/touchHLE/touchHLE/pull/262",
+      "body_preview": "## Tested versions\r\n\r\n- RE Degeneration: 1.00.00\r\n- Pandemonium: 2.1.5\r\n- COD Zombies: 1.0.0\r\n\r\n## Known issues\r\n\r\n- Doesn't work on Windows\r\n- May crash on loading screens, seemingly at random\r\n\r\n## "
+    },
+    {
+      "number": 493,
+      "title": "Driver Bug",
+      "state": "open",
+      "is_pr": false,
+      "url": "https://github.com/touchHLE/touchHLE/issues/493",
+      "body_preview": "### App DB report link\n\nhttps://appdb.touchhle.org/apps/247\n\n### App name\n\nDriver\n\n### App version\n\n1.1.1\n\n### touchHLE version\n\nv0.2.2-868-g9141d98\n\n### Operating system\n\nAndroid 13\n\n### GPU\n\nMali-G7"
+    },
+    {
+      "number": 317,
+      "title": "Fix read extended fopen flag",
+      "state": "closed",
+      "is_pr": true,
+      "url": "https://github.com/touchHLE/touchHLE/pull/317",
+      "body_preview": "Hi I was messing around with touchHLE to run an old iOS port of ace attorney which i got running eventually but the changes are too obtrusive and are just a result of unimplemented framework functiona"
+    },
+    {
+      "number": 278,
+      "title": "Black Screen Texture in Doom 2 RPG",
+      "state": "closed",
+      "is_pr": false,
+      "url": "https://github.com/touchHLE/touchHLE/issues/278",
+      "body_preview": "I'm playing TouchHLE v0.2.2 on android, and I found a bug Black Texture in the Doom 2 RPG . I have reached Ciscus\n![Screenshot_20240403_062338_touchHLE.jpg](https://github.com/touchHLE/touchHLE/assets"
+    },
+    {
+      "number": 303,
+      "title": "Dungeon Hunter segfaulting on Windows with last NVIDIA drivers",
+      "state": "open",
+      "is_pr": false,
+      "url": "https://github.com/touchHLE/touchHLE/issues/303",
+      "body_preview": "\"Segmentation fault\" occurs during the call to DrawElements() in the nvoglv64.dll\r\n\r\nLogs when running on the NVIDIA card:\r\n\r\n```\r\ntouchHLE v0.2.2-40-g8ff3235 — https://touchhle.org/\r\n\r\nNo app specifi"
+    },
+    {
+      "number": 115,
+      "title": "Partial loading and playability for several games",
+      "state": "closed",
+      "is_pr": false,
+      "url": "https://github.com/touchHLE/touchHLE/issues/115",
+      "body_preview": "Tested using the Windows build of touchHLE from [GitHub Actions](https://github.com/hikari-no-yume/touchHLE/actions/runs/4963071042) for commit 16c7fd5:\r\n\r\n# Games with a high level of playability: \r\n"
+    },
+    {
+      "number": 22,
+      "title": "The text on Super Monkey Ball's options screen looks really gnarly",
+      "state": "closed",
+      "is_pr": false,
+      "url": "https://github.com/touchHLE/touchHLE/issues/22",
+      "body_preview": "Not sure what's up with this. Missing gamma encoding perhaps? Of course, it's not the same font (Helvetica versus Liberation Sans) or the same font rendering system, but it seems weird that there's su"
+    }
+  ]
+}

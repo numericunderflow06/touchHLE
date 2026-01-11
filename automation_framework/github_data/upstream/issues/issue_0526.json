@@ -1,0 +1,15 @@
+{
+  "number": 526,
+  "title": "Which minimum OS versions pre-built releases target?",
+  "state": "open",
+  "created_at": "2026-01-04T08:45:05Z",
+  "updated_at": "2026-01-04T08:46:11Z",
+  "closed_at": null,
+  "labels": [],
+  "author": "loomweaver",
+  "body": "### Describe the feature or issue.\n\nI am interested regarding the minimum OS requirements of pre-built touchHLE builds on Releases page.\nSpecificially the Windows/MacOS versions, since unlike Android, they don't contain built-in minSDK info.\nChecked your documentation and FAQ, and found no information on this outside of \"PC being relatively modern\".\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [],
+  "comments_count": 0,
+  "url": "https://github.com/touchHLE/touchHLE/issues/526",
+  "fetched_at": "2026-01-11T14:50:02.792291Z"
+}

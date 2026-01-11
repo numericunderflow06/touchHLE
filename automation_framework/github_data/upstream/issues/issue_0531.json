@@ -1,0 +1,21 @@
+{
+  "number": 531,
+  "title": "Crash when restoring minimized TouchHLE on Android",
+  "state": "closed",
+  "created_at": "2026-01-08T12:28:00Z",
+  "updated_at": "2026-01-08T14:05:13Z",
+  "closed_at": "2026-01-08T14:05:13Z",
+  "labels": [],
+  "author": "roninspin",
+  "body": "### Describe the feature or issue.\n\nAndroid 15.\n\nhttps://github.com/user-attachments/assets/ad7f5de6-2bdc-48c6-9f82-4bd73bf15282\n\n[touchHLE_log.txt](https://github.com/user-attachments/files/24494810/touchHLE_log.txt)\n\n### By submitting this issue, I certify that…\n\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "hikari-no-yume",
+      "body": "This is not a bug, the actual crash is an unimplemented feature triggered when quitting the app.",
+      "created_at": "2026-01-08T14:05:13Z"
+    }
+  ],
+  "comments_count": 1,
+  "url": "https://github.com/touchHLE/touchHLE/issues/531",
+  "fetched_at": "2026-01-11T14:49:54.687765Z"
+}

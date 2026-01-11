@@ -1,0 +1,23 @@
+{
+  "number": 508,
+  "title": "Cut the Rope Bug",
+  "state": "open",
+  "created_at": "2025-10-26T00:24:14Z",
+  "updated_at": "2025-11-09T06:49:48Z",
+  "closed_at": null,
+  "labels": [
+    "bug (supported app)"
+  ],
+  "author": "JuanDaBoi",
+  "body": "### App DB report link\n\nhttps://appdb.touchhle.org/apps/124\n\n### App name\n\nCut the Rope\n\n### App version\n\n1.5 \n\n### touchHLE version\n\nlastest trunk build\n\n### Operating system\n\nAndroid 11\n\n### GPU\n\nidk\n\n### What is the problem with the app?\n\nwhen collecting a star the animation of it appears at the top left instead of being im the position where the star is, if possible to be fixed, let me know\n\n### If touchHLE crashed, please paste the log output.\n\n```text\n\n```\n\n### By submitting this issue, I certify that…\n\n- [x] I have tested that this version of this app is at least partially working in a previous version of touchHLE.\n- [x] I understand that linking to, discussing or asking for pirated content is not permitted, and will lead to an immediate ban.\n- [x] I understand that “Abandonware” and illegal copies of free games are also pirated content.",
+  "comments": [
+    {
+      "author": "kiratmust-bit",
+      "body": "This applies to all working Cut The Rope games.",
+      "created_at": "2025-11-09T06:49:48Z"
+    }
+  ],
+  "comments_count": 1,
+  "url": "https://github.com/touchHLE/touchHLE/issues/508",
+  "fetched_at": "2026-01-11T14:50:28.139125Z"
+}
