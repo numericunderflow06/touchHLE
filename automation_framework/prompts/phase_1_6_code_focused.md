@@ -56,7 +56,7 @@ Read these files to understand the current state:
 3. `D:/touchHLE_src/automation_framework/memory/CODE_STRATEGY_MEMORY.json` - Code-focused strategy effectiveness
 4. `D:/touchHLE_src/automation_framework/memory/HYPOTHESIS_TRACKER.json` - Past hypotheses
 
-Write your analysis to: `{outputs_dir}/code_pipeline/code_001_context_analysis.md`
+Write your analysis to: `{outputs_dir}/code_001_context_analysis.md`
 
 Include:
 - Summary of current understanding of the bug from a CODE perspective
@@ -71,7 +71,7 @@ Include:
 
 Based on your context analysis, design a bug fix plan that focuses on CODE CORRECTNESS.
 
-Write to: `{outputs_dir}/code_pipeline/code_002_solution_plan.md`
+Write to: `{outputs_dir}/code_002_solution_plan.md`
 
 Your plan should focus on:
 - **Specific code discrepancies** found by comparing to documentation
@@ -109,9 +109,9 @@ Read your solution plan and compare against past attempts.
 
 Read:
 - `D:/touchHLE_src/MEMORY.md` (Past Implementations section)
-- `{outputs_dir}/code_pipeline/code_002_solution_plan.md`
+- `{outputs_dir}/code_002_solution_plan.md`
 
-Write to: `{outputs_dir}/code_pipeline/code_003_plan_deduplicated.md`
+Write to: `{outputs_dir}/code_003_plan_deduplicated.md`
 
 Determine:
 - Is this plan substantially similar to something already tried?
@@ -126,7 +126,7 @@ The output should be the FINAL code-focused plan to implement (either original o
 
 Think about what code correctness questions you need to answer.
 
-Write to: `{outputs_dir}/code_pipeline/code_004_hypotheses.md`
+Write to: `{outputs_dir}/code_004_hypotheses.md`
 
 For EACH hypothesis (aim for 2-3), focus on CODE vs DOCUMENTATION:
 
@@ -163,7 +163,7 @@ IMPORTANT: Each hypothesis should compare CODE BEHAVIOR against DOCUMENTATION.
 
 Plan what documentation and specifications to search/read.
 
-Write to: `{outputs_dir}/code_pipeline/code_005_search_strategy.md`
+Write to: `{outputs_dir}/code_005_search_strategy.md`
 
 Include:
 
@@ -199,9 +199,9 @@ Verify your search strategy isn't repeating past searches.
 
 Read:
 - `D:/touchHLE_src/automation_framework/memory/CODE_STRATEGY_MEMORY.json`
-- `{outputs_dir}/code_pipeline/code_005_search_strategy.md`
+- `{outputs_dir}/code_005_search_strategy.md`
 
-Write to: `{outputs_dir}/code_pipeline/code_006_final_plan.md`
+Write to: `{outputs_dir}/code_006_final_plan.md`
 
 This should be your FINAL plan including:
 1. The deduplicated solution plan (from step 3)

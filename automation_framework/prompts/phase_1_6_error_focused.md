@@ -66,7 +66,7 @@ Also check for recent diagnostic output:
 - Look in recent session folders for `007_test_results.md`
 - Check for captured [DIAG-*] logs
 
-Write your analysis to: `{outputs_dir}/error_pipeline/error_001_context_analysis.md`
+Write your analysis to: `{outputs_dir}/error_001_context_analysis.md`
 
 Include:
 - Summary of current understanding of the bug from an ERROR/RUNTIME perspective
@@ -81,7 +81,7 @@ Include:
 
 Based on your context analysis, design a bug fix plan that focuses on RUNTIME BEHAVIOR.
 
-Write to: `{outputs_dir}/error_pipeline/error_002_solution_plan.md`
+Write to: `{outputs_dir}/error_002_solution_plan.md`
 
 Your plan should focus on:
 - **Runtime observations** that indicate the bug
@@ -119,9 +119,9 @@ Read your solution plan and compare against past attempts.
 
 Read:
 - `D:/touchHLE_src/MEMORY.md` (Past Implementations section)
-- `{outputs_dir}/error_pipeline/error_002_solution_plan.md`
+- `{outputs_dir}/error_002_solution_plan.md`
 
-Write to: `{outputs_dir}/error_pipeline/error_003_plan_deduplicated.md`
+Write to: `{outputs_dir}/error_003_plan_deduplicated.md`
 
 Determine:
 - Is this plan substantially similar to something already tried?
@@ -136,7 +136,7 @@ The output should be the FINAL error-focused plan to implement (either original 
 
 Think about what runtime behavior questions you need to answer.
 
-Write to: `{outputs_dir}/error_pipeline/error_004_hypotheses.md`
+Write to: `{outputs_dir}/error_004_hypotheses.md`
 
 For EACH hypothesis (aim for 2-3), focus on OBSERVABLE BEHAVIOR:
 
@@ -174,7 +174,7 @@ IMPORTANT: Each hypothesis should be about OBSERVABLE RUNTIME BEHAVIOR.
 
 Plan what error patterns and similar issues to search for.
 
-Write to: `{outputs_dir}/error_pipeline/error_005_search_strategy.md`
+Write to: `{outputs_dir}/error_005_search_strategy.md`
 
 Include:
 
@@ -210,9 +210,9 @@ Verify your search strategy isn't repeating past searches.
 
 Read:
 - `D:/touchHLE_src/automation_framework/memory/ERROR_STRATEGY_MEMORY.json`
-- `{outputs_dir}/error_pipeline/error_005_search_strategy.md`
+- `{outputs_dir}/error_005_search_strategy.md`
 
-Write to: `{outputs_dir}/error_pipeline/error_006_final_plan.md`
+Write to: `{outputs_dir}/error_006_final_plan.md`
 
 This should be your FINAL plan including:
 1. The deduplicated solution plan (from step 3)
