@@ -80,3 +80,50 @@ phases:
       - "Evaluate Hypotheses"
       - "Assess Strategies"
       - "Update Memory"
+
+# =============================================================================
+# MULTI-AGENT CONFIGURATION
+# =============================================================================
+
+multi_agent:
+  enabled: true
+
+  # Parallel planning pipelines
+  parallel_planning:
+    code_focused:
+      prompt_template: "phase_1_6_code_focused.md"
+      output_dir: "code_pipeline"
+      output_prefix: "code_"
+      strategy_memory: "CODE_STRATEGY_MEMORY.json"
+    error_focused:
+      prompt_template: "phase_1_6_error_focused.md"
+      output_dir: "error_pipeline"
+      output_prefix: "error_"
+      strategy_memory: "ERROR_STRATEGY_MEMORY.json"
+
+  # Debate phase configuration
+  debate:
+    max_turns: 10
+    turn_timeout_seconds: 600  # 10 minutes per debate turn
+    output_dir: "debate"
+
+    consensus_keywords:
+      - "CONSENSUS_REACHED"
+      - "I agree with the combined approach"
+      - "I accept this proposal"
+
+    code_advocate:
+      prompt_template: "debate_code_advocate.md"
+      memory_file: "code_advocate_memory.json"
+    error_advocate:
+      prompt_template: "debate_error_advocate.md"
+      memory_file: "error_advocate_memory.json"
+
+  # Reflection configuration
+  reflection:
+    code_reflection_prompt: "phase_8_code_reflection.md"
+    error_reflection_prompt: "phase_8_error_reflection.md"
+
+  # Implementation reads from consensus
+  implementation:
+    consensus_plan_file: "consensus_plan.md"

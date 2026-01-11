@@ -1,0 +1,37 @@
+{
+  "description": "Tracks effectiveness of error-focused debugging strategies",
+  "last_updated": "2026-01-11T00:00:00",
+  "error_strategies_tried": [],
+  "diagnostic_prefixes_used": {
+    "DIAG-H1": "Track decodeBytesForKey calls in NSKeyedUnarchiver",
+    "DIAG-H2": "Track missing keys during NSCoder unarchiving",
+    "DIAG-H3": "Track file loading via NSBundle/NSData",
+    "DIAG-DEV": "Track UIDevice/UIScreen queries"
+  },
+  "runtime_patterns_observed": [
+    "decodeBytesForKey never called (0 times)",
+    "Only UI keys missing during unarchiving (9 total)",
+    ".Image.def files loaded but .png textures NOT loaded via NSData",
+    "UIScreen reports 320x480, UIDevice reports iOS 3.0"
+  ],
+  "crash_patterns": [],
+  "error_handling_gaps": [],
+  "successful_patterns": [
+    "Using [DIAG-*] prefixes for easy log filtering",
+    "Counting function calls to detect missing functionality"
+  ],
+  "unsuccessful_patterns": [],
+  "recommendations": {
+    "add_logging_to": [
+      "C stdlib fopen/fread for PNG file loading",
+      "OpenGL texture upload functions",
+      "glScissor and glViewport calls"
+    ],
+    "error_patterns_to_check": [
+      "GL_INVALID_OPERATION errors",
+      "Texture binding failures",
+      "Missing asset loading"
+    ],
+    "avoid": []
+  }
+}

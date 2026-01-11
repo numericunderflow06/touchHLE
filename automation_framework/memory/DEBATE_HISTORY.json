@@ -1,0 +1,24 @@
+{
+  "description": "Tracks effectiveness of multi-agent debate sessions",
+  "last_updated": "2026-01-11T00:00:00",
+  "sessions": [],
+  "aggregate_stats": {
+    "total_debates": 0,
+    "consensus_reached_count": 0,
+    "average_turns_to_consensus": 0,
+    "code_advocate_wins": 0,
+    "error_advocate_wins": 0,
+    "combined_solutions": 0
+  },
+  "effective_arguments": {
+    "code_advocate": [],
+    "error_advocate": []
+  },
+  "lessons_learned": [],
+  "debate_patterns": {
+    "successful_consensus_strategies": [],
+    "failed_consensus_strategies": [],
+    "common_disagreements": [],
+    "common_agreements": []
+  }
+}
