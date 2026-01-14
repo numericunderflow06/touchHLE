@@ -24,6 +24,7 @@ import yaml
 import time
 import re
 import hashlib
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
@@ -179,40 +180,95 @@ def build_planning_prompt(pipeline: str, session_id: str, outputs_dir: Path,
 
 def build_debate_prompt(agent: str, session_id: str, outputs_dir: Path,
                         debate_dir: Path, turn_num: int,
-                        latest_opponent_message: str) -> str:
-    """Build prompt for a debate agent."""
+                        latest_opponent_message: str,
+                        is_first_turn: bool = True) -> str:
+    """Build prompt for a debate agent.
+
+    Args:
+        agent: "code_advocate" or "error_advocate"
+        session_id: Session identifier
+        outputs_dir: Directory containing pipeline outputs
+        debate_dir: Directory for debate artifacts
+        turn_num: Overall turn number (1-based)
+        latest_opponent_message: The other agent's most recent message
+        is_first_turn: True if this is the agent's first turn (full prompt),
+                       False if resuming (continuation prompt only)
+    """
     global _injector, _injection_log
 
     ma_config = CONFIG["multi_agent"]["debate"]
     agent_config = ma_config[agent]
-    template = load_prompt_template(agent_config["prompt_template"])
 
-    prompt = template.format(
-        session_id=session_id,
-        outputs_dir=str(outputs_dir).replace("\\", "/"),
-        debate_dir=str(debate_dir).replace("\\", "/"),
-        turn_num=turn_num,
-        latest_opponent_message=latest_opponent_message or "(No previous message - you are going first)",
-    )
+    opponent = "Error Advocate" if agent == "code_advocate" else "Code Advocate"
 
-    # Inject random suggestion before "## Your Task" section
-    if _injector is not None:
-        pipeline = "code" if agent == "code_advocate" else "error"
-        injection = _injector.get_debate_injection(pipeline=pipeline)
+    if is_first_turn:
+        # FIRST TURN: Load full template with role description and all context
+        template = load_prompt_template(agent_config["prompt_template"])
 
-        task_header = "## Your Task"
-        if task_header in prompt:
-            header_pos = prompt.find(task_header)
-            prompt = (
-                prompt[:header_pos] +
-                injection + "\n\n" +
-                prompt[header_pos:]
-            )
-            log(f"Injected {pipeline} debate suggestion into {agent} prompt (turn {turn_num})")
-            _injection_log[f"debate_turn_{turn_num}_{agent}"] = {
-                "type": f"debate_{pipeline}",
-                "injected": True
-            }
+        prompt = template.format(
+            session_id=session_id,
+            outputs_dir=str(outputs_dir).replace("\\", "/"),
+            debate_dir=str(debate_dir).replace("\\", "/"),
+            turn_num=turn_num,
+            latest_opponent_message=latest_opponent_message or "(No previous message - you are going first)",
+        )
+
+        # Inject random suggestion before "## Your Task" section (only on first turn)
+        if _injector is not None:
+            pipeline = "code" if agent == "code_advocate" else "error"
+            injection = _injector.get_debate_injection(pipeline=pipeline)
+
+            task_header = "## Your Task"
+            if task_header in prompt:
+                header_pos = prompt.find(task_header)
+                prompt = (
+                    prompt[:header_pos] +
+                    injection + "\n\n" +
+                    prompt[header_pos:]
+                )
+                log(f"Injected {pipeline} debate suggestion into {agent} prompt (turn {turn_num})")
+                _injection_log[f"debate_turn_{turn_num}_{agent}"] = {
+                    "type": f"debate_{pipeline}",
+                    "injected": True
+                }
+    else:
+        # CONTINUATION TURN: Simpler prompt since agent already has full context
+        # The agent's previous conversation is automatically restored via --resume
+        prompt = f"""## Debate Continuation - Turn {turn_num}
+
+The {opponent} has responded. Here is their latest message:
+
+---
+
+**{opponent}'s Response:**
+
+{latest_opponent_message}
+
+---
+
+## Your Task
+
+Continue the debate. You have full context from your previous turns.
+
+1. **Analyze** their response - what are the key points?
+2. **Respond** with your counter-arguments or agreements
+3. **Decide** whether to propose/accept consensus or continue debating
+
+Remember to write your reasoning to:
+`{str(debate_dir).replace(chr(92), "/")}/turn_{turn_num:03d}_{agent.split("_")[0]}_reasoning.md`
+
+Then output your JSON response:
+```json
+{{
+  "message": "Your concise response (2-3 paragraphs)",
+  "proposes_consensus": false,
+  "accepts_consensus": false,
+  "consensus_summary": ""
+}}
+```
+
+To signal agreement, include **"CONSENSUS_REACHED"** in your message.
+"""
 
     return prompt
 
@@ -263,18 +319,44 @@ def list_files_in_dir(directory: Path) -> List[str]:
 
 def run_claude_code(prompt: str, phase: str, session_dir: Path,
                     event_logger: SessionEventLogger,
-                    timeout: int = None) -> Tuple[bool, str, Dict]:
-    """Run Claude Code with the given prompt."""
+                    timeout: int = None,
+                    session_id: str = None,
+                    resume_session_id: str = None) -> Tuple[bool, str, Dict]:
+    """Run Claude Code with the given prompt.
+
+    Args:
+        prompt: The prompt to send to Claude
+        phase: Phase name for logging
+        session_dir: Directory to save outputs
+        event_logger: Event logger instance
+        timeout: Timeout in seconds
+        session_id: UUID to use for a NEW persistent session (first call)
+        resume_session_id: UUID of existing session to RESUME (subsequent calls)
+
+    Note: session_id and resume_session_id are mutually exclusive.
+          - Use session_id on first call to start a persistent session
+          - Use resume_session_id on subsequent calls to continue it
+    """
     claude_cmd = CONFIG["claude"]["cmd"]
     model = CONFIG["claude"]["model"]
     timeout = timeout or CONFIG["general"]["session_timeout_seconds"]
 
     event_logger.log_claude_prompt(phase, prompt, step=phase)
-    log(f"Running Claude Code ({phase}, timeout: {timeout}s)...")
+
+    # Build session flags
+    session_flags = ""
+    if resume_session_id:
+        session_flags = f'--resume {resume_session_id}'
+        log(f"Running Claude Code ({phase}, RESUMING session {resume_session_id[:8]}..., timeout: {timeout}s)...")
+    elif session_id:
+        session_flags = f'--session-id {session_id}'
+        log(f"Running Claude Code ({phase}, NEW session {session_id[:8]}..., timeout: {timeout}s)...")
+    else:
+        log(f"Running Claude Code ({phase}, timeout: {timeout}s)...")
 
     try:
         if os.name == 'nt':
-            cmd = f'"{claude_cmd}" --print --model {model} --dangerously-skip-permissions'
+            cmd = f'"{claude_cmd}" --print --model {model} --dangerously-skip-permissions {session_flags}'.strip()
             result = subprocess.run(
                 cmd,
                 input=prompt,
@@ -285,9 +367,13 @@ def run_claude_code(prompt: str, phase: str, session_dir: Path,
                 shell=True,
             )
         else:
-            cmd = [claude_cmd, "--print", "--model", model, "--dangerously-skip-permissions"]
+            cmd_parts = [claude_cmd, "--print", "--model", model, "--dangerously-skip-permissions"]
+            if resume_session_id:
+                cmd_parts.extend(["--resume", resume_session_id])
+            elif session_id:
+                cmd_parts.extend(["--session-id", session_id])
             result = subprocess.run(
-                cmd,
+                cmd_parts,
                 input=prompt,
                 cwd=str(WORKING_DIR),
                 capture_output=True,
@@ -390,12 +476,26 @@ def run_parallel_planning(session_id: str, session_dir: Path, outputs_dir: Path,
 # =============================================================================
 
 def init_debate_state(debate_dir: Path) -> Dict:
-    """Initialize debate state."""
+    """Initialize debate state with persistent session IDs for each advocate."""
+    # Generate persistent session UUIDs for each advocate
+    code_advocate_session = str(uuid.uuid4())
+    error_advocate_session = str(uuid.uuid4())
+
     debate_log = {
         "turns": [],
         "consensus_reached": False,
         "final_plan_author": None,
         "consensus_plan_file": None,
+        # Persistent session IDs for each advocate
+        "sessions": {
+            "code_advocate": code_advocate_session,
+            "error_advocate": error_advocate_session,
+        },
+        # Track how many turns each agent has had
+        "agent_turn_counts": {
+            "code_advocate": 0,
+            "error_advocate": 0,
+        },
     }
 
     # Initialize agent memory files
@@ -409,6 +509,10 @@ def init_debate_state(debate_dir: Path) -> Dict:
             "current_stance": "debating",
             "notes": "",
         }, indent=2), encoding="utf-8")
+
+    log(f"Debate sessions initialized:")
+    log(f"  Code Advocate: {code_advocate_session[:8]}...")
+    log(f"  Error Advocate: {error_advocate_session[:8]}...")
 
     return debate_log
 
@@ -453,9 +557,14 @@ def check_consensus(debate_log: Dict) -> bool:
 
 def run_debate_phase(session_id: str, session_dir: Path, outputs_dir: Path,
                      event_logger: SessionEventLogger) -> Tuple[bool, str]:
-    """Run the debate phase between code and error advocates."""
-    log("Starting debate phase...")
-    event_logger.log_phase_start("debate", "Code vs Error advocate debate")
+    """Run the debate phase between code and error advocates.
+
+    Each advocate runs in a PERSISTENT Claude session that gets resumed
+    on subsequent turns. This allows each agent to maintain full context
+    of their previous arguments and reasoning.
+    """
+    log("Starting debate phase (with persistent sessions)...")
+    event_logger.log_phase_start("debate", "Code vs Error advocate debate (persistent sessions)")
 
     debate_dir = outputs_dir / "debate"
     debate_dir.mkdir(parents=True, exist_ok=True)
@@ -464,6 +573,9 @@ def run_debate_phase(session_id: str, session_dir: Path, outputs_dir: Path,
     max_turns = CONFIG["multi_agent"]["debate"]["max_turns"]
     turn_timeout = CONFIG["multi_agent"]["debate"]["turn_timeout_seconds"]
 
+    # Get persistent session IDs for each advocate
+    advocate_sessions = debate_log["sessions"]
+
     # Alternate between agents, starting with code_advocate
     agents = ["code_advocate", "error_advocate"]
     current_agent_idx = 0
@@ -471,20 +583,51 @@ def run_debate_phase(session_id: str, session_dir: Path, outputs_dir: Path,
 
     for turn_num in range(1, max_turns + 1):
         current_agent = agents[current_agent_idx]
-        log(f"Debate turn {turn_num}: {current_agent}")
+        agent_session_id = advocate_sessions[current_agent]
+        agent_turn_count = debate_log["agent_turn_counts"][current_agent]
 
-        prompt = build_debate_prompt(
-            current_agent, session_id, outputs_dir, debate_dir,
-            turn_num, latest_message
-        )
+        # Determine if this is the agent's first turn (new session) or continuation (resume)
+        is_first_turn = (agent_turn_count == 0)
+
+        if is_first_turn:
+            log(f"Debate turn {turn_num}: {current_agent} (STARTING persistent session)")
+            # Build full initial prompt with role description
+            prompt = build_debate_prompt(
+                current_agent, session_id, outputs_dir, debate_dir,
+                turn_num, latest_message, is_first_turn=True
+            )
+        else:
+            log(f"Debate turn {turn_num}: {current_agent} (RESUMING session, agent's turn #{agent_turn_count + 1})")
+            # Build continuation prompt with opponent's latest message
+            prompt = build_debate_prompt(
+                current_agent, session_id, outputs_dir, debate_dir,
+                turn_num, latest_message, is_first_turn=False
+            )
 
         phase_name = f"debate_turn_{turn_num}_{current_agent}"
-        success, output, _ = run_claude_code(prompt, phase_name, session_dir,
-                                             event_logger, timeout=turn_timeout)
+
+        # Run with session persistence
+        if is_first_turn:
+            # Start new persistent session with specific UUID
+            success, output, _ = run_claude_code(
+                prompt, phase_name, session_dir, event_logger,
+                timeout=turn_timeout,
+                session_id=agent_session_id  # NEW session
+            )
+        else:
+            # Resume existing persistent session
+            success, output, _ = run_claude_code(
+                prompt, phase_name, session_dir, event_logger,
+                timeout=turn_timeout,
+                resume_session_id=agent_session_id  # RESUME session
+            )
 
         if not success:
             log(f"Debate turn {turn_num} failed", "ERROR")
             break
+
+        # Update agent's turn count
+        debate_log["agent_turn_counts"][current_agent] += 1
 
         # Parse response
         response = parse_debate_response(output)
@@ -493,6 +636,9 @@ def run_debate_phase(session_id: str, session_dir: Path, outputs_dir: Path,
         turn_entry = {
             "turn": turn_num,
             "agent": current_agent,
+            "agent_turn_number": debate_log["agent_turn_counts"][current_agent],
+            "session_id": agent_session_id,
+            "is_first_turn": is_first_turn,
             "timestamp": datetime.now().isoformat(),
             "message": response.get("message", ""),
             "reasoning_file": f"debate/turn_{turn_num:03d}_{current_agent.split('_')[0]}_reasoning.md",
