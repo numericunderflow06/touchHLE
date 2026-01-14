@@ -1405,5 +1405,124 @@
     "file_path": "src/libc/stdlib/qsort.rs",
     "description": "qsort implementation for array sorting",
     "bug_hypothesis": "Sort order wrong, comparator not called correctly, or stack overflow"
+  },
+  {
+    "id": "matrix",
+    "name": "Matrix Mathematics",
+    "file_path": "src/matrix.rs",
+    "description": "Matrix math utilities for 3D transformations and projections",
+    "bug_hypothesis": "Matrix multiplication wrong, projection incorrect, or transformation order wrong"
+  },
+  {
+    "id": "audio_ima4",
+    "name": "IMA4 Audio Codec",
+    "file_path": "src/audio/ima4.rs",
+    "description": "IMA ADPCM audio decompression for compressed audio files",
+    "bug_hypothesis": "Decompression artifacts, wrong sample rate, or buffer size mismatch"
+  },
+  {
+    "id": "audio_symphonia",
+    "name": "Symphonia Audio Formats",
+    "file_path": "src/audio/symphonia_formats.rs",
+    "description": "Audio format decoding using Symphonia library (MP3, AAC, etc.)",
+    "bug_hypothesis": "Format not supported, decode error, or sample conversion wrong"
+  },
+  {
+    "id": "gk_local_player",
+    "name": "Game Center Local Player",
+    "file_path": "src/frameworks/game_kit/gk_local_player.rs",
+    "description": "Local player authentication and Game Center identity",
+    "bug_hypothesis": "Authentication failing, player ID wrong, or callbacks not invoked"
+  },
+  {
+    "id": "gk_score",
+    "name": "Game Center Scores",
+    "file_path": "src/frameworks/game_kit/gk_score.rs",
+    "description": "Leaderboard score submission and retrieval",
+    "bug_hypothesis": "Score not submitted, leaderboard ID wrong, or rank incorrect"
+  },
+  {
+    "id": "media_library",
+    "name": "Media Library Access",
+    "file_path": "src/frameworks/media_player/media_library.rs",
+    "description": "Access to device music library and playlists",
+    "bug_hypothesis": "Library not accessible, items missing, or permissions denied"
+  },
+  {
+    "id": "media_picker_controller",
+    "name": "Media Picker Controller",
+    "file_path": "src/frameworks/media_player/media_picker_controller.rs",
+    "description": "UI for selecting media from device library",
+    "bug_hypothesis": "Picker not shown, selection not returned, or delegate not called"
+  },
+  {
+    "id": "media_query",
+    "name": "Media Query",
+    "file_path": "src/frameworks/media_player/media_query.rs",
+    "description": "Querying media library for songs, albums, artists",
+    "bug_hypothesis": "Query returning empty, filter not applied, or grouping wrong"
+  },
+  {
+    "id": "movie_player",
+    "name": "Movie Player Controller",
+    "file_path": "src/frameworks/media_player/movie_player.rs",
+    "description": "Video playback controller with fullscreen support",
+    "bug_hypothesis": "Video not playing, controls not shown, or aspect ratio wrong"
+  },
+  {
+    "id": "sk_payment_queue",
+    "name": "StoreKit Payment Queue",
+    "file_path": "src/frameworks/store_kit/sk_payment_queue.rs",
+    "description": "In-app purchase transaction processing",
+    "bug_hypothesis": "Transaction not processed, observer not called, or state wrong"
+  },
+  {
+    "id": "sk_product",
+    "name": "StoreKit Products",
+    "file_path": "src/frameworks/store_kit/sk_product.rs",
+    "description": "Product information retrieval from App Store",
+    "bug_hypothesis": "Products not loaded, price wrong, or request failing"
+  },
+  {
+    "id": "gles_util",
+    "name": "GLES Utilities",
+    "file_path": "src/gles/util.rs",
+    "description": "OpenGL ES utility functions and helpers",
+    "bug_hypothesis": "Utility function returning wrong value, conversion error"
+  },
+  {
+    "id": "generic_char",
+    "name": "Generic Character Handling",
+    "file_path": "src/libc/generic_char.rs",
+    "description": "Generic character type handling for string functions",
+    "bug_hypothesis": "Character width wrong, null terminator handling incorrect"
+  },
+  {
+    "id": "mach_init",
+    "name": "Mach Initialization",
+    "file_path": "src/libc/mach/init.rs",
+    "description": "Mach subsystem initialization and task/thread ports",
+    "bug_hypothesis": "Task port wrong, thread port not set, or initialization order wrong"
+  },
+  {
+    "id": "os_atomic",
+    "name": "OSAtomic Functions",
+    "file_path": "src/libc/libkern/os_atomic.rs",
+    "description": "Atomic operations (OSAtomicAdd, OSAtomicCompareAndSwap, etc.)",
+    "bug_hypothesis": "Atomic operation not atomic, memory barrier missing, or overflow"
+  },
+  {
+    "id": "ns_notification",
+    "name": "NSNotification",
+    "file_path": "src/frameworks/foundation/ns_notification.rs",
+    "description": "Notification object with name, object, and userInfo",
+    "bug_hypothesis": "Notification name wrong, userInfo missing, or object nil"
+  },
+  {
+    "id": "ui_image_picker_controller",
+    "name": "UIImagePickerController",
+    "file_path": "src/frameworks/uikit/ui_image_picker_controller.rs",
+    "description": "Camera and photo library picker interface",
+    "bug_hypothesis": "Picker not shown, image not returned, or source type unavailable"
   }
 ]

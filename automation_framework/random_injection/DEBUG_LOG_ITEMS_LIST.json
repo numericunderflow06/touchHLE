@@ -1024,5 +1024,23 @@
     "detectable_issues": ["PID wrong", "getcwd failing", "Sleep duration wrong"],
     "when_useful": "POSIX API bugs, process/file descriptor issues",
     "log_volume": "low"
+  },
+  {
+    "id": "ca_media_timing_function",
+    "module": "touchHLE::frameworks::core_animation::ca_media_timing_function",
+    "category": "Graphics",
+    "what_it_logs": "Animation timing function creation and control points (1 log_dbg call)",
+    "detectable_issues": ["Wrong timing curve", "Control points incorrect", "Curve not applied"],
+    "when_useful": "Animation timing bugs, easing function issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "gles_main",
+    "module": "touchHLE::gles",
+    "category": "Graphics",
+    "what_it_logs": "Main GLES module initialization and backend selection",
+    "detectable_issues": ["Backend not selected", "Initialization failure", "Feature detection wrong"],
+    "when_useful": "GLES subsystem startup issues, backend problems",
+    "log_volume": "low"
   }
 ]
