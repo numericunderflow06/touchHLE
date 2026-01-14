@@ -9,8 +9,44 @@
 
 ---
 
+## Infrastructure Updates (2026-01-11)
+
+### Random Idea Injection System
+Added random suggestion injection to help models discover new investigation angles.
+- **Location**: `automation_framework/random_injection/`
+- **Lists**: 49 code components, 62 debug/log items
+- **Injection Points**: Planning Step 2, Planning Step 4 (error only), Debate turns
+- **Verified**: Models actively evaluate suggestions, incorporate or dismiss with reasoning
+- **Docs**: `automation_framework/random_injection/INTEGRATION_GUIDE.md`
+- **Session Doc**: `automation_framework/docs/SESSION_2026-01-11_SUMMARY.md`
+
+### Template Fix (phase_8_*_reflection.md)
+Fixed KeyError in reflection phase templates caused by unescaped JSON curly braces.
+- **Solution**: Escaped `{` to `{{` and `}` to `}}` in JSON example blocks
+
+---
+
 ## Latest Sessions (newest first)
 
+
+### Session: multiagent_2026-01-11_21-35-37 - Error Pipeline
+**Date**: 2026-01-11 | **Result**: BUILD FAILED (exit -1)
+**Error Approach**: Pipeline tracing diagnostics (fopen E1, TexImage2D E2, with deferred fread E3)
+**Key Finding**: Build failure prevented testing; E2 (TexImage2D logging) accepted as unique error contribution
+**Diagnostic Output**: None captured (build failure)
+**Debate Contribution**: E2 filled "critical gap" in code pipeline; targeted glGetError accepted over comprehensive E4
+
+---
+
+### Session: multiagent_2026-01-11_21-35-37 - Code Pipeline
+**Date**: 2026-01-11 | **Result**: BUILD FAILED (exit -1)
+**Code Approach**: Documentation-grounded diagnostics for texture pipeline (fopen, decode, UIImage, TexImage2D)
+**Key Finding**: Build failure prevented testing; all diagnostic code implemented but not executed
+**Debate Outcome**: Consensus reached in 2 turns - merged code + error pipeline diagnostics
+**Hypotheses**: H1 (fopen expansion), H2 (decode failures), H3 (.def manifests) - all INCONCLUSIVE
+**See**: `automation_framework/sessions/multiagent_2026-01-11_21-35-37/`
+
+---
 ### Session: research_2026-01-10_14-13 (Manual) - BREAKTHROUGH
 **Date**: 2026-01-10 | **Result**: DIAGNOSTIC SUCCESS (42.22% black)
 **Key Finding**: PNG textures NOT loaded via Foundation APIs - game likely uses C stdlib (fopen/fread)

@@ -128,29 +128,29 @@ Updates to make:
 
 Format:
 ```json
-{
+{{
   "last_updated": "[timestamp]",
   "code_strategies_tried": [
-    {
+    {{
       "session": "[session_id]",
       "approach": "[description]",
       "documentation_used": ["..."],
       "result": "success|partial|failure",
       "notes": "..."
-    }
+    }}
   ],
-  "documentation_consulted": {
+  "documentation_consulted": {{
     "ios_sdk": ["topics checked"],
     "opengl_es": ["specs reviewed"],
     "other": ["..."]
-  },
+  }},
   "successful_patterns": ["..."],
   "unsuccessful_patterns": ["..."],
-  "recommendations": {
+  "recommendations": {{
     "investigate_next": ["..."],
     "avoid": ["..."]
-  }
-}
+  }}
+}}
 ```
 
 ---

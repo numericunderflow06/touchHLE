@@ -140,29 +140,29 @@ Updates to make:
 
 Format:
 ```json
-{
+{{
   "last_updated": "[timestamp]",
   "error_strategies_tried": [
-    {
+    {{
       "session": "[session_id]",
       "approach": "[description]",
       "diagnostics_added": ["[DIAG-*] prefixes"],
       "result": "success|partial|failure",
       "notes": "..."
-    }
+    }}
   ],
-  "diagnostic_prefixes_used": {
+  "diagnostic_prefixes_used": {{
     "DIAG-H1": "description",
     "DIAG-H2": "description"
-  },
+  }},
   "runtime_patterns_observed": ["..."],
   "successful_patterns": ["..."],
   "unsuccessful_patterns": ["..."],
-  "recommendations": {
+  "recommendations": {{
     "add_logging_to": ["..."],
     "avoid": ["..."]
-  }
-}
+  }}
+}}
 ```
 
 ---
@@ -190,17 +190,17 @@ Update: `D:/touchHLE_src/automation_framework/memory/DEBATE_HISTORY.json`
 
 Add entry for this session:
 ```json
-{
+{{
   "session_id": "{session_id}",
   "turns": [number of debate turns],
   "consensus_reached": true/false,
   "consensus_type": "code_won|error_won|combined|no_consensus",
-  "effective_arguments": {
+  "effective_arguments": {{
     "code_advocate": ["..."],
     "error_advocate": ["..."]
-  },
+  }},
   "lessons_learned": ["..."]
-}
+}}
 ```
 
 ---

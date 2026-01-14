@@ -72,11 +72,11 @@ Implement diagnostic code from BOTH pipelines' hypotheses:
 Example logging format:
 ```rust
 // Code-focused diagnostic
-log!("[DIAG-C1] glFrustumf parameters: left={}, right={}, bottom={}, top={}",
+log!("[DIAG-C1] glFrustumf parameters: left={{}}, right={{}}, bottom={{}}, top={{}}",
      left, right, bottom, top);
 
 // Error-focused diagnostic
-log!("[DIAG-E1] Texture load attempt: file={}, result={:?}", filename, result);
+log!("[DIAG-E1] Texture load attempt: file={{}}, result={{:?}}", filename, result);
 ```
 
 ---

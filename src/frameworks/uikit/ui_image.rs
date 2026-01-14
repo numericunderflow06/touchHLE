@@ -117,6 +117,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     let path = ns_string::to_rust_string(env, path); // TODO: avoid copy
     let Ok(bytes) = env.fs.read(GuestPath::new(&path)) else {
         log!("Warning: couldn't read image file at {:?}, returning nil", path);
+        // [DIAG-C3] Log UIImage load failure
+        log!("[DIAG-C3] UIImage initWithContentsOfFile: FAILED to read {:?}", path);
         release(env, this);
         return nil;
     };
@@ -124,6 +126,9 @@ pub const CLASSES: ClassExports = objc_classes! {
     //       by a functionality gap in touchHLE, not the app actually trying to
     //       load a broken file, so panicking is most useful.
     let image = Image::from_bytes(&bytes).unwrap();
+    // [DIAG-C3] Log UIImage load success with dimensions
+    let (width, height) = image.dimensions();
+    log!("[DIAG-C3] UIImage initWithContentsOfFile: OK {:?} => {}x{}", path, width, height);
     let cg_image = cg_image::from_image(env, image);
     env.objc.borrow_mut::<UIImageHostObject>(this).cg_image = cg_image;
     this

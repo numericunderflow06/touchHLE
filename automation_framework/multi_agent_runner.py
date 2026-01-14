@@ -33,6 +33,13 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 sys.path.insert(0, str(Path(__file__).parent / "core"))
 from session_event_logger import SessionEventLogger
 
+# Import random injection system
+from random_injection import RandomIdeaInjector
+
+# Global injector instance (initialized per session)
+_injector: Optional[RandomIdeaInjector] = None
+_injection_log: Dict[str, Any] = {}
+
 # =============================================================================
 # CONFIGURATION
 # =============================================================================
@@ -108,33 +115,106 @@ def load_prompt_template(template_name: str) -> str:
 def build_planning_prompt(pipeline: str, session_id: str, outputs_dir: Path,
                           black_pct: float, retry_num: int) -> str:
     """Build prompt for a planning pipeline (code-focused or error-focused)."""
+    global _injector, _injection_log
+
     ma_config = CONFIG["multi_agent"]["parallel_planning"][pipeline]
     template = load_prompt_template(ma_config["prompt_template"])
 
     pipeline_outputs_dir = outputs_dir / ma_config["output_dir"]
 
-    return template.format(
+    prompt = template.format(
         session_id=session_id,
         outputs_dir=str(pipeline_outputs_dir).replace("\\", "/"),
         black_pct=black_pct or 0,
         retry_num=retry_num,
     )
 
+    # Inject random suggestion after Step 2 header
+    if _injector is not None:
+        if pipeline == "code_focused":
+            injection = _injector.get_code_injection()
+            injection_type = "code"
+            step_header = "## STEP 2: Create Solution Plan (Code-Focused)"
+        else:  # error_focused
+            injection = _injector.get_debug_injection()
+            injection_type = "debug"
+            step_header = "## STEP 2: Create Solution Plan (Error-Focused)"
+
+        # Find and inject after the Step 2 header
+        if step_header in prompt:
+            header_pos = prompt.find(step_header)
+            line_end = prompt.find('\n', header_pos)
+            if line_end != -1:
+                prompt = (
+                    prompt[:line_end] +
+                    "\n\n" + injection + "\n" +
+                    prompt[line_end:]
+                )
+                log(f"Injected {injection_type} suggestion into {pipeline} planning prompt")
+                _injection_log[f"planning_{pipeline}"] = {
+                    "type": injection_type,
+                    "injected": True
+                }
+
+        # For error-focused pipeline, also inject at Step 4 (Hypotheses)
+        if pipeline == "error_focused":
+            hypothesis_header = "## STEP 4: Formulate Hypotheses (Runtime Behavior)"
+            if hypothesis_header in prompt:
+                hypothesis_injection = _injector.get_hypothesis_injection()
+                header_pos = prompt.find(hypothesis_header)
+                line_end = prompt.find('\n', header_pos)
+                if line_end != -1:
+                    prompt = (
+                        prompt[:line_end] +
+                        "\n\n" + hypothesis_injection + "\n" +
+                        prompt[line_end:]
+                    )
+                    log("Injected hypothesis suggestion into error_focused planning prompt")
+                    _injection_log["planning_error_focused_hypothesis"] = {
+                        "type": "hypothesis",
+                        "injected": True
+                    }
+
+    return prompt
+
 def build_debate_prompt(agent: str, session_id: str, outputs_dir: Path,
                         debate_dir: Path, turn_num: int,
                         latest_opponent_message: str) -> str:
     """Build prompt for a debate agent."""
+    global _injector, _injection_log
+
     ma_config = CONFIG["multi_agent"]["debate"]
     agent_config = ma_config[agent]
     template = load_prompt_template(agent_config["prompt_template"])
 
-    return template.format(
+    prompt = template.format(
         session_id=session_id,
         outputs_dir=str(outputs_dir).replace("\\", "/"),
         debate_dir=str(debate_dir).replace("\\", "/"),
         turn_num=turn_num,
         latest_opponent_message=latest_opponent_message or "(No previous message - you are going first)",
     )
+
+    # Inject random suggestion before "## Your Task" section
+    if _injector is not None:
+        pipeline = "code" if agent == "code_advocate" else "error"
+        injection = _injector.get_debate_injection(pipeline=pipeline)
+
+        task_header = "## Your Task"
+        if task_header in prompt:
+            header_pos = prompt.find(task_header)
+            prompt = (
+                prompt[:header_pos] +
+                injection + "\n\n" +
+                prompt[header_pos:]
+            )
+            log(f"Injected {pipeline} debate suggestion into {agent} prompt (turn {turn_num})")
+            _injection_log[f"debate_turn_{turn_num}_{agent}"] = {
+                "type": f"debate_{pipeline}",
+                "injected": True
+            }
+
+    return prompt
 
 def build_implementation_prompt(session_id: str, outputs_dir: Path) -> str:
     """Build prompt for implementation phase (multi-agent version)."""
@@ -780,6 +860,8 @@ def run_dual_reflection(session_id: str, session_dir: Path, outputs_dir: Path,
 
 def create_session() -> Tuple[str, Path, SessionEventLogger]:
     """Create a new session with directories and logger."""
+    global _injector, _injection_log
+
     session_id = f"multiagent_{get_timestamp()}"
     session_dir = SESSIONS_DIR / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
@@ -793,6 +875,16 @@ def create_session() -> Tuple[str, Path, SessionEventLogger]:
     (outputs_dir / "debate").mkdir(exist_ok=True)
 
     event_logger = SessionEventLogger(session_dir, session_id, "multi_agent_pipeline")
+
+    # Initialize random injection system with session-based seed
+    session_seed = hash(session_id) % (2**32)
+    _injector = RandomIdeaInjector(seed=session_seed)
+    _injection_log = {"session_id": session_id, "seed": session_seed}
+    log(f"Initialized random injector with seed {session_seed}")
+
+    # Log injection statistics
+    report = _injector.get_injection_report()
+    log(f"Injection lists loaded: {report['code_components_count']} code, {report['debug_items_count']} debug items")
 
     log(f"Created session: {session_id}")
     return session_id, session_dir, event_logger
@@ -918,11 +1010,18 @@ def run_session(retry_num: int = 0, initial_black_pct: float = None) -> Tuple[bo
         f"Test {'PASSED' if passed else 'FAILED'}: {final_black_pct}% black"
     )
 
+    # Save injection log for this session
+    if _injection_log:
+        injection_log_file = outputs_dir / "random_injection_log.json"
+        injection_log_file.write_text(json.dumps(_injection_log, indent=2), encoding="utf-8")
+        log(f"Saved injection log to {injection_log_file}")
+
     print(f"\n{'=' * 70}", flush=True)
     print(f"  SESSION COMPLETE", flush=True)
     print(f"  Result: {'PASS' if passed else 'FAIL'}", flush=True)
     print(f"  Black pixels: {final_black_pct}%", flush=True)
     print(f"  Consensus: {consensus_reached} (author: {consensus_author})", flush=True)
+    print(f"  Random injections: {len([k for k in _injection_log.keys() if 'injected' in str(_injection_log.get(k, {}))])}", flush=True)
     print(f"{'=' * 70}\n", flush=True)
 
     return passed, final_black_pct

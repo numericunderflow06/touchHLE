@@ -447,6 +447,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; layer isHidden]
 }
 - (())setHidden:(bool)hidden {
+    // [DIAG-E2] Log view visibility changes
+    let class: Class = msg![env; this class];
+    let class_name = env.objc.get_class_name(class);
+    log!("[DIAG-E2] setHidden: view={:?} class={} hidden={}", this, class_name, hidden);
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer setHidden:hidden]
 }

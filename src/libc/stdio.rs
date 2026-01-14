@@ -106,9 +106,20 @@ fn fopen(env: &mut Environment, filename: ConstPtr<u8>, mode: ConstPtr<u8>) -> M
         _ => unreachable!(),
     };
 
+    // [DIAG-E1] Log ALL fopen calls (expanded from image-only logging per consensus)
+    let filename_str = env.mem.cstr_at_utf8(filename).unwrap_or("<invalid UTF-8>");
+    let mode_str = String::from_utf8_lossy(mode);
+    log!("[DIAG-E1] fopen({:?}, mode={:?})", filename_str, mode_str);
+
     match posix_io::open_direct(env, filename, flags) {
-        -1 => Ptr::null(),
+        -1 => {
+            // [DIAG-E1] Log failed fopen
+            log!("[DIAG-E1] fopen({:?}) => NULL (FAILED)", filename_str);
+            Ptr::null()
+        }
         fd => {
+            // [DIAG-E1] Log successful fopen
+            log!("[DIAG-E1] fopen({:?}) => FILE* (success)", filename_str);
             let res = env.mem.alloc_and_write(FILE { fd });
             assert!(!State::get_mut(env).file_streams.contains_key(&res));
             State::get_mut(env).file_streams.insert(

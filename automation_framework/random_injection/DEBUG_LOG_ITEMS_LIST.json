@@ -1,0 +1,560 @@
+[
+  {
+    "id": "gles_guest_calls",
+    "module": "touchHLE::frameworks::opengles::gles_guest",
+    "category": "Graphics",
+    "what_it_logs": "All OpenGL ES function calls from guest code with full parameter values",
+    "detectable_issues": ["Wrong viewport dimensions", "Invalid texture parameters", "Incorrect blend modes", "Missing GL calls"],
+    "when_useful": "Black screen, rendering artifacts, missing geometry, texture issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "eagl_context",
+    "module": "touchHLE::frameworks::opengles::eagl",
+    "category": "Graphics",
+    "what_it_logs": "EAGLContext creation, makeCurrent calls, presentRenderbuffer, drawable properties",
+    "detectable_issues": ["Context not made current", "Presentation failures", "Wrong drawable size", "Missing renderbuffer"],
+    "when_useful": "Black screen, context switching issues, presentation failures",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ca_composition",
+    "module": "touchHLE::frameworks::core_animation::composition",
+    "category": "Graphics",
+    "what_it_logs": "Layer tree traversal, bounds calculations, layer rendering order, composition results",
+    "detectable_issues": ["Layer not in tree", "Zero-size bounds", "Wrong layer order", "Hidden layers", "Transform issues"],
+    "when_useful": "Missing UI elements, partial rendering, layering bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "gles1_on_gl2",
+    "module": "touchHLE::gles::gles1_on_gl2",
+    "category": "Graphics",
+    "what_it_logs": "ES 1.1 to GL 2.1 translation, state changes, shader generation, draw calls",
+    "detectable_issues": ["State translation errors", "Shader compilation failures", "Draw call issues", "Matrix stack problems"],
+    "when_useful": "Rendering differences from real device, shader errors, state corruption",
+    "log_volume": "high"
+  },
+  {
+    "id": "gles_native",
+    "module": "touchHLE::gles::gles1_native",
+    "category": "Graphics",
+    "what_it_logs": "Native OpenGL ES 1.1 passthrough calls and parameters",
+    "detectable_issues": ["GL errors", "Invalid parameters", "Missing functionality"],
+    "when_useful": "When using native ES 1.1 instead of GL 2.1 translation",
+    "log_volume": "high"
+  },
+  {
+    "id": "ca_layer",
+    "module": "touchHLE::frameworks::core_animation::ca_layer",
+    "category": "Graphics",
+    "what_it_logs": "Layer property changes, bounds/position/anchorPoint, sublayer additions",
+    "detectable_issues": ["Wrong bounds", "Position miscalculation", "AnchorPoint issues", "Missing sublayers"],
+    "when_useful": "Layer positioning bugs, view layout issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ca_eagl_layer",
+    "module": "touchHLE::frameworks::core_animation::ca_eagl_layer",
+    "category": "Graphics",
+    "what_it_logs": "CAEAGLLayer drawable properties, backing store allocation, size changes",
+    "detectable_issues": ["Drawable not allocated", "Wrong drawable size", "Format mismatch"],
+    "when_useful": "OpenGL rendering to wrong size, black GL views",
+    "log_volume": "low"
+  },
+  {
+    "id": "ca_transaction",
+    "module": "touchHLE::frameworks::core_animation::ca_transaction",
+    "category": "Graphics",
+    "what_it_logs": "Transaction begin/commit, flush calls, animation disabling",
+    "detectable_issues": ["Uncommitted transactions", "Missing flush", "Animation timing"],
+    "when_useful": "UI not updating, animation issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_view",
+    "module": "touchHLE::frameworks::uikit::ui_view",
+    "category": "UIKit",
+    "what_it_logs": "View creation, frame/bounds changes, addSubview calls, layer backing",
+    "detectable_issues": ["View not in hierarchy", "Wrong frame", "Layer not created"],
+    "when_useful": "Missing views, layout bugs, view hierarchy issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_window",
+    "module": "touchHLE::frameworks::uikit::ui_window",
+    "category": "UIKit",
+    "what_it_logs": "Window creation, makeKeyAndVisible, root view controller, screen association",
+    "detectable_issues": ["Window not visible", "No root controller", "Wrong screen"],
+    "when_useful": "App not displaying, window setup issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_application",
+    "module": "touchHLE::frameworks::uikit::ui_application",
+    "category": "UIKit",
+    "what_it_logs": "Application lifecycle, delegate callbacks, main run loop events",
+    "detectable_issues": ["Delegate not called", "Lifecycle events missing", "Run loop not running"],
+    "when_useful": "App not starting, lifecycle bugs",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_view_controller",
+    "module": "touchHLE::frameworks::uikit::ui_view_controller",
+    "category": "UIKit",
+    "what_it_logs": "View loading, viewDidLoad/viewWillAppear callbacks, view controller presentation",
+    "detectable_issues": ["View not loaded", "Callbacks not invoked", "Presentation failures"],
+    "when_useful": "View controller bugs, view not appearing",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_touch",
+    "module": "touchHLE::frameworks::uikit::ui_touch",
+    "category": "UIKit",
+    "what_it_logs": "Touch events, phases, locations, hit testing results",
+    "detectable_issues": ["Touch not delivered", "Wrong hit test", "Phase errors"],
+    "when_useful": "Input not working, wrong view receiving touches",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_responder",
+    "module": "touchHLE::frameworks::uikit::ui_responder",
+    "category": "UIKit",
+    "what_it_logs": "Responder chain traversal, event forwarding, first responder changes",
+    "detectable_issues": ["Event not forwarded", "Wrong responder", "Chain broken"],
+    "when_useful": "Input handling bugs, responder chain issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_control",
+    "module": "touchHLE::frameworks::uikit::ui_control",
+    "category": "UIKit",
+    "what_it_logs": "Control state changes, target-action invocations, touch tracking",
+    "detectable_issues": ["Action not sent", "Wrong target", "State not updating"],
+    "when_useful": "Button not responding, control state bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_graphics",
+    "module": "touchHLE::frameworks::uikit::ui_graphics",
+    "category": "UIKit",
+    "what_it_logs": "Graphics context push/pop, image context creation, current context",
+    "detectable_issues": ["Context stack corruption", "Wrong context", "Missing context"],
+    "when_useful": "Drawing bugs, image rendering issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "mem_allocator",
+    "module": "touchHLE::mem",
+    "category": "Memory",
+    "what_it_logs": "Guest memory allocations and deallocations with addresses and sizes",
+    "detectable_issues": ["Memory exhaustion", "Double-free", "Allocation failures", "Memory leaks"],
+    "when_useful": "Crashes, memory corruption, out of memory",
+    "log_volume": "very_high"
+  },
+  {
+    "id": "mmap",
+    "module": "touchHLE::libc::mmap",
+    "category": "Memory",
+    "what_it_logs": "Memory mapping operations, mmap/munmap calls, protection flags",
+    "detectable_issues": ["Map failures", "Wrong permissions", "Address conflicts"],
+    "when_useful": "Memory mapping issues, protection faults",
+    "log_volume": "low"
+  },
+  {
+    "id": "dyld",
+    "module": "touchHLE::dyld",
+    "category": "Linking",
+    "what_it_logs": "Symbol resolution, library loading, lazy binding, export lookups",
+    "detectable_issues": ["Symbol not found", "Wrong function linked", "Library load failure"],
+    "when_useful": "Missing functions, linking errors, wrong behavior",
+    "log_volume": "medium"
+  },
+  {
+    "id": "abi",
+    "module": "touchHLE::abi",
+    "category": "Execution",
+    "what_it_logs": "Guest-to-host function calls, arguments, return values",
+    "detectable_issues": ["Wrong arguments", "Return value errors", "Struct return (stret) issues"],
+    "when_useful": "Function call bugs, parameter passing errors",
+    "log_volume": "very_high"
+  },
+  {
+    "id": "environment",
+    "module": "touchHLE::environment",
+    "category": "Threading",
+    "what_it_logs": "Thread creation, scheduling, blocking states, context switches",
+    "detectable_issues": ["Deadlocks", "Thread not scheduled", "Wrong thread context"],
+    "when_useful": "Threading bugs, deadlocks, scheduling issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "env_mutex",
+    "module": "touchHLE::environment::mutex",
+    "category": "Threading",
+    "what_it_logs": "Mutex lock/unlock operations, contention, recursive locking",
+    "detectable_issues": ["Deadlocks", "Lock ordering violations", "Recursive lock errors"],
+    "when_useful": "Deadlocks, mutex bugs",
+    "log_volume": "high"
+  },
+  {
+    "id": "pthread_thread",
+    "module": "touchHLE::libc::pthread::thread",
+    "category": "Threading",
+    "what_it_logs": "pthread_create, pthread_join, thread attributes, exit values",
+    "detectable_issues": ["Thread creation failure", "Join deadlock", "Detach issues"],
+    "when_useful": "Thread management bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "pthread_mutex",
+    "module": "touchHLE::libc::pthread::mutex",
+    "category": "Threading",
+    "what_it_logs": "pthread_mutex operations, lock types, error returns",
+    "detectable_issues": ["Mutex errors", "Type mismatches", "Error handling"],
+    "when_useful": "POSIX mutex bugs",
+    "log_volume": "high"
+  },
+  {
+    "id": "pthread_cond",
+    "module": "touchHLE::libc::pthread::cond",
+    "category": "Threading",
+    "what_it_logs": "Condition variable wait/signal/broadcast operations",
+    "detectable_issues": ["Spurious wakeup handling", "Signal lost", "Wait errors"],
+    "when_useful": "Condition variable bugs, synchronization issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "semaphore",
+    "module": "touchHLE::libc::semaphore",
+    "category": "Threading",
+    "what_it_logs": "Semaphore wait/post operations, values",
+    "detectable_issues": ["Semaphore underflow", "Wait timeout", "Post errors"],
+    "when_useful": "Semaphore synchronization bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "posix_io",
+    "module": "touchHLE::libc::posix_io",
+    "category": "File I/O",
+    "what_it_logs": "open/close/read/write/lseek operations, file descriptors, results",
+    "detectable_issues": ["File not found", "Read/write errors", "Seek failures", "FD leaks"],
+    "when_useful": "File access bugs, I/O errors",
+    "log_volume": "high"
+  },
+  {
+    "id": "stdio",
+    "module": "touchHLE::libc::stdio",
+    "category": "File I/O",
+    "what_it_logs": "fopen/fclose/fread/fwrite/fprintf operations, FILE* handling",
+    "detectable_issues": ["File open failures", "Read/write errors", "Format string bugs"],
+    "when_useful": "stdio bugs, file handling issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "stdio_printf",
+    "module": "touchHLE::libc::stdio::printf",
+    "category": "File I/O",
+    "what_it_logs": "printf/sprintf format string parsing, argument consumption",
+    "detectable_issues": ["Format string mismatch", "Wrong argument types", "Buffer overflow"],
+    "when_useful": "printf bugs, output corruption",
+    "log_volume": "high"
+  },
+  {
+    "id": "fs",
+    "module": "touchHLE::fs",
+    "category": "File System",
+    "what_it_logs": "Virtual filesystem operations, path resolution, file lookups",
+    "detectable_issues": ["Path not found", "Wrong file returned", "Permission issues"],
+    "when_useful": "Resource loading bugs, file not found errors",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_bundle",
+    "module": "touchHLE::frameworks::foundation::ns_bundle",
+    "category": "Resources",
+    "what_it_logs": "Bundle resource lookups, pathForResource calls, Info.plist access",
+    "detectable_issues": ["Resource not found", "Wrong bundle", "Localization issues"],
+    "when_useful": "Missing resources, bundle loading bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_data",
+    "module": "touchHLE::frameworks::foundation::ns_data",
+    "category": "Data",
+    "what_it_logs": "NSData creation, file loading, byte access",
+    "detectable_issues": ["Data not loaded", "Length mismatch", "Nil data"],
+    "when_useful": "Data loading bugs, file reading issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_string",
+    "module": "touchHLE::frameworks::foundation::ns_string",
+    "category": "Data",
+    "what_it_logs": "String creation, encoding, path operations, comparisons",
+    "detectable_issues": ["Encoding errors", "Path manipulation bugs", "Nil strings"],
+    "when_useful": "String handling bugs, path issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "ns_dictionary",
+    "module": "touchHLE::frameworks::foundation::ns_dictionary",
+    "category": "Data",
+    "what_it_logs": "Dictionary creation, key lookups, value access",
+    "detectable_issues": ["Key not found", "Wrong type returned", "Nil values"],
+    "when_useful": "Dictionary bugs, plist parsing issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_array",
+    "module": "touchHLE::frameworks::foundation::ns_array",
+    "category": "Data",
+    "what_it_logs": "Array creation, element access, enumeration",
+    "detectable_issues": ["Index out of bounds", "Wrong element", "Empty array"],
+    "when_useful": "Array bugs, collection issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_keyed_unarchiver",
+    "module": "touchHLE::frameworks::foundation::ns_keyed_unarchiver",
+    "category": "Serialization",
+    "what_it_logs": "Keyed archive decoding, class lookups, object instantiation",
+    "detectable_issues": ["Class not found", "Key missing", "Decode failure"],
+    "when_useful": "NIB loading bugs, archive corruption",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_keyed_archiver",
+    "module": "touchHLE::frameworks::foundation::ns_keyed_archiver",
+    "category": "Serialization",
+    "what_it_logs": "Keyed archive encoding, object serialization",
+    "detectable_issues": ["Encode failure", "Missing encoder", "Format errors"],
+    "when_useful": "Serialization bugs, save state issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_nib",
+    "module": "touchHLE::frameworks::uikit::ui_nib",
+    "category": "UIKit",
+    "what_it_logs": "NIB/XIB loading, object instantiation, outlet connections",
+    "detectable_issues": ["NIB not found", "Object not created", "Outlet not connected"],
+    "when_useful": "Interface Builder loading bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_run_loop",
+    "module": "touchHLE::frameworks::foundation::ns_run_loop",
+    "category": "Run Loop",
+    "what_it_logs": "Run loop execution, mode changes, source processing",
+    "detectable_issues": ["Run loop not running", "Wrong mode", "Source not processed"],
+    "when_useful": "Event processing bugs, timer issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "cf_run_loop",
+    "module": "touchHLE::frameworks::core_foundation::cf_run_loop",
+    "category": "Run Loop",
+    "what_it_logs": "CFRunLoop execution, sources, observers, timers",
+    "detectable_issues": ["Source not added", "Observer not called", "Timer not firing"],
+    "when_useful": "Core Foundation run loop bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_timer",
+    "module": "touchHLE::frameworks::foundation::ns_timer",
+    "category": "Run Loop",
+    "what_it_logs": "Timer creation, scheduling, firing, invalidation",
+    "detectable_issues": ["Timer not scheduled", "Wrong fire date", "Timer invalidated"],
+    "when_useful": "Timer bugs, delayed execution issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_notification",
+    "module": "touchHLE::frameworks::foundation::ns_notification_center",
+    "category": "Events",
+    "what_it_logs": "Notification posting, observer registration, delivery",
+    "detectable_issues": ["Observer not registered", "Notification not delivered", "Wrong object"],
+    "when_useful": "Notification bugs, event handling issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "audio_queue",
+    "module": "touchHLE::frameworks::audio_toolbox::audio_queue",
+    "category": "Audio",
+    "what_it_logs": "Audio queue creation, buffer enqueueing, callbacks, start/stop",
+    "detectable_issues": ["Queue not started", "Buffer underrun", "Callback not invoked"],
+    "when_useful": "Audio playback bugs, no sound",
+    "log_volume": "medium"
+  },
+  {
+    "id": "audio_file",
+    "module": "touchHLE::frameworks::audio_toolbox::audio_file",
+    "category": "Audio",
+    "what_it_logs": "Audio file opening, format detection, packet reading",
+    "detectable_issues": ["File not found", "Format not supported", "Read errors"],
+    "when_useful": "Audio loading bugs, format issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "audio_session",
+    "module": "touchHLE::frameworks::audio_toolbox::audio_session",
+    "category": "Audio",
+    "what_it_logs": "Audio session initialization, category setting, activation",
+    "detectable_issues": ["Session not initialized", "Wrong category", "Activation failure"],
+    "when_useful": "Audio setup bugs, session configuration",
+    "log_volume": "low"
+  },
+  {
+    "id": "audio_unit",
+    "module": "touchHLE::frameworks::audio_toolbox::audio_unit",
+    "category": "Audio",
+    "what_it_logs": "Audio unit creation, property setting, render callbacks",
+    "detectable_issues": ["Unit not created", "Property error", "Render failure"],
+    "when_useful": "Audio processing bugs, unit configuration",
+    "log_volume": "medium"
+  },
+  {
+    "id": "openal",
+    "module": "touchHLE::frameworks::openal",
+    "category": "Audio",
+    "what_it_logs": "OpenAL context, sources, buffers, listener, state changes",
+    "detectable_issues": ["Context not current", "Source not playing", "Buffer not filled"],
+    "when_useful": "3D audio bugs, OpenAL issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "objc_messages",
+    "module": "touchHLE::objc::messages",
+    "category": "Runtime",
+    "what_it_logs": "objc_msgSend calls, message dispatch, autorelease, retain/release",
+    "detectable_issues": ["Message to nil", "Selector not found", "Retain/release imbalance"],
+    "when_useful": "Objective-C runtime bugs, message dispatch issues",
+    "log_volume": "very_high"
+  },
+  {
+    "id": "objc_classes",
+    "module": "touchHLE::objc::classes",
+    "category": "Runtime",
+    "what_it_logs": "Class registration, metaclass creation, class lookups",
+    "detectable_issues": ["Class not found", "Duplicate class", "Metaclass errors"],
+    "when_useful": "Class registration bugs, inheritance issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "cg_context",
+    "module": "touchHLE::frameworks::core_graphics::cg_context",
+    "category": "Graphics",
+    "what_it_logs": "Graphics context operations, state changes, drawing commands",
+    "detectable_issues": ["No context", "State not restored", "Draw errors"],
+    "when_useful": "2D drawing bugs, context issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "cg_image",
+    "module": "touchHLE::frameworks::core_graphics::cg_image",
+    "category": "Graphics",
+    "what_it_logs": "Image creation, data provider access, pixel format",
+    "detectable_issues": ["Image not created", "Wrong format", "Data error"],
+    "when_useful": "Image loading bugs, format issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_image",
+    "module": "touchHLE::frameworks::uikit::ui_image",
+    "category": "UIKit",
+    "what_it_logs": "UIImage loading, scale factor, orientation handling",
+    "detectable_issues": ["Image not loaded", "Wrong scale", "Orientation bug"],
+    "when_useful": "Image display bugs, loading failures",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_file_manager",
+    "module": "touchHLE::frameworks::foundation::ns_file_manager",
+    "category": "File System",
+    "what_it_logs": "File existence checks, directory contents, file attributes",
+    "detectable_issues": ["Wrong path", "File not found", "Permission denied"],
+    "when_useful": "File management bugs, path issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_url",
+    "module": "touchHLE::frameworks::foundation::ns_url",
+    "category": "Networking",
+    "what_it_logs": "URL creation, path extraction, scheme handling",
+    "detectable_issues": ["Invalid URL", "Wrong path", "Scheme error"],
+    "when_useful": "URL handling bugs, file URL issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_url_connection",
+    "module": "touchHLE::frameworks::foundation::ns_url_connection",
+    "category": "Networking",
+    "what_it_logs": "Network request sending, response handling, delegate callbacks",
+    "detectable_issues": ["Request failed", "No response", "Delegate not called"],
+    "when_useful": "Network bugs, connection failures",
+    "log_volume": "medium"
+  },
+  {
+    "id": "netdb",
+    "module": "touchHLE::libc::netdb",
+    "category": "Networking",
+    "what_it_logs": "DNS resolution, getaddrinfo, hostname lookups",
+    "detectable_issues": ["Resolution failure", "Wrong address", "Timeout"],
+    "when_useful": "DNS bugs, hostname issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "socket",
+    "module": "touchHLE::libc::sys::socket",
+    "category": "Networking",
+    "what_it_logs": "Socket creation, connect, send, recv operations",
+    "detectable_issues": ["Socket error", "Connection refused", "Send/recv failure"],
+    "when_useful": "Socket bugs, connection issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "gdb",
+    "module": "touchHLE::gdb",
+    "category": "Debugging",
+    "what_it_logs": "GDB protocol messages, breakpoints, register access",
+    "detectable_issues": ["Protocol errors", "Breakpoint failures", "Register mismatch"],
+    "when_useful": "GDB debugging issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "window",
+    "module": "touchHLE::window",
+    "category": "Window",
+    "what_it_logs": "SDL window events, GL context operations, input events",
+    "detectable_issues": ["Window not created", "GL context error", "Input not received"],
+    "when_useful": "Window management bugs, display issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "mach_o",
+    "module": "touchHLE::mach_o",
+    "category": "Loading",
+    "what_it_logs": "Mach-O parsing, segment loading, symbol extraction",
+    "detectable_issues": ["Parse error", "Missing segment", "Symbol not found"],
+    "when_useful": "Binary loading bugs, format issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "time",
+    "module": "touchHLE::libc::time",
+    "category": "System",
+    "what_it_logs": "Time functions, gettimeofday, clock operations",
+    "detectable_issues": ["Wrong time", "Clock drift", "Timezone errors"],
+    "when_useful": "Timing bugs, clock issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "dispatch",
+    "module": "touchHLE::libc::dispatch",
+    "category": "Threading",
+    "what_it_logs": "GCD dispatch operations, queue execution, async/sync calls",
+    "detectable_issues": ["Block not executed", "Queue deadlock", "Wrong queue"],
+    "when_useful": "GCD bugs, dispatch issues",
+    "log_volume": "medium"
+  }
+]

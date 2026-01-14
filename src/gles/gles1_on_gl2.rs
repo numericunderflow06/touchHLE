@@ -1474,6 +1474,10 @@ impl GLES for GLES1OnGL2 {
                 || type_ == gl21::UNSIGNED_SHORT_4_4_4_4
                 || type_ == gl21::UNSIGNED_SHORT_5_5_5_1
         );
+        // [DIAG-E2] Log texture uploads to GPU
+        log!("[DIAG-E2] TexImage2D: {}x{}, format={:#x}, type={:#x}, pixels_null={}",
+             width, height, format, type_, pixels.is_null());
+
         gl21::TexImage2D(
             target,
             level,
@@ -1484,7 +1488,13 @@ impl GLES for GLES1OnGL2 {
             format,
             type_,
             pixels,
-        )
+        );
+
+        // [DIAG-E2] Check for GL errors after texture upload
+        let err = gl21::GetError();
+        if err != gl21::NO_ERROR {
+            log!("[DIAG-E2] GL ERROR after TexImage2D: {:#x}", err);
+        }
     }
     unsafe fn TexSubImage2D(
         &mut self,

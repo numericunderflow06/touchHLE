@@ -1,0 +1,345 @@
+[
+  {
+    "id": "eagl_context",
+    "name": "EAGL Context Management",
+    "file_path": "src/frameworks/opengles/eagl.rs",
+    "description": "Manages EAGLContext for OpenGL ES rendering, handles drawable properties, presentation, and context switching between threads",
+    "bug_hypothesis": "Context not properly configured for drawable backing, presentation not flushing to correct buffer, or context not current when rendering"
+  },
+  {
+    "id": "ca_composition",
+    "name": "Core Animation Layer Composition",
+    "file_path": "src/frameworks/core_animation/composition.rs",
+    "description": "Composes CALayers into final frame, manages layer hierarchy, transforms, and renders layer tree to screen",
+    "bug_hypothesis": "Layer bounds incorrectly calculated, layer not in hierarchy, or composition not including all visible layers"
+  },
+  {
+    "id": "ca_eagl_layer",
+    "name": "CAEAGLLayer Implementation",
+    "file_path": "src/frameworks/core_animation/ca_eagl_layer.rs",
+    "description": "OpenGL ES rendering layer that backs UIView for GL content, manages drawable storage",
+    "bug_hypothesis": "Drawable properties not set correctly, layer size mismatch with view bounds, or backing store not allocated"
+  },
+  {
+    "id": "gles_viewport",
+    "name": "OpenGL ES Viewport/Scissor",
+    "file_path": "src/gles/gles1_on_gl2.rs",
+    "description": "Implements glViewport and glScissor for ES 1.1 emulation on desktop GL 2.1",
+    "bug_hypothesis": "Viewport or scissor rect not covering full drawable area, Y-coordinate inversion issues, or state not applied correctly"
+  },
+  {
+    "id": "gles_framebuffer",
+    "name": "OpenGL ES Framebuffer Management",
+    "file_path": "src/gles/gles1_on_gl2.rs",
+    "description": "Manages framebuffer objects, renderbuffer attachments, and framebuffer completeness checks",
+    "bug_hypothesis": "Renderbuffer not attached, framebuffer incomplete, or rendering to wrong attachment"
+  },
+  {
+    "id": "gles_guest",
+    "name": "OpenGL ES Guest Interface",
+    "file_path": "src/frameworks/opengles/gles_guest.rs",
+    "description": "Exposes OpenGL ES functions to guest code, translates guest GL calls to host implementations",
+    "bug_hypothesis": "Function not implemented, wrong parameter conversion, or missing GL function export"
+  },
+  {
+    "id": "gles_textures",
+    "name": "OpenGL ES Texture Handling",
+    "file_path": "src/gles/gles1_on_gl2.rs",
+    "description": "Manages texture creation, binding, parameter setting, and image data upload",
+    "bug_hypothesis": "Texture format conversion error, PVRTC decompression failure, or texture not bound when rendering"
+  },
+  {
+    "id": "gles_matrix",
+    "name": "OpenGL ES Matrix Operations",
+    "file_path": "src/gles/gles1_on_gl2.rs",
+    "description": "Implements glFrustum, glOrtho, glLoadMatrix, glMultMatrix, and matrix stack operations",
+    "bug_hypothesis": "Projection matrix incorrectly calculated, matrix stack overflow/underflow, or wrong matrix mode"
+  },
+  {
+    "id": "ui_view",
+    "name": "UIView Core Implementation",
+    "file_path": "src/frameworks/uikit/ui_view.rs",
+    "description": "Base view class with frame/bounds management, view hierarchy, transforms, and layer backing",
+    "bug_hypothesis": "Frame/bounds mismatch, view not added to window, or transform not applied to sublayers"
+  },
+  {
+    "id": "ui_window",
+    "name": "UIWindow Implementation",
+    "file_path": "src/frameworks/uikit/ui_window.rs",
+    "description": "Main application window, root of view hierarchy, manages key window status and screen association",
+    "bug_hypothesis": "Window not made key, root view controller's view not added, or window frame wrong"
+  },
+  {
+    "id": "ui_screen",
+    "name": "UIScreen Implementation",
+    "file_path": "src/frameworks/uikit/ui_screen.rs",
+    "description": "Represents the device display, provides screen bounds and scale factor",
+    "bug_hypothesis": "Screen bounds returning wrong dimensions, scale factor incorrect for resolution"
+  },
+  {
+    "id": "ui_application",
+    "name": "UIApplication Lifecycle",
+    "file_path": "src/frameworks/uikit/ui_application.rs",
+    "description": "Application singleton, manages app lifecycle, delegate callbacks, and main run loop",
+    "bug_hypothesis": "Delegate methods not called, applicationDidFinishLaunching not completing, or run loop not processing"
+  },
+  {
+    "id": "ui_view_controller",
+    "name": "UIViewController Implementation",
+    "file_path": "src/frameworks/uikit/ui_view_controller.rs",
+    "description": "Manages view lifecycle, view loading, and appearance callbacks",
+    "bug_hypothesis": "viewDidLoad not called, view not loaded from NIB correctly, or viewWillAppear timing wrong"
+  },
+  {
+    "id": "ui_graphics",
+    "name": "UIGraphics Context Functions",
+    "file_path": "src/frameworks/uikit/ui_graphics.rs",
+    "description": "UIGraphicsBeginImageContext, UIGraphicsGetCurrentContext, and image context management",
+    "bug_hypothesis": "Graphics context stack corrupted, wrong context current, or context not created with correct size"
+  },
+  {
+    "id": "cg_context",
+    "name": "Core Graphics Context",
+    "file_path": "src/frameworks/core_graphics/cg_context.rs",
+    "description": "2D drawing context for paths, fills, strokes, and image drawing",
+    "bug_hypothesis": "Context state not saved/restored correctly, clipping rect wrong, or blend mode incorrect"
+  },
+  {
+    "id": "cg_bitmap_context",
+    "name": "CGBitmapContext Implementation",
+    "file_path": "src/frameworks/core_graphics/cg_bitmap_context.rs",
+    "description": "Bitmap-backed graphics context for offscreen rendering",
+    "bug_hypothesis": "Bitmap format incompatible, bytes per row incorrect, or alpha info wrong"
+  },
+  {
+    "id": "cg_image",
+    "name": "CGImage Implementation",
+    "file_path": "src/frameworks/core_graphics/cg_image.rs",
+    "description": "Immutable image representation, image data provider, and pixel format handling",
+    "bug_hypothesis": "Image data not read correctly, color space mismatch, or premultiplied alpha handling wrong"
+  },
+  {
+    "id": "cg_affine_transform",
+    "name": "CGAffineTransform Implementation",
+    "file_path": "src/frameworks/core_graphics/cg_affine_transform.rs",
+    "description": "2D affine transformations for scaling, rotation, translation",
+    "bug_hypothesis": "Transform concatenation order wrong, identity not returned correctly, or inversion failing"
+  },
+  {
+    "id": "ca_layer",
+    "name": "CALayer Core Implementation",
+    "file_path": "src/frameworks/core_animation/ca_layer.rs",
+    "description": "Base layer class with bounds, position, anchorPoint, transform, and sublayer management",
+    "bug_hypothesis": "Bounds/position mismatch, anchorPoint affecting position incorrectly, or sublayers not rendered"
+  },
+  {
+    "id": "ca_transaction",
+    "name": "CATransaction Implementation",
+    "file_path": "src/frameworks/core_animation/ca_transaction.rs",
+    "description": "Animation transaction management, implicit animations, and commit timing",
+    "bug_hypothesis": "Transaction not committed, animations blocking rendering, or flush not called"
+  },
+  {
+    "id": "ns_run_loop",
+    "name": "NSRunLoop Implementation",
+    "file_path": "src/frameworks/foundation/ns_run_loop.rs",
+    "description": "Event loop management, timer scheduling, and run loop modes",
+    "bug_hypothesis": "Run loop not processing events, wrong mode active, or timers not firing"
+  },
+  {
+    "id": "dyld_linking",
+    "name": "Dynamic Linker (dyld)",
+    "file_path": "src/dyld.rs",
+    "description": "Resolves symbols from guest code to host implementations, handles lazy binding",
+    "bug_hypothesis": "Symbol not found, wrong function linked, or lazy pointer not resolved"
+  },
+  {
+    "id": "mach_o_parser",
+    "name": "Mach-O Binary Parser",
+    "file_path": "src/mach_o.rs",
+    "description": "Parses iPhone OS executable format, extracts segments, sections, and symbol tables",
+    "bug_hypothesis": "Section type misidentified, symbols not extracted, or Thumb bit handling wrong"
+  },
+  {
+    "id": "objc_runtime",
+    "name": "Objective-C Runtime",
+    "file_path": "src/objc/mod.rs",
+    "description": "Message dispatch, class registration, method lookup, and selector management",
+    "bug_hypothesis": "Message not dispatched to correct implementation, class not registered, or method not found"
+  },
+  {
+    "id": "objc_messages",
+    "name": "Objective-C Message Sending",
+    "file_path": "src/objc/messages.rs",
+    "description": "objc_msgSend implementation, autorelease pool management, retain/release",
+    "bug_hypothesis": "Wrong IMP called, super dispatch failing, or object released prematurely"
+  },
+  {
+    "id": "mem_allocator",
+    "name": "Memory Allocator",
+    "file_path": "src/mem.rs",
+    "description": "Guest virtual memory management, allocation, deallocation, and memory mapping",
+    "bug_hypothesis": "Memory exhaustion, allocation returning invalid address, or memory corruption"
+  },
+  {
+    "id": "cpu_dynarmic",
+    "name": "CPU Emulation (dynarmic)",
+    "file_path": "src/cpu.rs",
+    "description": "ARM instruction execution via dynarmic JIT, register state, and memory access",
+    "bug_hypothesis": "Instruction emulation bug, wrong register value, or memory access fault"
+  },
+  {
+    "id": "environment",
+    "name": "Environment/Thread Management",
+    "file_path": "src/environment.rs",
+    "description": "Thread creation, scheduling, blocking states, and main run loop",
+    "bug_hypothesis": "Thread deadlock, wrong thread executing GL code, or thread not scheduled"
+  },
+  {
+    "id": "abi_calls",
+    "name": "ABI/Calling Convention",
+    "file_path": "src/abi.rs",
+    "description": "Guest-to-host and host-to-guest function call marshaling, return value handling",
+    "bug_hypothesis": "Arguments passed incorrectly, return value truncated, or struct return (stret) wrong"
+  },
+  {
+    "id": "window_sdl",
+    "name": "SDL Window Management",
+    "file_path": "src/window.rs",
+    "description": "SDL2-based window creation, event handling, and GL context presentation",
+    "bug_hypothesis": "Window not created at correct size, swap buffers not called, or GL context not current"
+  },
+  {
+    "id": "image_loading",
+    "name": "Image Loading/Decoding",
+    "file_path": "src/image.rs",
+    "description": "Image format detection, PNG/JPEG decoding, PVRTC decompression",
+    "bug_hypothesis": "Image format not recognized, decompression failing, or color format wrong"
+  },
+  {
+    "id": "fs_bundle",
+    "name": "Bundle Filesystem",
+    "file_path": "src/fs/bundle.rs",
+    "description": "App bundle resource access, IPA file extraction, and resource path resolution",
+    "bug_hypothesis": "Resource not found, wrong path returned, or IPA extraction failing"
+  },
+  {
+    "id": "ns_bundle",
+    "name": "NSBundle Implementation",
+    "file_path": "src/frameworks/foundation/ns_bundle.rs",
+    "description": "Bundle resource loading, localized string lookup, and Info.plist access",
+    "bug_hypothesis": "pathForResource returning nil, bundle not loaded, or localization wrong"
+  },
+  {
+    "id": "ui_image",
+    "name": "UIImage Implementation",
+    "file_path": "src/frameworks/uikit/ui_image.rs",
+    "description": "Image loading from files and data, image orientation, and scale handling",
+    "bug_hypothesis": "Image not loaded, scale factor wrong, or orientation not applied"
+  },
+  {
+    "id": "ui_image_view",
+    "name": "UIImageView Implementation",
+    "file_path": "src/frameworks/uikit/ui_image_view.rs",
+    "description": "Displays UIImage in view hierarchy, handles content mode scaling",
+    "bug_hypothesis": "Image not displayed, content mode not applied, or view not added to hierarchy"
+  },
+  {
+    "id": "ns_data",
+    "name": "NSData Implementation",
+    "file_path": "src/frameworks/foundation/ns_data.rs",
+    "description": "Binary data container, file reading, and data manipulation",
+    "bug_hypothesis": "Data not read from file, length incorrect, or bytes pointer invalid"
+  },
+  {
+    "id": "cf_data",
+    "name": "CFData Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_data.rs",
+    "description": "Core Foundation binary data, toll-free bridged with NSData",
+    "bug_hypothesis": "CFDataGetBytePtr returning wrong address, length mismatch with NSData"
+  },
+  {
+    "id": "audio_queue",
+    "name": "Audio Queue Services",
+    "file_path": "src/frameworks/audio_toolbox/audio_queue.rs",
+    "description": "Audio playback and recording queues, buffer management",
+    "bug_hypothesis": "Audio callback not invoked, buffers not enqueued, or audio format wrong"
+  },
+  {
+    "id": "openal",
+    "name": "OpenAL Audio",
+    "file_path": "src/frameworks/openal.rs",
+    "description": "3D audio via OpenAL Soft, source/buffer management",
+    "bug_hypothesis": "Audio context not current, sources not playing, or listener position wrong"
+  },
+  {
+    "id": "pthread",
+    "name": "POSIX Threads",
+    "file_path": "src/libc/pthread/thread.rs",
+    "description": "Thread creation, joining, and thread-local storage",
+    "bug_hypothesis": "Thread not created, join deadlocking, or TLS key not working"
+  },
+  {
+    "id": "pthread_mutex",
+    "name": "POSIX Mutex",
+    "file_path": "src/libc/pthread/mutex.rs",
+    "description": "Mutex locking, unlocking, and recursive mutex support",
+    "bug_hypothesis": "Deadlock on mutex, recursive lock count wrong, or unlock without lock"
+  },
+  {
+    "id": "posix_io",
+    "name": "POSIX File I/O",
+    "file_path": "src/libc/posix_io.rs",
+    "description": "open, read, write, close, lseek file operations",
+    "bug_hypothesis": "File descriptor invalid, read returning wrong data, or seek position wrong"
+  },
+  {
+    "id": "stdio",
+    "name": "Standard I/O (stdio)",
+    "file_path": "src/libc/stdio.rs",
+    "description": "fopen, fread, fwrite, fprintf, printf implementation",
+    "bug_hypothesis": "FILE* invalid, printf format string wrong, or fread not returning data"
+  },
+  {
+    "id": "ui_nib",
+    "name": "NIB/XIB Loading",
+    "file_path": "src/frameworks/uikit/ui_nib.rs",
+    "description": "Interface Builder file loading, object instantiation, and outlet connections",
+    "bug_hypothesis": "NIB not found, objects not instantiated, or outlets not connected"
+  },
+  {
+    "id": "ns_keyed_unarchiver",
+    "name": "NSKeyedUnarchiver",
+    "file_path": "src/frameworks/foundation/ns_keyed_unarchiver.rs",
+    "description": "Deserializes objects from keyed archives (NIB files, saved state)",
+    "bug_hypothesis": "Class not found for unarchiving, key missing, or decode returning nil"
+  },
+  {
+    "id": "cf_run_loop",
+    "name": "CFRunLoop Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_run_loop.rs",
+    "description": "Core Foundation run loop, sources, observers, and timers",
+    "bug_hypothesis": "Sources not added, run loop not running, or timer not firing"
+  },
+  {
+    "id": "ns_timer",
+    "name": "NSTimer Implementation",
+    "file_path": "src/frameworks/foundation/ns_timer.rs",
+    "description": "Scheduled timers, repeating timers, and timer invalidation",
+    "bug_hypothesis": "Timer not scheduled on run loop, fire date wrong, or timer invalidated early"
+  },
+  {
+    "id": "ui_touch",
+    "name": "UITouch/UIEvent Handling",
+    "file_path": "src/frameworks/uikit/ui_touch.rs",
+    "description": "Touch event creation, hit testing, and event delivery",
+    "bug_hypothesis": "Touch not delivered to correct view, hit test returning wrong view, or event phase wrong"
+  },
+  {
+    "id": "ui_responder",
+    "name": "UIResponder Chain",
+    "file_path": "src/frameworks/uikit/ui_responder.rs",
+    "description": "Responder chain for event handling, first responder management",
+    "bug_hypothesis": "Event not propagated up chain, first responder not set, or responder not in chain"
+  }
+]

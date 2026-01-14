@@ -65,11 +65,18 @@ impl Image {
         };
         if pixels.is_null() {
             let reason = unsafe { CStr::from_ptr(stbi_failure_reason()) };
+            // [DIAG-C2] Log image decode failures with stbi reason
+            log!("[DIAG-C2] Image::from_bytes() FAILED: reason={:?}, input_size={} bytes",
+                 reason, bytes.len());
             return Err(reason.to_str().unwrap().to_string());
         }
 
         let width: u32 = x.try_into().unwrap();
         let height: u32 = y.try_into().unwrap();
+
+        // [DIAG-C2] Log successful image decode with dimensions
+        log!("[DIAG-C2] Image::from_bytes() OK: {}x{}, input_size={} bytes",
+             width, height, bytes.len());
 
         // (Un-un-)premultiply pixels to match iPhone OS's image loading.
         if bytes.starts_with(&PNG_MAGIC_NUMBER) {
