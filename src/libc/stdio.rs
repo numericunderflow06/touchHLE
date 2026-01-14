@@ -107,7 +107,8 @@ fn fopen(env: &mut Environment, filename: ConstPtr<u8>, mode: ConstPtr<u8>) -> M
     };
 
     // [DIAG-E1] Log ALL fopen calls (expanded from image-only logging per consensus)
-    let filename_str = env.mem.cstr_at_utf8(filename).unwrap_or("<invalid UTF-8>");
+    // Use owned String to avoid borrow conflicts with posix_io::open_direct()
+    let filename_str = env.mem.cstr_at_utf8(filename).unwrap_or("<invalid UTF-8>").to_string();
     let mode_str = String::from_utf8_lossy(mode);
     log!("[DIAG-E1] fopen({:?}, mode={:?})", filename_str, mode_str);
 
@@ -177,12 +178,28 @@ fn fread(
         0
     };
     let FILE { fd } = env.mem.read(file_ptr);
+    let total_requested = item_size.checked_mul(n_items).unwrap_or(0);
     match posix_io::read(env, fd, buffer, total_size) {
         // TODO: ferror() support.
-        -1 => already_read / item_size,
+        -1 => {
+            // [DIAG-FREAD] Log failed fread (Code-focused diagnostic H1)
+            if total_requested > 1024 {
+                log!("[DIAG-FREAD] fd={}, item_size={}, n_items={}, read=FAILED of {} bytes",
+                     fd, item_size, n_items, total_requested);
+            }
+            already_read / item_size
+        }
         bytes_read => {
             let bytes_read: GuestUSize = bytes_read.try_into().unwrap();
-            (bytes_read + already_read) / item_size
+            let total_read = bytes_read + already_read;
+            let return_value = total_read / item_size;
+            // [DIAG-FREAD] Log fread results for large reads or short reads (Code-focused diagnostic H1)
+            // [DIAG-C1] Also verify C99 compliance: return value should be elements, not bytes
+            if total_read < total_requested || total_requested > 1024 {
+                log!("[DIAG-FREAD] fd={}, item_size={}, n_items={}, read={} of {} bytes, returning={} elements",
+                     fd, item_size, n_items, total_read, total_requested, return_value);
+            }
+            return_value
         }
     }
 }

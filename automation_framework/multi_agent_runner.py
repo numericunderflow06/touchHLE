@@ -816,7 +816,7 @@ def run_build(event_logger: SessionEventLogger) -> Tuple[bool, str]:
             cwd=str(WORKING_DIR),
             capture_output=True,
             text=True,
-            timeout=600,
+            timeout=900,  # Increased from 600 to handle longer builds
             env=build_env
         )
 
@@ -1060,6 +1060,10 @@ def run_session(retry_num: int = 0, initial_black_pct: float = None) -> Tuple[bo
             event_logger.finalize("completed", "Initial test passed")
             return True, initial_black_pct
 
+    # Record initial black_pct in timeline (may have been passed from previous session)
+    if initial_black_pct is not None:
+        event_logger.timeline.initial_black_pct = initial_black_pct
+
     # =========================================================================
     # PHASE 1-6: PARALLEL PLANNING
     # =========================================================================
@@ -1126,7 +1130,9 @@ def run_session(retry_num: int = 0, initial_black_pct: float = None) -> Tuple[bo
     build_success, build_output = run_build(event_logger)
 
     if not build_success:
-        write_test_results(outputs_dir, -1, "Build failed", None, False, build_output)
+        write_test_results(outputs_dir, -1, "Build failed", initial_black_pct, False, build_output)
+        # Log test result with initial black_pct so timeline is updated
+        event_logger.log_test_result("testing", -1, initial_black_pct, "Build failed - no test run", 0.0)
         event_logger.log_phase_end("testing", success=False)
         black_pct = initial_black_pct
     else:

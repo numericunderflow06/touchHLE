@@ -763,12 +763,15 @@ fn glVertexPointer(
 
 // Drawing - with draw call counting and error checking
 static DRAW_CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+// [DIAG-E3] Frame counter for frame summary logging
+static FRAME_NUM: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
 fn glDrawArrays(env: &mut Environment, mode: GLenum, first: GLint, count: GLsizei) {
     let call_num = DRAW_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     // GL_POINTS=0x0000, GL_LINES=0x0001, GL_LINE_LOOP=0x0002, GL_LINE_STRIP=0x0003
     // GL_TRIANGLES=0x0004, GL_TRIANGLE_STRIP=0x0005, GL_TRIANGLE_FAN=0x0006
-    log_dbg!("glDrawArrays[{}](mode={:#x}, first={}, count={})", call_num, mode, first, count);
+    // [DIAG-E3] Error-focused diagnostic: log all draw calls for geometry analysis
+    log!("[DIAG-E3] DrawArrays[{}]: mode={:#x}, first={}, count={}", call_num, mode, first, count);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         let fog_state_backup = clamp_fog_state_values(gles);
         gles.DrawArrays(mode, first, count);
@@ -788,7 +791,8 @@ fn glDrawElements(
     indices: ConstVoidPtr,
 ) {
     let call_num = DRAW_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    log_dbg!("glDrawElements[{}](mode={:#x}, count={}, type={:#x})", call_num, mode, count, type_);
+    // [DIAG-E3] Error-focused diagnostic: log all draw calls for geometry analysis
+    log!("[DIAG-E3] DrawElements[{}]: mode={:#x}, count={}, type={:#x}", call_num, mode, count, type_);
     with_ctx_and_mem(env, |gles, mem| unsafe {
         let fog_state_backup = clamp_fog_state_values(gles);
         let indices = translate_pointer_or_offset_to_host(
@@ -809,6 +813,15 @@ fn glDrawElements(
 
 // Clearing
 fn glClear(env: &mut Environment, mask: GLbitfield) {
+    // [DIAG-E3] Frame summary: log draw call count from previous frame
+    // glClear with color buffer bit typically marks a new frame
+    if (mask & 0x4000) != 0 {
+        let frame = FRAME_NUM.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let total_draws = DRAW_CALL_COUNT.swap(0, std::sync::atomic::Ordering::Relaxed);
+        if frame > 0 {
+            log!("[DIAG-E3] Frame {} complete: {} draw calls total", frame - 1, total_draws);
+        }
+    }
     // GL_COLOR_BUFFER_BIT = 0x4000, GL_DEPTH_BUFFER_BIT = 0x100, GL_STENCIL_BUFFER_BIT = 0x400
     log_dbg!("glClear(mask={:#x}) color={} depth={} stencil={}",
         mask,

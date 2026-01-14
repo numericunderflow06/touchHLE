@@ -1,7 +1,14 @@
 {
   "description": "Tracks effectiveness of error-focused debugging strategies",
-  "last_updated": "2026-01-11T22:30:00",
+  "last_updated": "2026-01-14T13:30:00",
   "error_strategies_tried": [
+    {
+      "session": "multiagent_2026-01-14_12-32-51",
+      "approach": "Phased observation-first diagnostics: Phase 1 zero-change capture, Phase 2 conditional fread logging, Phase 3 conditional draw call logging",
+      "diagnostics_added": ["DIAG-E3", "DIAG-FREAD"],
+      "result": "not_executed",
+      "notes": "Build failure prevented test execution. Upgraded log_dbg! to log! for draw calls (DIAG-E3). Added fread logging as Phase 2 conditional. Observation-first principle accepted in debate consensus."
+    },
     {
       "session": "multiagent_2026-01-11_21-35-37",
       "approach": "Comprehensive texture pipeline tracing: fopen (E1), TexImage2D with glGetError (E2), with deferred fread (E3) and comprehensive GL checks (E4)",
@@ -15,10 +22,12 @@
     "DIAG-H2": "Track missing keys during NSCoder unarchiving",
     "DIAG-H3": "Track file loading via NSBundle/NSData",
     "DIAG-DEV": "Track UIDevice/UIScreen queries",
-    "DIAG-E1": "Track all fopen calls with success/failure (proposed)",
-    "DIAG-E2": "Track TexImage2D calls with dimensions, format, pixels_null, glGetError (proposed)",
-    "DIAG-C2": "Track Image::from_bytes() success/failure with stbi_failure_reason (proposed)",
-    "DIAG-C3": "Track UIImage initWithContentsOfFile success/failure (proposed)"
+    "DIAG-E1": "Track all fopen calls with success/failure (implemented)",
+    "DIAG-E2": "Track TexImage2D calls with dimensions, format, pixels_null, glGetError (implemented)",
+    "DIAG-E3": "Track draw calls (DrawArrays, DrawElements) and frame summary (upgraded from log_dbg!)",
+    "DIAG-C2": "Track Image::from_bytes() success/failure with stbi_failure_reason (implemented)",
+    "DIAG-C3": "Track UIImage initWithContentsOfFile success/failure (implemented)",
+    "DIAG-FREAD": "Track fread() calls for large reads and short reads (conditional Phase 2)"
   },
   "runtime_patterns_observed": [
     "decodeBytesForKey never called (0 times)",
@@ -31,18 +40,20 @@
   "successful_patterns": [
     "Using [DIAG-*] prefixes for easy log filtering",
     "Counting function calls to detect missing functionality",
-    "Proposing targeted diagnostics rather than comprehensive logging (E4 rejected, targeted glGetError accepted)",
-    "Focusing on unique contributions during debate (E2 was gap in code pipeline)"
+    "Proposing targeted diagnostics rather than comprehensive logging",
+    "Focusing on unique contributions during debate",
+    "Observation-first principle: run existing diagnostics before adding more",
+    "Conditional phasing: add diagnostics only when prior phase indicates need",
+    "Upgrading log_dbg! to log! for capture output visibility"
   ],
   "unsuccessful_patterns": [
-    "Comprehensive logging proposals rejected as too noisy (E3 fread, comprehensive E4)"
+    "Comprehensive logging proposals rejected as too noisy",
+    "Adding diagnostics when build is unstable (4 consecutive failures)"
   ],
   "recommendations": {
     "add_logging_to": [
-      "C stdlib fopen/fread for PNG file loading [DIAG-E1] - ready to implement",
-      "TexImage2D with GL error checking [DIAG-E2] - ready to implement",
-      "mmap() calls (alternative file loading mechanism)",
-      "CGImageRef creation (lower-level than UIImage)",
+      "CGImageRef creation (if E1/E2/E3 show normal behavior)",
+      "mmap() calls (if fopen shows no PNG access)",
       "Bundle path resolution functions"
     ],
     "error_patterns_to_check": [
@@ -50,17 +61,28 @@
       "Texture binding failures",
       "Missing asset loading",
       "fopen returning NULL for expected files",
-      "Partial texture uploads (width/height mismatch)"
+      "Short fread() results (fewer bytes than requested)"
     ],
     "avoid": [
-      "Comprehensive fread logging (generates too much output)",
-      "glGetError after every GL call (GL state already verified)"
+      "Adding more diagnostics before build is stable",
+      "Comprehensive GL state logging (already verified)",
+      "Threading investigation (pattern is stable, not intermittent)"
     ]
   },
   "pending_diagnostics": {
     "description": "Diagnostics implemented but not yet tested due to build failure",
-    "session": "multiagent_2026-01-11_21-35-37",
-    "ready_to_test": ["DIAG-E1", "DIAG-E2", "DIAG-C2", "DIAG-C3"],
-    "recommendation": "Fix build failure and re-run capture test"
+    "session": "multiagent_2026-01-14_12-32-51",
+    "ready_to_test": ["DIAG-E1", "DIAG-E2", "DIAG-E3", "DIAG-C2", "DIAG-C3", "DIAG-FREAD"],
+    "recommendation": "Fix build failure and re-run capture test with zero changes"
+  },
+  "build_failure_streak": {
+    "count": 4,
+    "sessions": [
+      "research_2026-01-10_12-35-40",
+      "research_2026-01-10_13-43-50",
+      "multiagent_2026-01-11_21-35-37",
+      "multiagent_2026-01-14_12-32-51"
+    ],
+    "recommendation": "Prioritize build stability over adding more diagnostics"
   }
 }

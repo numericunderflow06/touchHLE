@@ -51,7 +51,8 @@ case "$1" in
             exit 0
         fi
 
-        STATUS=$(cat "$BUILD_STATUS_FILE")
+        # Strip CR/LF for reliable comparison on Windows
+        STATUS=$(cat "$BUILD_STATUS_FILE" | tr -d '\r\n ')
 
         if [ "$STATUS" = "RUNNING" ]; then
             # Check if process is still running
@@ -91,7 +92,8 @@ case "$1" in
         echo "Waiting for build to complete..."
         while true; do
             if [ -f "$BUILD_STATUS_FILE" ]; then
-                STATUS=$(cat "$BUILD_STATUS_FILE")
+                # Use tr to strip CR/LF and whitespace for reliable comparison
+                STATUS=$(cat "$BUILD_STATUS_FILE" | tr -d '\r\n ' )
                 if [ "$STATUS" != "RUNNING" ]; then
                     echo "Build finished: $STATUS"
                     break

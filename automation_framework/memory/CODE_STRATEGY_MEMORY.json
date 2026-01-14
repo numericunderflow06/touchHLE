@@ -1,7 +1,48 @@
 {
   "description": "Tracks effectiveness of code-focused debugging strategies",
-  "last_updated": "2026-01-11T21:35:37",
+  "last_updated": "2026-01-14T13:06:00",
   "code_strategies_tried": [
+    {
+      "session": "multiagent_2026-01-14_12-32-51",
+      "approach": "Three-hypothesis diagnostic plan: H1 (fread C99 compliance), H2 (path resolution), H3 (CgBI PNG handling). Added [DIAG-FREAD] logging and [DIAG-E3] draw call tracking.",
+      "documentation_used": [
+        "C99 Standard 7.21.8.1 (fread return value semantics)",
+        "Apple Technical Note TN2313 (CgBI PNG format)",
+        "iOS App Bundle Structure documentation"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "fread return value",
+          "question": "Does fread return elements or bytes?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        },
+        {
+          "id": "H2",
+          "name": "Path resolution",
+          "question": "Are PNG paths from .def manifests resolving correctly?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        },
+        {
+          "id": "H3",
+          "name": "CgBI PNG handling",
+          "question": "Does stb_image handle all CgBI variants?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": ["fread logging [DIAG-FREAD]", "C99 compliance check [DIAG-C1]"],
+        "contributions_deferred": ["path resolution verification"],
+        "contributions_rejected": ["CGImage logging"],
+        "contributions_from_error_pipeline": ["draw call logging [DIAG-E3]", "frame summary counter"]
+      },
+      "result": "failure",
+      "notes": "Build failed for third consecutive session. Diagnostic code was implemented but infrastructure blocked execution. Hybrid plan merged code + error approaches but couldn't be validated."
+    },
     {
       "session": "multiagent_2026-01-11_21-35-37",
       "approach": "Documentation-grounded diagnostic pipeline: expanded fopen logging, image decode tracking with stbi_failure_reason(), UIImage logging, .def file investigation",
@@ -46,30 +87,36 @@
   "documentation_consulted": {
     "ios_sdk": [
       "App bundle structure and resource organization",
-      "NSData file loading patterns"
+      "NSData file loading patterns",
+      "iOS path resolution for bundle resources"
     ],
     "opengl_es": [
       "glTexImage2D parameters and error codes",
-      "GL_INVALID_* error values"
+      "GL_INVALID_* error values",
+      "Draw call semantics (glDrawArrays, glDrawElements)"
     ],
     "apple_developer": [
-      "CgBI PNG format (Technical Note TN2313) - referenced but not fully reviewed"
+      "CgBI PNG format (Technical Note TN2313) - referenced but not fully reviewed",
+      "iOS 3.0 era asset conventions"
+    ],
+    "c_standards": [
+      "C99 Standard 7.21.8.1 - fread return value (elements not bytes)",
+      "POSIX fopen() - any path string accepted"
     ],
     "other": [
-      "POSIX fopen() - any path string accepted",
       "stb_image library - stbi_failure_reason() API",
-      "stb_image CgBI support configuration"
+      "stb_image CgBI support configuration (stbi_convert_iphone_png_to_rgb)"
     ]
   },
   "code_areas_investigated": {
     "gles": {
-      "files_checked": ["src/gles/gles1_on_gl2.rs"],
-      "functions_analyzed": ["TexImage2D"],
+      "files_checked": ["src/gles/gles1_on_gl2.rs", "src/frameworks/opengles/gles_guest.rs"],
+      "functions_analyzed": ["TexImage2D", "glDrawArrays", "glDrawElements", "glClear"],
       "discrepancies_found": []
     },
     "foundation": {
-      "files_checked": [],
-      "functions_analyzed": [],
+      "files_checked": ["src/frameworks/foundation/ns_keyed_unarchiver.rs", "src/frameworks/foundation/ns_data.rs"],
+      "functions_analyzed": ["decodeBytesForKey", "initWithContentsOfFile"],
       "discrepancies_found": []
     },
     "uikit": {
@@ -78,45 +125,71 @@
       "discrepancies_found": []
     },
     "libc": {
-      "files_checked": ["src/libc/stdio.rs"],
-      "functions_analyzed": ["fopen"],
-      "discrepancies_found": ["Previous logging filtered by extension, may miss custom formats"]
+      "files_checked": ["src/libc/stdio.rs", "src/libc/posix_io.rs"],
+      "functions_analyzed": ["fopen", "fread"],
+      "discrepancies_found": ["fread diagnostic never executed due to build failures"],
+      "planned_investigation": "C99 compliance verification for fread return value"
     },
     "image": {
       "files_checked": ["src/image.rs"],
       "functions_analyzed": ["Image::from_bytes"],
-      "discrepancies_found": ["No decode failure logging existed before this session"]
+      "discrepancies_found": ["stb_image CgBI mode enabled but edge cases unknown"]
+    },
+    "filesystem": {
+      "files_checked": [],
+      "functions_analyzed": [],
+      "discrepancies_found": [],
+      "planned_investigation": "Path resolution in src/fs/ - how touchHLE resolves bundle-relative paths"
     }
   },
   "successful_patterns": [
     "Opening debate with consensus proposal accelerates agreement",
     "Identifying unique contributions from each pipeline clarifies value",
-    "Citing specific documentation (e.g., stbi_failure_reason API) strengthens proposals"
+    "Citing specific documentation (e.g., C99 7.21.8.1) strengthens proposals",
+    "Proposing hybrid approaches (code + error) enables faster consensus",
+    "Filtering diagnostic logging (only large/short reads) reduces noise"
   ],
   "unsuccessful_patterns": [
     "Diagnostic changes caused build failure - need pre-build syntax check",
-    "Manual investigation (.def extraction) was planned but not executed"
+    "Manual investigation (.def extraction) was planned but not executed",
+    "Multiple changes in single session increases failure risk",
+    "Repeated hypotheses without resolution wastes effort across sessions"
   ],
   "recommendations": {
     "investigate_next": [
-      "Extract and analyze .def files from IPA (highest priority)",
-      "Verify stb_image CgBI configuration in image.rs lines 54-56",
-      "Search touchHLE GitHub issues for similar rendering problems",
-      "Check if game uses a known engine (Unity, Cocos2d) with .Image.def pattern"
+      "Extract and analyze .def files from IPA OFFLINE (don't wait for build)",
+      "Pre-validate all Rust changes with 'cargo check' before full build",
+      "Focus on fread() diagnostic - highest priority untested hypothesis",
+      "Investigate src/fs/ path resolution logic (case sensitivity, bundle paths)"
     ],
     "documentation_to_consult": [
-      "Apple Technical Note TN2313 (CgBI PNG specification)",
-      "stb_image.h header file comments",
-      "touchHLE upstream issues (rendering category)"
+      "Apple Technical Note TN2313 (CgBI PNG specification) - full review",
+      "C99 Standard sections 7.21.8.1-7.21.8.2 (fread/fwrite complete)",
+      "touchHLE upstream issues (search for rendering/texture problems)",
+      "iOS 3.0 SDK documentation for asset loading patterns"
     ],
     "avoid": [
-      "Adding diagnostic logging without pre-checking compilation",
-      "Skipping manual investigation of critical artifacts (.def files)"
+      "Adding multiple diagnostic changes in one session",
+      "Skipping pre-compilation check (cargo check)",
+      "Repeating same hypothesis without new approach",
+      "Waiting for builds to investigate .def files (do it offline)"
     ]
   },
   "key_insights": {
-    "primary_hypothesis": ".def files are manifests that reference .png textures, but the references aren't being followed",
-    "evidence": ".def files (150-260 bytes) load via NSData, but corresponding .png files (200KB+) do NOT load",
-    "correlation": "This matches the screen truncation pattern - top renders, bottom black = missing terrain textures"
+    "primary_hypothesis": "fread() may return incorrect value (bytes vs elements) causing .def manifest parsing to fail, preventing PNG file paths from being extracted correctly",
+    "supporting_evidence": [
+      ".def files (150-260 bytes) load via NSData successfully",
+      ".png files (200KB+) do NOT load via NSData",
+      "Game likely uses C stdlib (fopen/fread) for asset loading",
+      "Gap exists in diagnostic chain between fopen and image decode"
+    ],
+    "blocking_factor": "Infrastructure - three consecutive build failures have prevented any code vs. documentation comparison from executing",
+    "recommended_mitigation": "Pre-validate changes with cargo check; consider minimal single-change approach"
+  },
+  "session_count": {
+    "total": 2,
+    "successful": 0,
+    "failed_build": 2,
+    "inconclusive": 0
   }
 }

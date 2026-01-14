@@ -86,7 +86,7 @@
   {
     "id": "ui_window",
     "name": "UIWindow Implementation",
-    "file_path": "src/frameworks/uikit/ui_window.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_window.rs",
     "description": "Main application window, root of view hierarchy, manages key window status and screen association",
     "bug_hypothesis": "Window not made key, root view controller's view not added, or window frame wrong"
   },
@@ -121,49 +121,49 @@
   {
     "id": "ui_control",
     "name": "UIControl Base Class",
-    "file_path": "src/frameworks/uikit/ui_control.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control.rs",
     "description": "Base class for interactive controls (buttons, sliders, switches), handles target-action dispatch",
     "bug_hypothesis": "Action not dispatched, wrong target called, or control state not updated"
   },
   {
     "id": "ui_button",
     "name": "UIButton Implementation",
-    "file_path": "src/frameworks/uikit/ui_button.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control/ui_button.rs",
     "description": "Clickable button control with title, image, and state management",
     "bug_hypothesis": "Button not responding to touch, title/image not displayed, or state images wrong"
   },
   {
     "id": "ui_label",
     "name": "UILabel Implementation",
-    "file_path": "src/frameworks/uikit/ui_label.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_label.rs",
     "description": "Text display view with font, color, alignment, and line handling",
     "bug_hypothesis": "Text not rendered, font not loaded, or alignment/wrapping incorrect"
   },
   {
     "id": "ui_scroll_view",
     "name": "UIScrollView Implementation",
-    "file_path": "src/frameworks/uikit/ui_scroll_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_scroll_view.rs",
     "description": "Scrollable content container with content offset, bounds, and deceleration",
     "bug_hypothesis": "Scroll not working, content size wrong, or scroll indicators not visible"
   },
   {
     "id": "ui_text_field",
     "name": "UITextField Implementation",
-    "file_path": "src/frameworks/uikit/ui_text_field.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control/ui_text_field.rs",
     "description": "Text input field with keyboard handling and delegate callbacks",
     "bug_hypothesis": "Keyboard not appearing, text not entered, or delegate not called"
   },
   {
     "id": "ui_navigation_controller",
     "name": "UINavigationController Implementation",
-    "file_path": "src/frameworks/uikit/ui_navigation_controller.rs",
+    "file_path": "src/frameworks/uikit/ui_view_controller/ui_navigation_controller.rs",
     "description": "Navigation stack management, push/pop view controllers, navigation bar",
     "bug_hypothesis": "Push not working, navigation bar not visible, or back navigation broken"
   },
   {
     "id": "ui_alert_view",
     "name": "UIAlertView Implementation",
-    "file_path": "src/frameworks/uikit/ui_alert_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_alert_view.rs",
     "description": "Modal alert dialog with buttons and delegate callbacks",
     "bug_hypothesis": "Alert not shown, buttons not working, or delegate not called"
   },
@@ -359,7 +359,7 @@
   {
     "id": "objc_runtime",
     "name": "Objective-C Runtime",
-    "file_path": "src/objc/mod.rs",
+    "file_path": "src/objc.rs",
     "description": "Message dispatch, class registration, method lookup, and selector management",
     "bug_hypothesis": "Message not dispatched to correct implementation, class not registered, or method not found"
   },
@@ -471,7 +471,7 @@
   {
     "id": "ui_image_view",
     "name": "UIImageView Implementation",
-    "file_path": "src/frameworks/uikit/ui_image_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_image_view.rs",
     "description": "Displays UIImage in view hierarchy, handles content mode scaling",
     "bug_hypothesis": "Image not displayed, content mode not applied, or view not added to hierarchy"
   },
@@ -966,13 +966,6 @@
     "bug_hypothesis": "Wrong timing curve, control points incorrect, or curve not applied"
   },
   {
-    "id": "ca_display_link",
-    "name": "CADisplayLink",
-    "file_path": "src/frameworks/core_animation/ca_display_link.rs",
-    "description": "Display refresh synchronized callbacks for frame updates",
-    "bug_hypothesis": "Callback not invoked, wrong frame rate, or display link not scheduled"
-  },
-  {
     "id": "ns_coder",
     "name": "NSCoder",
     "file_path": "src/frameworks/foundation/ns_coder.rs",
@@ -1129,42 +1122,42 @@
   {
     "id": "ui_picker_view",
     "name": "UIPickerView",
-    "file_path": "src/frameworks/uikit/ui_picker_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_picker_view.rs",
     "description": "Spinning wheel picker for selection",
     "bug_hypothesis": "Data source not called, selection not working, or rows not displayed"
   },
   {
     "id": "ui_segmented_control",
     "name": "UISegmentedControl",
-    "file_path": "src/frameworks/uikit/ui_segmented_control.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control/ui_segmented_control.rs",
     "description": "Segmented button control",
     "bug_hypothesis": "Segment not selected, title not displayed, or action not sent"
   },
   {
     "id": "ui_slider",
     "name": "UISlider",
-    "file_path": "src/frameworks/uikit/ui_slider.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control/ui_slider.rs",
     "description": "Slider control for continuous value selection",
     "bug_hypothesis": "Value not updating, thumb not displayed, or action not sent"
   },
   {
     "id": "ui_switch",
     "name": "UISwitch",
-    "file_path": "src/frameworks/uikit/ui_switch.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_control/ui_switch.rs",
     "description": "On/off toggle switch control",
     "bug_hypothesis": "State not toggling, visual not updating, or action not sent"
   },
   {
     "id": "ui_web_view",
     "name": "UIWebView",
-    "file_path": "src/frameworks/uikit/ui_web_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_web_view.rs",
     "description": "Web content display view",
     "bug_hypothesis": "Content not loaded, delegate not called, or JavaScript not executed"
   },
   {
     "id": "ui_text_view",
     "name": "UITextView",
-    "file_path": "src/frameworks/uikit/ui_text_view.rs",
+    "file_path": "src/frameworks/uikit/ui_view/ui_scroll_view/ui_text_view.rs",
     "description": "Multi-line editable text view",
     "bug_hypothesis": "Text not editable, delegate not called, or scroll not working"
   },
@@ -1524,5 +1517,82 @@
     "file_path": "src/frameworks/uikit/ui_image_picker_controller.rs",
     "description": "Camera and photo library picker interface",
     "bug_hypothesis": "Picker not shown, image not returned, or source type unavailable"
+  },
+  {
+    "id": "sc_network_reachability",
+    "name": "Network Reachability",
+    "file_path": "src/frameworks/system_configuration/sc_network_reachability.rs",
+    "description": "Network reachability checks and callback notifications for connectivity status",
+    "bug_hypothesis": "Reachability flags wrong, callback not invoked, or network status incorrect"
+  },
+  {
+    "id": "music_player",
+    "name": "Music Player Controller",
+    "file_path": "src/frameworks/media_player/music_player.rs",
+    "description": "Music playback controller with now playing info and playback state",
+    "bug_hypothesis": "Playback not starting, wrong track selected, or state not updating"
+  },
+  {
+    "id": "animation_base",
+    "name": "Core Animation Base",
+    "file_path": "src/frameworks/core_animation/animation.rs",
+    "description": "Base animation infrastructure and animation tree management",
+    "bug_hypothesis": "Animation not added to tree, lifecycle events not triggered, or traversal wrong"
+  },
+  {
+    "id": "ns_locale",
+    "name": "NSLocale Implementation",
+    "file_path": "src/frameworks/foundation/ns_locale.rs",
+    "description": "Locale handling for internationalization, language and region identifiers",
+    "bug_hypothesis": "Wrong locale identifier, property not found, or current locale incorrect"
+  },
+  {
+    "id": "ns_date_formatter",
+    "name": "NSDateFormatter Implementation",
+    "file_path": "src/frameworks/foundation/ns_date_formatter.rs",
+    "description": "Date formatting and parsing with locale-aware patterns",
+    "bug_hypothesis": "Format pattern wrong, locale not applied, or date parsing failing"
+  },
+  {
+    "id": "ns_url_request",
+    "name": "NSURLRequest Implementation",
+    "file_path": "src/frameworks/foundation/ns_url_request.rs",
+    "description": "HTTP request configuration with method, headers, and body",
+    "bug_hypothesis": "Request method wrong, headers missing, or body not set correctly"
+  },
+  {
+    "id": "ns_object",
+    "name": "NSObject Base Class",
+    "file_path": "src/frameworks/foundation/ns_object.rs",
+    "description": "Base Foundation object with description, equality, and hashing",
+    "bug_hypothesis": "Description wrong, equality comparison failing, or hash mismatch"
+  },
+  {
+    "id": "audio_components",
+    "name": "Audio Components",
+    "file_path": "src/frameworks/audio_toolbox/audio_components.rs",
+    "description": "Audio component discovery, descriptions, and factory functions",
+    "bug_hypothesis": "Component not found, description wrong, or factory function failing"
+  },
+  {
+    "id": "sched",
+    "name": "Thread Scheduling (sched)",
+    "file_path": "src/libc/sched.rs",
+    "description": "POSIX scheduling functions including sched_yield",
+    "bug_hypothesis": "Yield not working, priority not set, or scheduling policy wrong"
+  },
+  {
+    "id": "gles_generic",
+    "name": "OpenGL ES Generic Interface",
+    "file_path": "src/gles/gles_generic.rs",
+    "description": "Generic OpenGL ES interface for backend abstraction",
+    "bug_hypothesis": "Backend selection wrong, interface mismatch, or function dispatch failing"
+  },
+  {
+    "id": "address_book_ui",
+    "name": "AddressBook UI Framework",
+    "file_path": "src/frameworks/address_book_ui.rs",
+    "description": "UI components for contact selection and display",
+    "bug_hypothesis": "Picker not shown, contact not selected, or delegate not called"
   }
 ]

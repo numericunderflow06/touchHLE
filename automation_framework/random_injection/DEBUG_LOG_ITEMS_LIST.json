@@ -154,7 +154,7 @@
   },
   {
     "id": "ui_control",
-    "module": "touchHLE::frameworks::uikit::ui_control",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_control",
     "category": "UIKit",
     "what_it_logs": "Control state changes, target-action invocations, touch tracking",
     "detectable_issues": ["Action not sent", "Wrong target", "State not updating"],
