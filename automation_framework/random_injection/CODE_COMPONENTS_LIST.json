@@ -56,6 +56,27 @@
     "bug_hypothesis": "Projection matrix incorrectly calculated, matrix stack overflow/underflow, or wrong matrix mode"
   },
   {
+    "id": "gles_present",
+    "name": "OpenGL ES Frame Presentation",
+    "file_path": "src/gles/present.rs",
+    "description": "Presents rendered frame to screen, handles buffer swapping and display synchronization",
+    "bug_hypothesis": "Frame not presented, wrong buffer displayed, or presentation timing issues"
+  },
+  {
+    "id": "gles_native",
+    "name": "Native OpenGL ES 1.1 Passthrough",
+    "file_path": "src/gles/gles1_native.rs",
+    "description": "Direct passthrough to native OpenGL ES 1.1 implementation when available",
+    "bug_hypothesis": "Native GL errors not handled, parameters not converted correctly, or missing function bindings"
+  },
+  {
+    "id": "gles_guest_ext",
+    "name": "OpenGL ES Extensions (Guest)",
+    "file_path": "src/frameworks/opengles/gles_guest_ext.rs",
+    "description": "OpenGL ES extension functions exposed to guest code (OES_framebuffer_object, etc.)",
+    "bug_hypothesis": "Extension not implemented, wrong behavior compared to real device, or extension query wrong"
+  },
+  {
     "id": "ui_view",
     "name": "UIView Core Implementation",
     "file_path": "src/frameworks/uikit/ui_view.rs",
@@ -98,6 +119,83 @@
     "bug_hypothesis": "Graphics context stack corrupted, wrong context current, or context not created with correct size"
   },
   {
+    "id": "ui_control",
+    "name": "UIControl Base Class",
+    "file_path": "src/frameworks/uikit/ui_control.rs",
+    "description": "Base class for interactive controls (buttons, sliders, switches), handles target-action dispatch",
+    "bug_hypothesis": "Action not dispatched, wrong target called, or control state not updated"
+  },
+  {
+    "id": "ui_button",
+    "name": "UIButton Implementation",
+    "file_path": "src/frameworks/uikit/ui_button.rs",
+    "description": "Clickable button control with title, image, and state management",
+    "bug_hypothesis": "Button not responding to touch, title/image not displayed, or state images wrong"
+  },
+  {
+    "id": "ui_label",
+    "name": "UILabel Implementation",
+    "file_path": "src/frameworks/uikit/ui_label.rs",
+    "description": "Text display view with font, color, alignment, and line handling",
+    "bug_hypothesis": "Text not rendered, font not loaded, or alignment/wrapping incorrect"
+  },
+  {
+    "id": "ui_scroll_view",
+    "name": "UIScrollView Implementation",
+    "file_path": "src/frameworks/uikit/ui_scroll_view.rs",
+    "description": "Scrollable content container with content offset, bounds, and deceleration",
+    "bug_hypothesis": "Scroll not working, content size wrong, or scroll indicators not visible"
+  },
+  {
+    "id": "ui_text_field",
+    "name": "UITextField Implementation",
+    "file_path": "src/frameworks/uikit/ui_text_field.rs",
+    "description": "Text input field with keyboard handling and delegate callbacks",
+    "bug_hypothesis": "Keyboard not appearing, text not entered, or delegate not called"
+  },
+  {
+    "id": "ui_navigation_controller",
+    "name": "UINavigationController Implementation",
+    "file_path": "src/frameworks/uikit/ui_navigation_controller.rs",
+    "description": "Navigation stack management, push/pop view controllers, navigation bar",
+    "bug_hypothesis": "Push not working, navigation bar not visible, or back navigation broken"
+  },
+  {
+    "id": "ui_alert_view",
+    "name": "UIAlertView Implementation",
+    "file_path": "src/frameworks/uikit/ui_alert_view.rs",
+    "description": "Modal alert dialog with buttons and delegate callbacks",
+    "bug_hypothesis": "Alert not shown, buttons not working, or delegate not called"
+  },
+  {
+    "id": "ui_device",
+    "name": "UIDevice Implementation",
+    "file_path": "src/frameworks/uikit/ui_device.rs",
+    "description": "Device information singleton (model, OS version, orientation, battery)",
+    "bug_hypothesis": "Wrong device model reported, orientation not updated, or battery info incorrect"
+  },
+  {
+    "id": "ui_font",
+    "name": "UIFont Implementation",
+    "file_path": "src/frameworks/uikit/ui_font.rs",
+    "description": "Font loading, sizing, and font family/trait management",
+    "bug_hypothesis": "Font not loaded, wrong size returned, or font family not found"
+  },
+  {
+    "id": "ui_color",
+    "name": "UIColor Implementation",
+    "file_path": "src/frameworks/uikit/ui_color.rs",
+    "description": "Color representation with RGB/HSB components and named colors",
+    "bug_hypothesis": "Wrong color values, color space conversion wrong, or named color not found"
+  },
+  {
+    "id": "ui_accelerometer",
+    "name": "UIAccelerometer Implementation",
+    "file_path": "src/frameworks/uikit/ui_accelerometer.rs",
+    "description": "Accelerometer data access and delegate callbacks",
+    "bug_hypothesis": "Accelerometer data not delivered, delegate not called, or values incorrect"
+  },
+  {
     "id": "cg_context",
     "name": "Core Graphics Context",
     "file_path": "src/frameworks/core_graphics/cg_context.rs",
@@ -126,6 +224,20 @@
     "bug_hypothesis": "Transform concatenation order wrong, identity not returned correctly, or inversion failing"
   },
   {
+    "id": "cg_color_space",
+    "name": "CGColorSpace Implementation",
+    "file_path": "src/frameworks/core_graphics/cg_color_space.rs",
+    "description": "Color space definitions (RGB, Gray, DeviceRGB) for color management",
+    "bug_hypothesis": "Wrong color space used, color conversion incorrect, or color space not created"
+  },
+  {
+    "id": "cg_data_provider",
+    "name": "CGDataProvider Implementation",
+    "file_path": "src/frameworks/core_graphics/cg_data_provider.rs",
+    "description": "Data source for CGImage, provides bytes for image decoding",
+    "bug_hypothesis": "Data not provided correctly, byte range wrong, or callback not invoked"
+  },
+  {
     "id": "ca_layer",
     "name": "CALayer Core Implementation",
     "file_path": "src/frameworks/core_animation/ca_layer.rs",
@@ -140,11 +252,95 @@
     "bug_hypothesis": "Transaction not committed, animations blocking rendering, or flush not called"
   },
   {
+    "id": "ca_animation",
+    "name": "CAAnimation Implementation",
+    "file_path": "src/frameworks/core_animation/ca_animation.rs",
+    "description": "Property animation base class with timing, keyframes, and interpolation",
+    "bug_hypothesis": "Animation not running, timing function wrong, or keyframes not interpolated"
+  },
+  {
     "id": "ns_run_loop",
     "name": "NSRunLoop Implementation",
     "file_path": "src/frameworks/foundation/ns_run_loop.rs",
     "description": "Event loop management, timer scheduling, and run loop modes",
     "bug_hypothesis": "Run loop not processing events, wrong mode active, or timers not firing"
+  },
+  {
+    "id": "ns_autorelease_pool",
+    "name": "NSAutoreleasePool Implementation",
+    "file_path": "src/frameworks/foundation/ns_autorelease_pool.rs",
+    "description": "Memory management via autorelease pools, drain and release operations",
+    "bug_hypothesis": "Objects not autoreleased, pool not drained, or memory leak from pool imbalance"
+  },
+  {
+    "id": "ns_notification_center",
+    "name": "NSNotificationCenter Implementation",
+    "file_path": "src/frameworks/foundation/ns_notification_center.rs",
+    "description": "Observer pattern implementation for broadcasting notifications",
+    "bug_hypothesis": "Observer not registered, notification not delivered, or wrong object/name"
+  },
+  {
+    "id": "ns_operation_queue",
+    "name": "NSOperationQueue Implementation",
+    "file_path": "src/frameworks/foundation/ns_operation_queue.rs",
+    "description": "Concurrent operation execution, queue management, and dependency handling",
+    "bug_hypothesis": "Operations not executed, queue suspended, or dependency deadlock"
+  },
+  {
+    "id": "ns_lock",
+    "name": "NSLock Implementation",
+    "file_path": "src/frameworks/foundation/ns_lock.rs",
+    "description": "Thread synchronization lock, recursive lock, and condition lock",
+    "bug_hypothesis": "Deadlock on lock, recursive lock count wrong, or condition not signaled"
+  },
+  {
+    "id": "ns_thread",
+    "name": "NSThread Implementation",
+    "file_path": "src/frameworks/foundation/ns_thread.rs",
+    "description": "Thread creation, naming, and thread dictionary management",
+    "bug_hypothesis": "Thread not started, thread dictionary not accessible, or main thread check wrong"
+  },
+  {
+    "id": "ns_user_defaults",
+    "name": "NSUserDefaults Implementation",
+    "file_path": "src/frameworks/foundation/ns_user_defaults.rs",
+    "description": "Persistent key-value storage for application preferences",
+    "bug_hypothesis": "Defaults not saved, value not retrieved, or synchronize not working"
+  },
+  {
+    "id": "ns_date",
+    "name": "NSDate Implementation",
+    "file_path": "src/frameworks/foundation/ns_date.rs",
+    "description": "Date and time representation, time intervals, and date comparisons",
+    "bug_hypothesis": "Wrong date returned, time interval calculation wrong, or timezone issue"
+  },
+  {
+    "id": "ns_file_handle",
+    "name": "NSFileHandle Implementation",
+    "file_path": "src/frameworks/foundation/ns_file_handle.rs",
+    "description": "File handle for reading/writing, asynchronous I/O, and notifications",
+    "bug_hypothesis": "Read/write failing, file offset wrong, or notification not sent"
+  },
+  {
+    "id": "ns_keyed_archiver",
+    "name": "NSKeyedArchiver Implementation",
+    "file_path": "src/frameworks/foundation/ns_keyed_archiver.rs",
+    "description": "Serializes object graphs to keyed archives (plist format)",
+    "bug_hypothesis": "Object not encoded, key collision, or archive format wrong"
+  },
+  {
+    "id": "ns_property_list",
+    "name": "NSPropertyListSerialization",
+    "file_path": "src/frameworks/foundation/ns_property_list_serialization.rs",
+    "description": "Plist serialization and deserialization (XML, binary formats)",
+    "bug_hypothesis": "Plist parse error, wrong format detected, or encoding failed"
+  },
+  {
+    "id": "ns_xml_parser",
+    "name": "NSXMLParser Implementation",
+    "file_path": "src/frameworks/foundation/ns_xml_parser.rs",
+    "description": "SAX-style XML parser with delegate callbacks",
+    "bug_hypothesis": "Parse error, delegate not called, or element/attribute wrong"
   },
   {
     "id": "dyld_linking",
@@ -175,6 +371,27 @@
     "bug_hypothesis": "Wrong IMP called, super dispatch failing, or object released prematurely"
   },
   {
+    "id": "objc_classes",
+    "name": "Objective-C Class System",
+    "file_path": "src/objc/classes.rs",
+    "description": "Class definitions, metaclass creation, and class hierarchy management",
+    "bug_hypothesis": "Class not registered, superclass wrong, or metaclass issue"
+  },
+  {
+    "id": "objc_blocks",
+    "name": "Objective-C Blocks",
+    "file_path": "src/objc/blocks.rs",
+    "description": "Block (closure) implementation for Objective-C callbacks",
+    "bug_hypothesis": "Block not invoked, captured variables wrong, or block descriptor invalid"
+  },
+  {
+    "id": "objc_synchronization",
+    "name": "Objective-C @synchronized",
+    "file_path": "src/objc/synchronization.rs",
+    "description": "Thread synchronization primitives for @synchronized blocks",
+    "bug_hypothesis": "Deadlock in @synchronized, lock not released, or wrong object locked"
+  },
+  {
     "id": "mem_allocator",
     "name": "Memory Allocator",
     "file_path": "src/mem.rs",
@@ -196,6 +413,13 @@
     "bug_hypothesis": "Thread deadlock, wrong thread executing GL code, or thread not scheduled"
   },
   {
+    "id": "environment_mutex",
+    "name": "Environment Mutex",
+    "file_path": "src/environment/mutex.rs",
+    "description": "Internal mutex implementation for thread synchronization",
+    "bug_hypothesis": "Deadlock, mutex not released, or contention issues"
+  },
+  {
     "id": "abi_calls",
     "name": "ABI/Calling Convention",
     "file_path": "src/abi.rs",
@@ -215,6 +439,13 @@
     "file_path": "src/image.rs",
     "description": "Image format detection, PNG/JPEG decoding, PVRTC decompression",
     "bug_hypothesis": "Image format not recognized, decompression failing, or color format wrong"
+  },
+  {
+    "id": "fs_virtual",
+    "name": "Virtual Filesystem",
+    "file_path": "src/fs.rs",
+    "description": "Virtual filesystem for guest applications, path resolution, and access control",
+    "bug_hypothesis": "Path not resolved, file not found, or wrong file returned"
   },
   {
     "id": "fs_bundle",
@@ -252,6 +483,27 @@
     "bug_hypothesis": "Data not read from file, length incorrect, or bytes pointer invalid"
   },
   {
+    "id": "ns_string",
+    "name": "NSString Implementation",
+    "file_path": "src/frameworks/foundation/ns_string.rs",
+    "description": "String handling, encoding conversion, path operations, and comparisons",
+    "bug_hypothesis": "Encoding error, path manipulation wrong, or string comparison failing"
+  },
+  {
+    "id": "ns_array",
+    "name": "NSArray Implementation",
+    "file_path": "src/frameworks/foundation/ns_array.rs",
+    "description": "Ordered collection, enumeration, and array manipulation",
+    "bug_hypothesis": "Index out of bounds, wrong element returned, or mutation during enumeration"
+  },
+  {
+    "id": "ns_dictionary",
+    "name": "NSDictionary Implementation",
+    "file_path": "src/frameworks/foundation/ns_dictionary.rs",
+    "description": "Key-value dictionary, lookup, and enumeration",
+    "bug_hypothesis": "Key not found, wrong value returned, or hash collision"
+  },
+  {
     "id": "cf_data",
     "name": "CFData Implementation",
     "file_path": "src/frameworks/core_foundation/cf_data.rs",
@@ -259,11 +511,88 @@
     "bug_hypothesis": "CFDataGetBytePtr returning wrong address, length mismatch with NSData"
   },
   {
+    "id": "cf_string",
+    "name": "CFString Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_string.rs",
+    "description": "Core Foundation string, encoding, and toll-free bridging with NSString",
+    "bug_hypothesis": "Encoding conversion wrong, length incorrect, or bridge failing"
+  },
+  {
+    "id": "cf_dictionary",
+    "name": "CFDictionary Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_dictionary.rs",
+    "description": "Core Foundation dictionary with custom callbacks",
+    "bug_hypothesis": "Key lookup failing, retain/release callbacks wrong, or iteration broken"
+  },
+  {
+    "id": "cf_array",
+    "name": "CFArray Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_array.rs",
+    "description": "Core Foundation array with custom callbacks",
+    "bug_hypothesis": "Index access wrong, callbacks not invoked, or mutation issues"
+  },
+  {
+    "id": "cf_url",
+    "name": "CFURL Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_url.rs",
+    "description": "URL representation, path extraction, and URL component access",
+    "bug_hypothesis": "Path extraction wrong, scheme not recognized, or component missing"
+  },
+  {
+    "id": "cf_bundle",
+    "name": "CFBundle Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_bundle.rs",
+    "description": "Core Foundation bundle resource loading and Info.plist access",
+    "bug_hypothesis": "Resource not found, Info.plist not loaded, or bundle path wrong"
+  },
+  {
+    "id": "cf_run_loop",
+    "name": "CFRunLoop Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_run_loop.rs",
+    "description": "Core Foundation run loop, sources, observers, and timers",
+    "bug_hypothesis": "Sources not added, run loop not running, or timer not firing"
+  },
+  {
+    "id": "cf_run_loop_timer",
+    "name": "CFRunLoopTimer Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_run_loop_timer.rs",
+    "description": "Core Foundation timer with fire date and interval",
+    "bug_hypothesis": "Timer not added to run loop, fire date wrong, or callback not invoked"
+  },
+  {
+    "id": "cf_socket",
+    "name": "CFSocket Implementation",
+    "file_path": "src/frameworks/core_foundation/cf_socket.rs",
+    "description": "Core Foundation socket wrapper with run loop integration",
+    "bug_hypothesis": "Socket not created, callback not invoked, or run loop source wrong"
+  },
+  {
     "id": "audio_queue",
     "name": "Audio Queue Services",
     "file_path": "src/frameworks/audio_toolbox/audio_queue.rs",
     "description": "Audio playback and recording queues, buffer management",
     "bug_hypothesis": "Audio callback not invoked, buffers not enqueued, or audio format wrong"
+  },
+  {
+    "id": "audio_file",
+    "name": "AudioFile Implementation",
+    "file_path": "src/frameworks/audio_toolbox/audio_file.rs",
+    "description": "Audio file reading, format detection, and packet extraction",
+    "bug_hypothesis": "File not opened, format not supported, or packets not read"
+  },
+  {
+    "id": "audio_session",
+    "name": "AudioSession Implementation",
+    "file_path": "src/frameworks/audio_toolbox/audio_session.rs",
+    "description": "Audio session configuration, categories, and activation",
+    "bug_hypothesis": "Session not initialized, category wrong, or activation failing"
+  },
+  {
+    "id": "audio_unit",
+    "name": "AudioUnit Implementation",
+    "file_path": "src/frameworks/audio_toolbox/audio_unit.rs",
+    "description": "Audio processing units, render callbacks, and property management",
+    "bug_hypothesis": "Unit not initialized, render callback not invoked, or property error"
   },
   {
     "id": "openal",
@@ -287,6 +616,13 @@
     "bug_hypothesis": "Deadlock on mutex, recursive lock count wrong, or unlock without lock"
   },
   {
+    "id": "pthread_cond",
+    "name": "POSIX Condition Variable",
+    "file_path": "src/libc/pthread/cond.rs",
+    "description": "Condition variable wait, signal, and broadcast operations",
+    "bug_hypothesis": "Spurious wakeup not handled, signal lost, or wait error"
+  },
+  {
     "id": "posix_io",
     "name": "POSIX File I/O",
     "file_path": "src/libc/posix_io.rs",
@@ -301,6 +637,90 @@
     "bug_hypothesis": "FILE* invalid, printf format string wrong, or fread not returning data"
   },
   {
+    "id": "stdio_printf",
+    "name": "Printf Implementation",
+    "file_path": "src/libc/stdio/printf.rs",
+    "description": "Printf format string parsing and argument consumption",
+    "bug_hypothesis": "Format specifier wrong, argument type mismatch, or buffer overflow"
+  },
+  {
+    "id": "stdlib",
+    "name": "Standard Library (stdlib)",
+    "file_path": "src/libc/stdlib.rs",
+    "description": "malloc, free, atoi, strtol, qsort, and other standard functions",
+    "bug_hypothesis": "Memory allocation failing, conversion wrong, or qsort comparator issue"
+  },
+  {
+    "id": "string_libc",
+    "name": "String Functions (libc)",
+    "file_path": "src/libc/string.rs",
+    "description": "memcpy, memset, strcpy, strlen, strcmp and string operations",
+    "bug_hypothesis": "Buffer overflow, null terminator missing, or comparison wrong"
+  },
+  {
+    "id": "mmap",
+    "name": "Memory Mapping (mmap)",
+    "file_path": "src/libc/mmap.rs",
+    "description": "Memory mapping, protection changes, and anonymous mappings",
+    "bug_hypothesis": "Map failing, protection wrong, or address conflict"
+  },
+  {
+    "id": "socket",
+    "name": "BSD Sockets",
+    "file_path": "src/libc/sys/socket.rs",
+    "description": "Socket creation, connect, send, recv, and select operations",
+    "bug_hypothesis": "Socket error, connection refused, or select not working"
+  },
+  {
+    "id": "netdb",
+    "name": "Network Database (netdb)",
+    "file_path": "src/libc/netdb.rs",
+    "description": "DNS resolution, getaddrinfo, and hostname lookups",
+    "bug_hypothesis": "Resolution failing, wrong address returned, or timeout"
+  },
+  {
+    "id": "dispatch",
+    "name": "Grand Central Dispatch",
+    "file_path": "src/libc/dispatch.rs",
+    "description": "GCD dispatch queues, async/sync execution, and semaphores",
+    "bug_hypothesis": "Block not executed, queue deadlock, or wrong queue"
+  },
+  {
+    "id": "semaphore_libc",
+    "name": "POSIX Semaphores",
+    "file_path": "src/libc/semaphore.rs",
+    "description": "Semaphore wait, post, and value operations",
+    "bug_hypothesis": "Semaphore underflow, wait timeout, or post error"
+  },
+  {
+    "id": "dlfcn",
+    "name": "Dynamic Loading (dlfcn)",
+    "file_path": "src/libc/dlfcn.rs",
+    "description": "dlopen, dlsym, dlclose for dynamic library loading",
+    "bug_hypothesis": "Library not found, symbol not resolved, or handle invalid"
+  },
+  {
+    "id": "setjmp",
+    "name": "Non-local Jumps (setjmp)",
+    "file_path": "src/libc/setjmp.rs",
+    "description": "setjmp/longjmp for exception-like control flow",
+    "bug_hypothesis": "Jump buffer corrupted, stack unwinding wrong, or registers not restored"
+  },
+  {
+    "id": "time_libc",
+    "name": "Time Functions (libc)",
+    "file_path": "src/libc/time.rs",
+    "description": "gettimeofday, time, localtime, and clock functions",
+    "bug_hypothesis": "Wrong time returned, timezone wrong, or clock not accurate"
+  },
+  {
+    "id": "errno",
+    "name": "Error Numbers (errno)",
+    "file_path": "src/libc/errno.rs",
+    "description": "Thread-local errno and error code management",
+    "bug_hypothesis": "Wrong errno set, errno not thread-local, or error not propagated"
+  },
+  {
     "id": "ui_nib",
     "name": "NIB/XIB Loading",
     "file_path": "src/frameworks/uikit/ui_nib.rs",
@@ -313,13 +733,6 @@
     "file_path": "src/frameworks/foundation/ns_keyed_unarchiver.rs",
     "description": "Deserializes objects from keyed archives (NIB files, saved state)",
     "bug_hypothesis": "Class not found for unarchiving, key missing, or decode returning nil"
-  },
-  {
-    "id": "cf_run_loop",
-    "name": "CFRunLoop Implementation",
-    "file_path": "src/frameworks/core_foundation/cf_run_loop.rs",
-    "description": "Core Foundation run loop, sources, observers, and timers",
-    "bug_hypothesis": "Sources not added, run loop not running, or timer not firing"
   },
   {
     "id": "ns_timer",
@@ -341,5 +754,89 @@
     "file_path": "src/frameworks/uikit/ui_responder.rs",
     "description": "Responder chain for event handling, first responder management",
     "bug_hypothesis": "Event not propagated up chain, first responder not set, or responder not in chain"
+  },
+  {
+    "id": "gdb_debug",
+    "name": "GDB Debug Support",
+    "file_path": "src/gdb.rs",
+    "description": "GDB remote debugging protocol, breakpoints, and register access",
+    "bug_hypothesis": "Protocol error, breakpoint not hit, or register mismatch"
+  },
+  {
+    "id": "frame_capture",
+    "name": "Frame Capture",
+    "file_path": "src/frame_capture.rs",
+    "description": "Captures rendered frames to files for debugging",
+    "bug_hypothesis": "Capture not triggered, wrong framebuffer captured, or file not written"
+  },
+  {
+    "id": "event_capture",
+    "name": "Event Capture",
+    "file_path": "src/event_capture.rs",
+    "description": "Captures input events for replay and testing",
+    "bug_hypothesis": "Events not captured, timing wrong, or file format error"
+  },
+  {
+    "id": "event_inject",
+    "name": "Event Injection",
+    "file_path": "src/event_inject.rs",
+    "description": "Injects recorded events for automated testing",
+    "bug_hypothesis": "Events not injected, timing wrong, or coordinates incorrect"
+  },
+  {
+    "id": "ns_url",
+    "name": "NSURL Implementation",
+    "file_path": "src/frameworks/foundation/ns_url.rs",
+    "description": "URL representation, path extraction, and file URL handling",
+    "bug_hypothesis": "Path wrong, scheme not recognized, or file URL not created"
+  },
+  {
+    "id": "ns_url_connection",
+    "name": "NSURLConnection Implementation",
+    "file_path": "src/frameworks/foundation/ns_url_connection.rs",
+    "description": "HTTP/HTTPS requests, response handling, and delegate callbacks",
+    "bug_hypothesis": "Request failing, response not received, or delegate not called"
+  },
+  {
+    "id": "ns_file_manager",
+    "name": "NSFileManager Implementation",
+    "file_path": "src/frameworks/foundation/ns_file_manager.rs",
+    "description": "File system operations, directory contents, and file attributes",
+    "bug_hypothesis": "File not found, attributes wrong, or directory enumeration failing"
+  },
+  {
+    "id": "media_player",
+    "name": "MediaPlayer Framework",
+    "file_path": "src/frameworks/media_player.rs",
+    "description": "Music playback, movie player, and media library access",
+    "bug_hypothesis": "Playback not starting, wrong media selected, or controls not working"
+  },
+  {
+    "id": "store_kit",
+    "name": "StoreKit Framework",
+    "file_path": "src/frameworks/store_kit.rs",
+    "description": "In-app purchases, product requests, and payment transactions",
+    "bug_hypothesis": "Products not loaded, purchase failing, or receipt not validated"
+  },
+  {
+    "id": "game_kit",
+    "name": "GameKit Framework",
+    "file_path": "src/frameworks/game_kit.rs",
+    "description": "Game Center authentication, leaderboards, and achievements",
+    "bug_hypothesis": "Authentication failing, scores not submitted, or achievements not unlocked"
+  },
+  {
+    "id": "core_location",
+    "name": "CoreLocation Framework",
+    "file_path": "src/frameworks/core_location.rs",
+    "description": "Location services, GPS coordinates, and heading updates",
+    "bug_hypothesis": "Location not available, coordinates wrong, or delegate not called"
+  },
+  {
+    "id": "address_book",
+    "name": "AddressBook Framework",
+    "file_path": "src/frameworks/address_book.rs",
+    "description": "Contact database access, person records, and group management",
+    "bug_hypothesis": "Contacts not accessible, record not found, or permission denied"
   }
 ]
