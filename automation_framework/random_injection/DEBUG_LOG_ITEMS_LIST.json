@@ -808,5 +808,221 @@
     "detectable_issues": ["Events not injected", "Timing drift", "Coordinates wrong"],
     "when_useful": "Automated testing, input replay debugging",
     "log_volume": "medium"
+  },
+  {
+    "id": "dirent",
+    "module": "touchHLE::libc::dirent",
+    "category": "File System",
+    "what_it_logs": "opendir, readdir, closedir operations, directory entries (4 log_dbg calls)",
+    "detectable_issues": ["Directory not opened", "Entries missing", "d_name wrong", "d_type incorrect"],
+    "when_useful": "Directory enumeration bugs, file listing issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "arpa_inet",
+    "module": "touchHLE::libc::arpa::inet",
+    "category": "Networking",
+    "what_it_logs": "inet_addr, inet_ntoa, address conversion (3 log_dbg calls)",
+    "detectable_issues": ["Address conversion wrong", "Network byte order incorrect", "Invalid address format"],
+    "when_useful": "IP address handling bugs, network address issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "posix_stat",
+    "module": "touchHLE::libc::posix_io::stat",
+    "category": "File I/O",
+    "what_it_logs": "stat, fstat, lstat operations, file metadata (3 log_dbg calls)",
+    "detectable_issues": ["Stat failing", "Size wrong", "Mode incorrect", "Times wrong"],
+    "when_useful": "File metadata bugs, permission issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "mach_semaphore",
+    "module": "touchHLE::libc::mach::semaphore",
+    "category": "Threading",
+    "what_it_logs": "Mach semaphore create, signal, wait, destroy (4 log_dbg calls)",
+    "detectable_issues": ["Semaphore not signaled", "Wait timeout", "Task port wrong", "Creation failure"],
+    "when_useful": "Mach-level synchronization bugs",
+    "log_volume": "medium"
+  },
+  {
+    "id": "sysctl",
+    "module": "touchHLE::libc::sysctl",
+    "category": "System",
+    "what_it_logs": "sysctl queries, kernel parameters, system info (2 log_dbg calls)",
+    "detectable_issues": ["Value not found", "Buffer too small", "Type mismatch"],
+    "when_useful": "System information query bugs",
+    "log_volume": "low"
+  },
+  {
+    "id": "setjmp",
+    "module": "touchHLE::libc::setjmp",
+    "category": "Execution",
+    "what_it_logs": "setjmp/longjmp, jump buffer state (1 log_dbg call)",
+    "detectable_issues": ["Jump buffer corrupted", "Registers not restored", "Stack unwinding wrong"],
+    "when_useful": "Non-local jump bugs, exception-like control flow issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "objc_synchronization",
+    "module": "touchHLE::objc::synchronization",
+    "category": "Threading",
+    "what_it_logs": "@synchronized enter/exit, objc_sync_enter/exit (6 log_dbg calls)",
+    "detectable_issues": ["Deadlock in @synchronized", "Lock not released", "Wrong object locked"],
+    "when_useful": "Objective-C synchronization bugs, @synchronized deadlocks",
+    "log_volume": "medium"
+  },
+  {
+    "id": "objc_blocks",
+    "module": "touchHLE::objc::blocks",
+    "category": "Runtime",
+    "what_it_logs": "Block creation, invocation, descriptor parsing (2 log_dbg calls)",
+    "detectable_issues": ["Block not invoked", "Captured variables wrong", "Block descriptor invalid"],
+    "when_useful": "Block/closure bugs, callback issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_date",
+    "module": "touchHLE::frameworks::foundation::ns_date",
+    "category": "Data",
+    "what_it_logs": "Date creation, time interval calculations, comparisons (4 log_dbg calls)",
+    "detectable_issues": ["Wrong date returned", "Time interval calculation wrong", "Timezone issue"],
+    "when_useful": "Date/time bugs, scheduling issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_user_defaults",
+    "module": "touchHLE::frameworks::foundation::ns_user_defaults",
+    "category": "Data",
+    "what_it_logs": "Defaults read/write, synchronization, plist access (3 log_dbg calls)",
+    "detectable_issues": ["Defaults not saved", "Value not retrieved", "Synchronize not working"],
+    "when_useful": "Preferences bugs, save state issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_thread",
+    "module": "touchHLE::frameworks::foundation::ns_thread",
+    "category": "Threading",
+    "what_it_logs": "Thread creation, naming, thread dictionary, main thread check (3 log_dbg calls)",
+    "detectable_issues": ["Thread not started", "Thread dictionary not accessible", "Main thread check wrong"],
+    "when_useful": "NSThread bugs, thread management issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "ns_scanner",
+    "module": "touchHLE::frameworks::foundation::ns_scanner",
+    "category": "Data",
+    "what_it_logs": "String scanning, character set matching, position tracking (5 log_dbg calls)",
+    "detectable_issues": ["Scan failing", "Wrong position", "Character set not matched"],
+    "when_useful": "String parsing bugs, tokenization issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_xml_parser",
+    "module": "touchHLE::frameworks::foundation::ns_xml_parser",
+    "category": "Data",
+    "what_it_logs": "XML parsing, delegate callbacks, element/attribute handling (6 log_dbg calls)",
+    "detectable_issues": ["Parse error", "Delegate not called", "Element/attribute wrong"],
+    "when_useful": "XML loading bugs, plist parsing issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_property_list",
+    "module": "touchHLE::frameworks::foundation::ns_property_list_serialization",
+    "category": "Serialization",
+    "what_it_logs": "Plist serialization/deserialization, format detection (7 log_dbg calls)",
+    "detectable_issues": ["Plist parse error", "Wrong format detected", "Encoding failed"],
+    "when_useful": "Plist loading bugs, data serialization issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_object",
+    "module": "touchHLE::frameworks::foundation::ns_object",
+    "category": "Runtime",
+    "what_it_logs": "NSObject base methods, description, equality, hashing (6 log_dbg calls)",
+    "detectable_issues": ["Description wrong", "Equality failing", "Hash mismatch"],
+    "when_useful": "Object identity bugs, comparison issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ns_url_request",
+    "module": "touchHLE::frameworks::foundation::ns_url_request",
+    "category": "Networking",
+    "what_it_logs": "URL request creation, HTTP method, headers, body (4 log_dbg calls)",
+    "detectable_issues": ["Request method wrong", "Headers missing", "Body not set"],
+    "when_useful": "HTTP request bugs, API call issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "av_audio_player",
+    "module": "touchHLE::frameworks::avfoundation::av_audio_player",
+    "category": "Audio",
+    "what_it_logs": "Audio player creation, playback, delegate callbacks (6 log_dbg calls)",
+    "detectable_issues": ["Audio not playing", "File not loaded", "Delegate not called", "Volume wrong"],
+    "when_useful": "AVFoundation audio bugs, high-level playback issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_button",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_control::ui_button",
+    "category": "UIKit",
+    "what_it_logs": "Button state, title/image setting, action handling (5 log_dbg calls)",
+    "detectable_issues": ["Button not responding", "Title not displayed", "Image wrong", "State incorrect"],
+    "when_useful": "Button UI bugs, touch handling issues",
+    "log_volume": "medium"
+  },
+  {
+    "id": "ui_switch",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_control::ui_switch",
+    "category": "UIKit",
+    "what_it_logs": "Switch state changes, visual updates (1 log_dbg call)",
+    "detectable_issues": ["State not toggling", "Visual not updating", "Action not sent"],
+    "when_useful": "Toggle switch bugs",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_text_field",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_control::ui_text_field",
+    "category": "UIKit",
+    "what_it_logs": "Text input, delegate callbacks, keyboard interaction (10 log_dbg calls)",
+    "detectable_issues": ["Text not entered", "Delegate not called", "Keyboard not appearing", "Selection wrong"],
+    "when_useful": "Text input bugs, keyboard issues",
+    "log_volume": "high"
+  },
+  {
+    "id": "ui_scroll_view",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_scroll_view",
+    "category": "UIKit",
+    "what_it_logs": "Scroll events, content offset, delegate callbacks (1 log_dbg call)",
+    "detectable_issues": ["Scroll not working", "Content size wrong", "Delegate not called"],
+    "when_useful": "Scroll view bugs",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_text_view",
+    "module": "touchHLE::frameworks::uikit::ui_view::ui_scroll_view::ui_text_view",
+    "category": "UIKit",
+    "what_it_logs": "Multi-line text editing, delegate callbacks (1 log_dbg call)",
+    "detectable_issues": ["Text not editable", "Delegate not called", "Scroll not working"],
+    "when_useful": "Multi-line text input bugs",
+    "log_volume": "low"
+  },
+  {
+    "id": "ui_navigation_controller",
+    "module": "touchHLE::frameworks::uikit::ui_view_controller::ui_navigation_controller",
+    "category": "UIKit",
+    "what_it_logs": "Navigation push/pop, navigation bar, back button (1 log_dbg call)",
+    "detectable_issues": ["Push not working", "Navigation bar not visible", "Back navigation broken"],
+    "when_useful": "Navigation bugs, view controller stack issues",
+    "log_volume": "low"
+  },
+  {
+    "id": "unistd",
+    "module": "touchHLE::libc::unistd",
+    "category": "System",
+    "what_it_logs": "getpid, getcwd, usleep, pipe operations (1 log_dbg call)",
+    "detectable_issues": ["PID wrong", "getcwd failing", "Sleep duration wrong"],
+    "when_useful": "POSIX API bugs, process/file descriptor issues",
+    "log_volume": "low"
   }
 ]

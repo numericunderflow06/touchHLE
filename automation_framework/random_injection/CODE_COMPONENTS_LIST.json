@@ -838,5 +838,572 @@
     "file_path": "src/frameworks/address_book.rs",
     "description": "Contact database access, person records, and group management",
     "bug_hypothesis": "Contacts not accessible, record not found, or permission denied"
+  },
+  {
+    "id": "stack",
+    "name": "Stack Management",
+    "file_path": "src/stack.rs",
+    "description": "Call stack tracking and management for guest threads",
+    "bug_hypothesis": "Stack overflow, incorrect stack pointer, or stack corruption"
+  },
+  {
+    "id": "paths",
+    "name": "Path Utilities",
+    "file_path": "src/paths.rs",
+    "description": "Path handling utilities for file system operations",
+    "bug_hypothesis": "Path resolution errors, incorrect separators, or relative path issues"
+  },
+  {
+    "id": "options",
+    "name": "Command-line Options",
+    "file_path": "src/options.rs",
+    "description": "Configuration and command-line argument parsing",
+    "bug_hypothesis": "Option not recognized, wrong default value, or configuration conflict"
+  },
+  {
+    "id": "app_picker",
+    "name": "Application Picker",
+    "file_path": "src/app_picker.rs",
+    "description": "UI for selecting which app to run from available IPAs",
+    "bug_hypothesis": "App not listed, selection not working, or IPA path wrong"
+  },
+  {
+    "id": "bundle",
+    "name": "Application Bundle",
+    "file_path": "src/bundle.rs",
+    "description": "Application bundle handling and IPA extraction",
+    "bug_hypothesis": "Bundle not extracted, Info.plist not read, or executable not found"
+  },
+  {
+    "id": "font",
+    "name": "Font Management",
+    "file_path": "src/font.rs",
+    "description": "Font loading and glyph rendering for text display",
+    "bug_hypothesis": "Font not loaded, glyphs missing, or metrics incorrect"
+  },
+  {
+    "id": "log_system",
+    "name": "Logging System",
+    "file_path": "src/log.rs",
+    "description": "Logging macros (log!, log_dbg!, log_once!, echo!) and module filtering",
+    "bug_hypothesis": "Logs not appearing, module not enabled, or file output not working"
+  },
+  {
+    "id": "debug_utils",
+    "name": "Debug Utilities",
+    "file_path": "src/debug.rs",
+    "description": "Framebuffer dumping, pixel manipulation, and debug visualization",
+    "bug_hypothesis": "Debug output not written, wrong format, or capture not triggered"
+  },
+  {
+    "id": "carbon_core",
+    "name": "Carbon Core Framework",
+    "file_path": "src/frameworks/carbon_core.rs",
+    "description": "Carbon framework compatibility (Gestalt, FixMath)",
+    "bug_hypothesis": "Gestalt returning wrong values, FixMath precision issues"
+  },
+  {
+    "id": "cf_network",
+    "name": "CFNetwork Framework",
+    "file_path": "src/frameworks/cf_network.rs",
+    "description": "Core Foundation networking APIs",
+    "bug_hypothesis": "Network operation failing, wrong configuration, or callbacks not invoked"
+  },
+  {
+    "id": "core_audio",
+    "name": "Core Audio Framework",
+    "file_path": "src/frameworks/core_audio.rs",
+    "description": "Low-level audio hardware abstraction layer",
+    "bug_hypothesis": "Audio device not found, format mismatch, or hardware access issues"
+  },
+  {
+    "id": "core_audio_types",
+    "name": "Core Audio Types",
+    "file_path": "src/frameworks/core_audio_types.rs",
+    "description": "Audio format descriptions and type definitions",
+    "bug_hypothesis": "Format description wrong, type size mismatch, or flags incorrect"
+  },
+  {
+    "id": "security",
+    "name": "Security Framework",
+    "file_path": "src/frameworks/security.rs",
+    "description": "Keychain access and security-related APIs",
+    "bug_hypothesis": "Keychain item not found, access denied, or encryption issues"
+  },
+  {
+    "id": "map_kit",
+    "name": "MapKit Framework",
+    "file_path": "src/frameworks/map_kit.rs",
+    "description": "Map display and location annotation",
+    "bug_hypothesis": "Map not displayed, annotations missing, or coordinates wrong"
+  },
+  {
+    "id": "av_audio_session",
+    "name": "AVAudioSession",
+    "file_path": "src/frameworks/avfoundation/av_audio_session.rs",
+    "description": "Audio session configuration for AVFoundation",
+    "bug_hypothesis": "Session category wrong, activation failing, or route change not detected"
+  },
+  {
+    "id": "av_audio_player",
+    "name": "AVAudioPlayer",
+    "file_path": "src/frameworks/avfoundation/av_audio_player.rs",
+    "description": "High-level audio playback with AVFoundation",
+    "bug_hypothesis": "Audio not playing, file not loaded, or delegate not called"
+  },
+  {
+    "id": "audio_services",
+    "name": "Audio Services",
+    "file_path": "src/frameworks/audio_toolbox/audio_services.rs",
+    "description": "System sound playback and vibration",
+    "bug_hypothesis": "System sound not played, vibration not working, or sound ID invalid"
+  },
+  {
+    "id": "ca_media_timing_function",
+    "name": "CAMediaTimingFunction",
+    "file_path": "src/frameworks/core_animation/ca_media_timing_function.rs",
+    "description": "Animation timing curves (ease-in, ease-out, etc.)",
+    "bug_hypothesis": "Wrong timing curve, control points incorrect, or curve not applied"
+  },
+  {
+    "id": "ca_display_link",
+    "name": "CADisplayLink",
+    "file_path": "src/frameworks/core_animation/ca_display_link.rs",
+    "description": "Display refresh synchronized callbacks for frame updates",
+    "bug_hypothesis": "Callback not invoked, wrong frame rate, or display link not scheduled"
+  },
+  {
+    "id": "ns_coder",
+    "name": "NSCoder",
+    "file_path": "src/frameworks/foundation/ns_coder.rs",
+    "description": "Base class for object encoding/decoding",
+    "bug_hypothesis": "Encoding method not implemented, decode returning nil"
+  },
+  {
+    "id": "ns_character_set",
+    "name": "NSCharacterSet",
+    "file_path": "src/frameworks/foundation/ns_character_set.rs",
+    "description": "Character set definitions for string operations",
+    "bug_hypothesis": "Wrong characters in set, membership test failing, or inverted set wrong"
+  },
+  {
+    "id": "ns_enumerator",
+    "name": "NSEnumerator",
+    "file_path": "src/frameworks/foundation/ns_enumerator.rs",
+    "description": "Collection enumeration protocol",
+    "bug_hypothesis": "nextObject returning wrong element, enumeration ending early"
+  },
+  {
+    "id": "ns_error",
+    "name": "NSError",
+    "file_path": "src/frameworks/foundation/ns_error.rs",
+    "description": "Error representation with domain, code, and userInfo",
+    "bug_hypothesis": "Error code wrong, domain not recognized, or userInfo missing"
+  },
+  {
+    "id": "ns_exception",
+    "name": "NSException",
+    "file_path": "src/frameworks/foundation/ns_exception.rs",
+    "description": "Exception handling and stack traces",
+    "bug_hypothesis": "Exception not caught, wrong name/reason, or callStackSymbols missing"
+  },
+  {
+    "id": "ns_null",
+    "name": "NSNull",
+    "file_path": "src/frameworks/foundation/ns_null.rs",
+    "description": "Null placeholder for collections that can't store nil",
+    "bug_hypothesis": "NSNull not recognized, comparison failing"
+  },
+  {
+    "id": "ns_objc_runtime",
+    "name": "NSObjCRuntime",
+    "file_path": "src/frameworks/foundation/ns_objc_runtime.rs",
+    "description": "Foundation runtime utilities (NSLog, NSStringFromClass, etc.)",
+    "bug_hypothesis": "NSLog not printing, class name wrong, or selector conversion failing"
+  },
+  {
+    "id": "ns_process_info",
+    "name": "NSProcessInfo",
+    "file_path": "src/frameworks/foundation/ns_process_info.rs",
+    "description": "Process information (name, arguments, environment)",
+    "bug_hypothesis": "Process name wrong, arguments missing, or environment not set"
+  },
+  {
+    "id": "ns_set",
+    "name": "NSSet",
+    "file_path": "src/frameworks/foundation/ns_set.rs",
+    "description": "Unordered collection of unique objects",
+    "bug_hypothesis": "Member not found, duplicate allowed, or enumeration wrong"
+  },
+  {
+    "id": "ns_time_zone",
+    "name": "NSTimeZone",
+    "file_path": "src/frameworks/foundation/ns_time_zone.rs",
+    "description": "Time zone handling and offset calculations",
+    "bug_hypothesis": "Wrong timezone, offset incorrect, or DST not handled"
+  },
+  {
+    "id": "ns_value",
+    "name": "NSValue",
+    "file_path": "src/frameworks/foundation/ns_value.rs",
+    "description": "Object wrapper for C types (CGRect, CGPoint, etc.)",
+    "bug_hypothesis": "Type encoding wrong, value extraction failing, or pointer value incorrect"
+  },
+  {
+    "id": "ns_scanner",
+    "name": "NSScanner",
+    "file_path": "src/frameworks/foundation/ns_scanner.rs",
+    "description": "String parsing and scanning",
+    "bug_hypothesis": "Scan failing, wrong position, or character set not matched"
+  },
+  {
+    "id": "cf_allocator",
+    "name": "CFAllocator",
+    "file_path": "src/frameworks/core_foundation/cf_allocator.rs",
+    "description": "Core Foundation memory allocation",
+    "bug_hypothesis": "Wrong allocator used, allocation failing"
+  },
+  {
+    "id": "cf_locale",
+    "name": "CFLocale",
+    "file_path": "src/frameworks/core_foundation/cf_locale.rs",
+    "description": "Core Foundation locale representation",
+    "bug_hypothesis": "Locale identifier wrong, property not found"
+  },
+  {
+    "id": "cf_preferences",
+    "name": "CFPreferences",
+    "file_path": "src/frameworks/core_foundation/cf_preferences.rs",
+    "description": "Core Foundation preferences (user defaults) access",
+    "bug_hypothesis": "Preference not read, synchronization not working"
+  },
+  {
+    "id": "cf_type",
+    "name": "CFType",
+    "file_path": "src/frameworks/core_foundation/cf_type.rs",
+    "description": "Base Core Foundation type and type ID management",
+    "bug_hypothesis": "Type ID wrong, CFGetTypeID returning incorrect value"
+  },
+  {
+    "id": "cf_time",
+    "name": "Core Foundation Time",
+    "file_path": "src/frameworks/core_foundation/time.rs",
+    "description": "CFAbsoluteTime and time interval handling",
+    "bug_hypothesis": "Time value wrong, reference date incorrect"
+  },
+  {
+    "id": "cg_color",
+    "name": "CGColor",
+    "file_path": "src/frameworks/core_graphics/cg_color.rs",
+    "description": "Core Graphics color representation",
+    "bug_hypothesis": "Color components wrong, color space mismatch"
+  },
+  {
+    "id": "cg_geometry",
+    "name": "CGGeometry",
+    "file_path": "src/frameworks/core_graphics/cg_geometry.rs",
+    "description": "CGPoint, CGSize, CGRect geometry types and operations",
+    "bug_hypothesis": "Rect calculation wrong, intersection failing, or point in rect test wrong"
+  },
+  {
+    "id": "ui_activity_indicator_view",
+    "name": "UIActivityIndicatorView",
+    "file_path": "src/frameworks/uikit/ui_activity_indicator_view.rs",
+    "description": "Spinning loading indicator",
+    "bug_hypothesis": "Spinner not visible, animation not running, or style wrong"
+  },
+  {
+    "id": "ui_event",
+    "name": "UIEvent",
+    "file_path": "src/frameworks/uikit/ui_event.rs",
+    "description": "Event container for touches and other input",
+    "bug_hypothesis": "Event type wrong, touches not included, or timestamp incorrect"
+  },
+  {
+    "id": "ui_geometry",
+    "name": "UIGeometry (UIKit)",
+    "file_path": "src/frameworks/uikit/ui_geometry.rs",
+    "description": "UIEdgeInsets and geometry conversion functions",
+    "bug_hypothesis": "Insets wrong, conversion failing"
+  },
+  {
+    "id": "ui_picker_view",
+    "name": "UIPickerView",
+    "file_path": "src/frameworks/uikit/ui_picker_view.rs",
+    "description": "Spinning wheel picker for selection",
+    "bug_hypothesis": "Data source not called, selection not working, or rows not displayed"
+  },
+  {
+    "id": "ui_segmented_control",
+    "name": "UISegmentedControl",
+    "file_path": "src/frameworks/uikit/ui_segmented_control.rs",
+    "description": "Segmented button control",
+    "bug_hypothesis": "Segment not selected, title not displayed, or action not sent"
+  },
+  {
+    "id": "ui_slider",
+    "name": "UISlider",
+    "file_path": "src/frameworks/uikit/ui_slider.rs",
+    "description": "Slider control for continuous value selection",
+    "bug_hypothesis": "Value not updating, thumb not displayed, or action not sent"
+  },
+  {
+    "id": "ui_switch",
+    "name": "UISwitch",
+    "file_path": "src/frameworks/uikit/ui_switch.rs",
+    "description": "On/off toggle switch control",
+    "bug_hypothesis": "State not toggling, visual not updating, or action not sent"
+  },
+  {
+    "id": "ui_web_view",
+    "name": "UIWebView",
+    "file_path": "src/frameworks/uikit/ui_web_view.rs",
+    "description": "Web content display view",
+    "bug_hypothesis": "Content not loaded, delegate not called, or JavaScript not executed"
+  },
+  {
+    "id": "ui_text_view",
+    "name": "UITextView",
+    "file_path": "src/frameworks/uikit/ui_text_view.rs",
+    "description": "Multi-line editable text view",
+    "bug_hypothesis": "Text not editable, delegate not called, or scroll not working"
+  },
+  {
+    "id": "dirent",
+    "name": "Directory Iteration (dirent)",
+    "file_path": "src/libc/dirent.rs",
+    "description": "Directory reading with opendir/readdir/closedir",
+    "bug_hypothesis": "Directory not opened, entries missing, or d_name wrong"
+  },
+  {
+    "id": "sqlite3",
+    "name": "SQLite Database",
+    "file_path": "src/libc/sqlite3.rs",
+    "description": "SQLite database access and query execution",
+    "bug_hypothesis": "Database not opened, query failing, or result not returned"
+  },
+  {
+    "id": "math",
+    "name": "Math Functions (libm)",
+    "file_path": "src/libc/math.rs",
+    "description": "Mathematical functions (sin, cos, sqrt, etc.)",
+    "bug_hypothesis": "Wrong result, precision loss, or special value handling (NaN, Inf)"
+  },
+  {
+    "id": "signal",
+    "name": "Signal Handling",
+    "file_path": "src/libc/signal.rs",
+    "description": "POSIX signal handling and delivery",
+    "bug_hypothesis": "Signal not delivered, handler not called, or signal blocked"
+  },
+  {
+    "id": "crypto",
+    "name": "Cryptography (CommonCrypto)",
+    "file_path": "src/libc/crypto.rs",
+    "description": "Cryptographic functions (hashing, encryption)",
+    "bug_hypothesis": "Hash incorrect, encryption failing, or key handling wrong"
+  },
+  {
+    "id": "wchar",
+    "name": "Wide Character Functions",
+    "file_path": "src/libc/wchar.rs",
+    "description": "Wide character string handling",
+    "bug_hypothesis": "Conversion wrong, length incorrect, or encoding mismatch"
+  },
+  {
+    "id": "sysctl",
+    "name": "System Control (sysctl)",
+    "file_path": "src/libc/sysctl.rs",
+    "description": "System information queries and kernel parameters",
+    "bug_hypothesis": "Value not found, buffer too small, or type mismatch"
+  },
+  {
+    "id": "ifaddrs",
+    "name": "Network Interface Addresses",
+    "file_path": "src/libc/ifaddrs.rs",
+    "description": "Network interface enumeration (getifaddrs)",
+    "bug_hypothesis": "Interface not listed, address wrong, or flags incorrect"
+  },
+  {
+    "id": "dns_sd",
+    "name": "Bonjour/DNS-SD",
+    "file_path": "src/libc/dns_sd.rs",
+    "description": "DNS Service Discovery (Bonjour) for network service browsing",
+    "bug_hypothesis": "Service not found, registration failing, or callback not invoked"
+  },
+  {
+    "id": "ctype",
+    "name": "Character Type Functions",
+    "file_path": "src/libc/ctype.rs",
+    "description": "Character classification (isalpha, isdigit, etc.)",
+    "bug_hypothesis": "Classification wrong, locale not handled"
+  },
+  {
+    "id": "clocale",
+    "name": "C Locale Functions",
+    "file_path": "src/libc/clocale.rs",
+    "description": "C locale handling (setlocale, localeconv)",
+    "bug_hypothesis": "Locale not set, conversion wrong"
+  },
+  {
+    "id": "cxxabi",
+    "name": "C++ ABI Support",
+    "file_path": "src/libc/cxxabi.rs",
+    "description": "C++ exception handling and RTTI support",
+    "bug_hypothesis": "Exception not caught, type info wrong, or demangling failing"
+  },
+  {
+    "id": "keymgr",
+    "name": "Keychain Manager",
+    "file_path": "src/libc/keymgr.rs",
+    "description": "Low-level keychain management",
+    "bug_hypothesis": "Key not registered, manager not initialized"
+  },
+  {
+    "id": "libkern",
+    "name": "LibKern (OSAtomic)",
+    "file_path": "src/libc/libkern.rs",
+    "description": "Kernel utilities and atomic operations",
+    "bug_hypothesis": "Atomic operation wrong, memory barrier missing"
+  },
+  {
+    "id": "arpa_inet",
+    "name": "Internet Address Functions",
+    "file_path": "src/libc/arpa/inet.rs",
+    "description": "IP address conversion (inet_addr, inet_ntoa)",
+    "bug_hypothesis": "Address conversion wrong, network byte order incorrect"
+  },
+  {
+    "id": "mach_core",
+    "name": "Mach Kernel Types",
+    "file_path": "src/libc/mach/core_types.rs",
+    "description": "Mach kernel type definitions",
+    "bug_hypothesis": "Type size wrong, port handling incorrect"
+  },
+  {
+    "id": "mach_host",
+    "name": "Mach Host Info",
+    "file_path": "src/libc/mach/host.rs",
+    "description": "Host information queries",
+    "bug_hypothesis": "Host info wrong, page size incorrect"
+  },
+  {
+    "id": "mach_semaphore",
+    "name": "Mach Semaphores",
+    "file_path": "src/libc/mach/semaphore.rs",
+    "description": "Mach-style semaphore operations",
+    "bug_hypothesis": "Semaphore not signaled, wait timeout, or task port wrong"
+  },
+  {
+    "id": "mach_thread_info",
+    "name": "Mach Thread Info",
+    "file_path": "src/libc/mach/thread_info.rs",
+    "description": "Mach thread information and state queries",
+    "bug_hypothesis": "Thread info wrong, state not returned"
+  },
+  {
+    "id": "mach_time",
+    "name": "Mach Time",
+    "file_path": "src/libc/mach/time.rs",
+    "description": "High-resolution timing (mach_absolute_time)",
+    "bug_hypothesis": "Time not accurate, timebase info wrong"
+  },
+  {
+    "id": "posix_stat",
+    "name": "File Status (stat)",
+    "file_path": "src/libc/posix_io/stat.rs",
+    "description": "File metadata retrieval (stat, fstat, lstat)",
+    "bug_hypothesis": "Stat failing, size wrong, or mode incorrect"
+  },
+  {
+    "id": "unistd",
+    "name": "POSIX API (unistd)",
+    "file_path": "src/libc/unistd.rs",
+    "description": "POSIX functions (getpid, getcwd, usleep, etc.)",
+    "bug_hypothesis": "PID wrong, getcwd failing, or sleep duration wrong"
+  },
+  {
+    "id": "objc_objects",
+    "name": "Objective-C Objects",
+    "file_path": "src/objc/objects.rs",
+    "description": "Object instance management and host object wrapping",
+    "bug_hypothesis": "Object not allocated, dealloc not called, or host object lost"
+  },
+  {
+    "id": "objc_properties",
+    "name": "Objective-C Properties",
+    "file_path": "src/objc/properties.rs",
+    "description": "Property implementation with getters/setters and ivars",
+    "bug_hypothesis": "Property not found, ivar offset wrong, or atomic locking issue"
+  },
+  {
+    "id": "objc_selectors",
+    "name": "Objective-C Selectors",
+    "file_path": "src/objc/selectors.rs",
+    "description": "Selector (method name) registration and lookup",
+    "bug_hypothesis": "Selector not registered, name mismatch, or lookup failing"
+  },
+  {
+    "id": "objc_methods",
+    "name": "Objective-C Methods",
+    "file_path": "src/objc/methods.rs",
+    "description": "Method implementation and IMP management",
+    "bug_hypothesis": "Method not found, IMP wrong, or method list corrupt"
+  },
+  {
+    "id": "pthread_key",
+    "name": "Thread-Local Storage (pthread_key)",
+    "file_path": "src/libc/pthread/key.rs",
+    "description": "Thread-local storage key management",
+    "bug_hypothesis": "Key not created, value not stored, or destructor not called"
+  },
+  {
+    "id": "mem_allocator_internal",
+    "name": "Memory Allocator Internal",
+    "file_path": "src/mem/allocator.rs",
+    "description": "Internal guest memory allocator implementation",
+    "bug_hypothesis": "Allocation fragmentation, free list corruption, or merge failing"
+  },
+  {
+    "id": "net_if",
+    "name": "Network Interface (net/if)",
+    "file_path": "src/libc/net/if_.rs",
+    "description": "Network interface name/index conversion",
+    "bug_hypothesis": "Interface name wrong, index not found"
+  },
+  {
+    "id": "sys_mount",
+    "name": "Filesystem Mount (sys/mount)",
+    "file_path": "src/libc/sys/mount.rs",
+    "description": "Filesystem mount and statfs operations",
+    "bug_hypothesis": "Filesystem info wrong, mount point not found"
+  },
+  {
+    "id": "sys_ptrace",
+    "name": "Process Tracing (ptrace)",
+    "file_path": "src/libc/sys/ptrace.rs",
+    "description": "Process tracing and debugging",
+    "bug_hypothesis": "Trace request failing, debugger detection wrong"
+  },
+  {
+    "id": "sys_utsname",
+    "name": "System Name (utsname)",
+    "file_path": "src/libc/sys/utsname.rs",
+    "description": "System identification (uname)",
+    "bug_hypothesis": "System name wrong, version incorrect"
+  },
+  {
+    "id": "sys_timeb",
+    "name": "Time Buffer (sys/timeb)",
+    "file_path": "src/libc/sys/timeb.rs",
+    "description": "Legacy time functions (ftime)",
+    "bug_hypothesis": "Time wrong, timezone incorrect"
+  },
+  {
+    "id": "qsort",
+    "name": "QuickSort Implementation",
+    "file_path": "src/libc/stdlib/qsort.rs",
+    "description": "qsort implementation for array sorting",
+    "bug_hypothesis": "Sort order wrong, comparator not called correctly, or stack overflow"
   }
 ]
