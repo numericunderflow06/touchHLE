@@ -364,8 +364,12 @@ impl Window {
             // rotate
             let matrix = window.rotation_matrix().inverse().unwrap();
             let [x, y] = matrix.transform([x, y]);
-            // back to pixels
-            let (out_w, out_h) = window.size_unrotated_unscaled();
+            // back to pixels, using the current orientation's dimensions
+            // so touches map correctly for landscape apps
+            let (out_w, out_h) = size_for_orientation(
+                window.device_orientation,
+                NonZeroU32::new(1).unwrap(),
+            );
             let out_x = (x + 0.5) * out_w as f32;
             let out_y = (y + 0.5) * out_h as f32;
             (out_x, out_y)
