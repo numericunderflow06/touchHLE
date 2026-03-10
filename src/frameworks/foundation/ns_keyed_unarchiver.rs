@@ -71,6 +71,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)unarchiveObjectWithData:(id)data { // NSData *
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initForReadingWithData:data];
+    if new == nil {
+        log!("NSKeyedUnarchiver: initForReadingWithData returned nil, returning nil");
+        return nil;
+    }
     let root_key = get_static_str(env, NSKeyedArchiveRootObjectKey);
     let result: id = msg![env; new decodeObjectForKey:root_key];
     autorelease(env, result)
@@ -92,10 +96,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     assert!(host_obj.current_key.is_none());
     assert!(host_obj.plist.is_empty());
 
-    let plist = Value::from_reader(Cursor::new(slice)).unwrap();
-    let plist = plist.into_dictionary().unwrap();
-    assert!(plist["$version"].as_unsigned_integer() == Some(100000));
-    assert!(plist["$archiver"].as_string() == Some("NSKeyedArchiver"));
+    let Ok(plist) = Value::from_reader(Cursor::new(slice)) else {
+        log!("Warning: NSKeyedUnarchiver: failed to parse plist data ({} bytes), returning empty unarchiver", length);
+        // Return this with empty state - decodeObjectForKey: will return nil
+        return this;
+    };
+    let Some(plist) = plist.into_dictionary() else {
+        log!("Warning: NSKeyedUnarchiver: plist is not a dictionary, returning empty unarchiver");
+        return this;
+    };
+    if plist.get("$version").and_then(|v| v.as_unsigned_integer()) != Some(100000)
+        || plist.get("$archiver").and_then(|v| v.as_string()) != Some("NSKeyedArchiver")
+    {
+        log!("Warning: NSKeyedUnarchiver: not a valid NSKeyedArchiver plist, returning empty unarchiver");
+        return this;
+    }
 
     let key_count = plist["$objects"].as_array().unwrap().len();
 
@@ -103,6 +118,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     host_obj.plist = plist;
 
     this
+}
+
+- (())finishDecoding {
+    // Signals that decoding is complete. On real iOS this notifies the
+    // delegate and prevents further decode calls. We just log it.
+    log_dbg!("[(NSKeyedUnarchiver*){:?} finishDecoding]", this);
 }
 
 - (())dealloc {
@@ -271,6 +292,13 @@ fn borrow_host_obj(env: &mut Environment, unarchiver: id) -> &mut NSKeyedUnarchi
 fn get_value_to_decode_for_key(env: &mut Environment, unarchiver: id, key: id) -> Option<&Value> {
     let key = to_rust_string(env, key); // TODO: avoid copying string
     let host_obj = borrow_host_obj(env, unarchiver);
+
+    // Handle empty/invalid plist (e.g. from failed initForReadingWithData:)
+    if host_obj.plist.is_empty() {
+        log!("[DIAG-H2] NSKeyedUnarchiver: key '{}' NOT FOUND (empty plist)", key);
+        return None;
+    }
+
     let scope = match host_obj.current_key {
         Some(current_uid) => {
             &host_obj.plist["$objects"].as_array().unwrap()[current_uid.get() as usize]
@@ -346,6 +374,10 @@ fn unarchive_key(env: &mut Environment, unarchiver: id, key: Uid) -> id {
         }
         Value::String(s) => {
             let s = s.to_string();
+            // [DIAG-PATH] Code-focused diagnostic: Log decoded path-like strings
+            if s.contains(".png") || s.contains(".PNG") || s.contains(".Image") || s.contains("/") {
+                log!("[DIAG-PATH] Decoded path-like string: '{}' (len={})", s, s.len());
+            }
             from_rust_string(env, s)
         }
         Value::Integer(int) => {

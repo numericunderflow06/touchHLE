@@ -342,7 +342,7 @@ fn handle_touches_move(env: &mut Environment, map: HashMap<FingerId, Coords>) {
             continue;
         };
 
-        log_dbg!("Finger {:?} touch move: {:?}", finger_id, coords);
+        log!("Finger {:?} touch move: {:?}", finger_id, coords);
         event_capture::touch_move(&format!("{:?}", finger_id), coords.0, coords.1);
 
         let location = CGPoint {
@@ -384,7 +384,7 @@ fn handle_touches_move(env: &mut Environment, map: HashMap<FingerId, Coords>) {
     autorelease(env, event);
 
     for (view, touches) in view_touches {
-        log_dbg!(
+        log!(
             "Sending [{:?} touchesMoved:{:?} withEvent:{:?}]",
             view,
             touches,

@@ -93,7 +93,12 @@ fn objc_msgSend_inner(env: &mut Environment, receiver: id, selector: SEL, super2
             );
         }
 
-        let host_object = env.objc.get_host_object(class).unwrap();
+        let host_object = env.objc.get_host_object(class).unwrap_or_else(|| {
+            panic!(
+                "No host object for class {:?} in superclass chain of {:?} while looking up selector \"{}\"",
+                class, orig_class, selector.as_str(&env.mem)
+            );
+        });
 
         if let Some(&super::ClassHostObject {
             superclass,
