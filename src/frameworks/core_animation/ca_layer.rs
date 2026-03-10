@@ -143,6 +143,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     msg![env; new_layer init]
 }
 
+// Class method for description - used when calling [CALayer description]
++ (id)description {
+    let ns_string = ns_string::from_rust_string(env, "CALayer".to_string());
+    autorelease(env, ns_string)
+}
+
 - (())dealloc {
     let &mut CALayerHostObject {
         drawable_properties,
@@ -232,7 +238,21 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (CGRect)bounds {
-    env.objc.borrow::<CALayerHostObject>(this).bounds
+    let bounds = env.objc.borrow::<CALayerHostObject>(this).bounds;
+    // [DIAG-H1-LAYER] Log CALayer bounds queries for dimension debugging
+    let (w, h) = (bounds.size.width, bounds.size.height);
+    // [DIAG-ERR-CALAYER] Specific logging for CAEAGLLayer (GL rendering surface)
+    // to check if layer has different dimensions than UIView
+    let class: id = msg![env; this class];
+    let class_name_ns: id = msg![env; class description];
+    let class_name = crate::frameworks::foundation::ns_string::to_rust_string(env, class_name_ns);
+    if class_name.contains("EAGL") || class_name.contains("GL") {
+        log!("[DIAG-ERR-CALAYER] {}.bounds = {:.1}x{:.1}", class_name, w, h);
+    } else {
+        log!("[DIAG-H1-LAYER] CALayer {:?} ({}) bounds: {:.1} x {:.1}",
+             this, class_name, w, h);
+    }
+    bounds
 }
 - (())setBounds:(CGRect)bounds {
     env.objc.borrow_mut::<CALayerHostObject>(this).bounds = bounds;
@@ -530,6 +550,13 @@ pub const CLASSES: ClassExports = objc_classes! {
     if let Some(anim) = env.objc.borrow_mut::<CALayerHostObject>(this).animations.remove(&*key_string) {
         release(env, anim);
     };
+}
+
+// NSObject method - instance description for debugging
+- (id)description {
+    let desc = format!("<CALayer: {:?}>", this);
+    let ns_string = ns_string::from_rust_string(env, desc);
+    autorelease(env, ns_string)
 }
 
 // TODO: more

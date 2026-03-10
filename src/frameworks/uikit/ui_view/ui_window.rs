@@ -7,9 +7,10 @@
 
 use super::UIViewHostObject;
 use crate::dyld::{ConstantExports, HostConstant};
-use crate::frameworks::core_graphics::{CGPoint, CGRect};
+use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::ns_string;
 use crate::objc::{id, msg, msg_class, msg_super, nil, objc_classes, ClassExports};
+use crate::window::DeviceOrientation;
 
 #[derive(Default)]
 pub struct State {
@@ -109,6 +110,45 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     () = msg![env; this makeKeyWindow];
 
+    // When the device is in landscape orientation, resize the window and all
+    // its subviews to landscape dimensions. This simulates what UIKit does
+    // on real iOS when the view controller supports landscape: it applies a
+    // rotation transform and resizes the view hierarchy.
+    let orientation = env.window().current_rotation();
+    if matches!(orientation, DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight) {
+        let screen: id = msg_class![env; UIScreen mainScreen];
+        let screen_bounds: CGRect = msg![env; screen bounds];
+        let (sw, sh) = (screen_bounds.size.width, screen_bounds.size.height);
+        log!("makeKeyAndVisible: landscape mode, resizing window to {}x{}", sw, sh);
+        () = msg![env; this setFrame:screen_bounds];
+        // Resize all subviews to fill the window (simulating autoresizing)
+        let subviews: Vec<id> = env.objc.borrow::<UIViewHostObject>(this).subviews.clone();
+        log!("makeKeyAndVisible: window has {} subviews", subviews.len());
+        for subview in subviews {
+            let sub_frame: CGRect = msg![env; subview frame];
+            // Only resize views that were fullscreen in portrait
+            if sub_frame.size.width >= 319.0 && sub_frame.size.height >= 479.0 {
+                let new_frame = CGRect {
+                    origin: sub_frame.origin,
+                    size: screen_bounds.size,
+                };
+                () = msg![env; subview setFrame:new_frame];
+                // Also resize grandchildren (e.g. EAGLView inside a container)
+                let grandchildren: Vec<id> = env.objc.borrow::<UIViewHostObject>(subview).subviews.clone();
+                for grandchild in grandchildren {
+                    let gc_frame: CGRect = msg![env; grandchild frame];
+                    if gc_frame.size.width >= 319.0 && gc_frame.size.height >= 479.0 {
+                        let new_gc_frame = CGRect {
+                            origin: gc_frame.origin,
+                            size: screen_bounds.size,
+                        };
+                        () = msg![env; grandchild setFrame:new_gc_frame];
+                    }
+                }
+            }
+        }
+    }
+
     // TODO: post UIWindowDidBecomeVisibleNotification
     () = msg![env; this setHidden:false];
 }
@@ -122,6 +162,25 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (())addSubview:(id)view {
     log_dbg!("[(UIWindow*){:?} addSubview:{:?}] => ()", this, view);
+
+    // When in landscape mode, resize fullscreen subviews to landscape dimensions
+    let orientation = env.window().current_rotation();
+    if view != nil && matches!(orientation, DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight) {
+        let view_frame: CGRect = msg![env; view frame];
+        let (vw, vh) = (view_frame.size.width, view_frame.size.height);
+        // If the view was sized for portrait (width < height), resize to landscape
+        if vh > vw && vw >= 319.0 && vh >= 479.0 {
+            let screen: id = msg_class![env; UIScreen mainScreen];
+            let screen_bounds: CGRect = msg![env; screen bounds];
+            let new_frame = CGRect {
+                origin: view_frame.origin,
+                size: screen_bounds.size,
+            };
+            () = msg![env; view setFrame:new_frame];
+            let (nw, nh) = (screen_bounds.size.width, screen_bounds.size.height);
+            log!("UIWindow.addSubview: resized view to {}x{} for landscape", nw, nh);
+        }
+    }
 
     if view == nil || env.objc.borrow::<UIViewHostObject>(view).view_controller == nil {
         () = msg_super![env; this addSubview:view];

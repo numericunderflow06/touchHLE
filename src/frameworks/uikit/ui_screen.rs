@@ -7,6 +7,7 @@
 
 use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
 use crate::objc::{id, msg, objc_classes, ClassExports, TrivialHostObject};
+use crate::window::DeviceOrientation;
 
 #[derive(Default)]
 pub struct State {
@@ -41,14 +42,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 // TODO: more accessors
 
 - (CGRect)bounds {
-    // TODO: once rotation is supported, this must change with the rotation!
+    // Return dimensions based on current device orientation.
+    // On pre-iOS 8, UIScreen.bounds was always portrait, but since touchHLE
+    // doesn't implement UIKit's view rotation transforms, we return rotated
+    // bounds so landscape apps get the correct dimensions for their views.
+    let (w, h) = match env.window().current_rotation() {
+        DeviceOrientation::Portrait => (320.0f32, 480.0f32),
+        DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight => (480.0, 320.0),
+    };
     let bounds = CGRect {
         origin: CGPoint { x: 0.0, y: 0.0 },
-        size: CGSize { width: 320.0, height: 480.0 },
+        size: CGSize { width: w, height: h },
     };
-    // Copy to local vars to avoid packed struct field reference issues
-    let (w, h) = (bounds.size.width, bounds.size.height);
-    log!("[DIAG-DEV] UIScreen.bounds queried, returning: {}x{}", w, h);
+    log!("[DIAG-E2] UIScreen.bounds = {}x{}", w, h);
     bounds
 }
 
@@ -61,7 +67,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     }
     // Copy to local vars to avoid packed struct field reference issues
     let (w, h, x, y) = (bounds.size.width, bounds.size.height, bounds.origin.x, bounds.origin.y);
-    log!("[DIAG-DEV] UIScreen.applicationFrame queried, returning: {}x{} at ({},{})", w, h, x, y);
+    // [DIAG-E3] Log UIScreen.applicationFrame for dimension source debugging
+    log!("[DIAG-E3] UIScreen.applicationFrame = {}x{} at ({},{})", w, h, x, y);
     bounds
 }
 

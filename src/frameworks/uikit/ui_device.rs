@@ -71,7 +71,6 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (id)model {
-    // TODO: Hardcoded to iPhone for now
     let model = "iPhone";
     log!("[DIAG-DEV] UIDevice.model queried, returning: '{}'", model);
     ns_string::get_static_str(env, model)
@@ -108,11 +107,25 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (UIDeviceOrientation)orientation {
-    match env.window().current_rotation() {
+    let orientation = match env.window().current_rotation() {
         DeviceOrientation::Portrait => UIDeviceOrientationPortrait,
         DeviceOrientation::LandscapeLeft => UIDeviceOrientationLandscapeLeft,
         DeviceOrientation::LandscapeRight => UIDeviceOrientationLandscapeRight
-    }
+    };
+    // [DIAG-ERR-ORIENT] Log device orientation queries to detect landscape/portrait confusion
+    log!("[DIAG-ERR-ORIENT] UIDevice.orientation queried => {} ({})",
+         orientation,
+         match orientation {
+             0 => "Unknown",
+             1 => "Portrait",
+             2 => "PortraitUpsideDown",
+             3 => "LandscapeLeft",
+             4 => "LandscapeRight",
+             5 => "FaceUp",
+             6 => "FaceDown",
+             _ => "Invalid"
+         });
+    orientation
 }
 - (())setOrientation:(UIDeviceOrientation)orientation {
     env.window_mut().rotate_device(match orientation {

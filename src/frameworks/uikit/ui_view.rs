@@ -282,6 +282,26 @@ pub const CLASSES: ClassExports = objc_classes! {
         return;
     }
 
+    // When in landscape mode, resize fullscreen-portrait views to landscape
+    {
+        use crate::window::DeviceOrientation;
+        let orientation = env.window().current_rotation();
+        if matches!(orientation, DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight) {
+            let parent_bounds: CGRect = msg![env; this bounds];
+            let view_frame: CGRect = msg![env; view frame];
+            let (vw, vh) = (view_frame.size.width, view_frame.size.height);
+            let (pw, ph) = (parent_bounds.size.width, parent_bounds.size.height);
+            // If view is fullscreen-portrait and parent is landscape, resize
+            if vh > vw && vw >= 319.0 && vh >= 479.0 && pw > ph {
+                let new_frame = CGRect {
+                    origin: view_frame.origin,
+                    size: parent_bounds.size,
+                };
+                () = msg![env; view setFrame:new_frame];
+            }
+        }
+    }
+
     if env.objc.borrow::<UIViewHostObject>(view).superview == this {
         () = msg![env; this bringSubviewToFront:view];
     } else {
@@ -519,7 +539,20 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (CGRect)bounds {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer bounds]
+    let bounds: CGRect = msg![env; layer bounds];
+    // [DIAG-E1] Log UIView.bounds for dimension debugging - especially GL-related views
+    let class: Class = msg![env; this class];
+    let class_name = env.objc.get_class_name(class);
+    // Copy packed struct fields to local variables to avoid E0793
+    let (ox, oy) = (bounds.origin.x, bounds.origin.y);
+    let (w, h) = (bounds.size.width, bounds.size.height);
+    // Log all bounds queries for GL views, and any with 320 height to catch dimension issues
+    if class_name.contains("EAGL") || class_name.contains("GL") ||
+       h == 320.0 || w == 320.0 {
+        log!("[DIAG-E1] {}.bounds = origin=({:.1},{:.1}), size={:.1}x{:.1}",
+             class_name, ox, oy, w, h);
+    }
+    bounds
 }
 - (())setBounds:(CGRect)bounds {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
@@ -536,9 +569,34 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (CGRect)frame {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer frame]
+    let frame: CGRect = msg![env; layer frame];
+    // [DIAG-ERR-FRAME] Log UIView.frame queries for dimension debugging
+    // Frame is distinct from bounds and includes transform calculations
+    let class: Class = msg![env; this class];
+    let class_name = env.objc.get_class_name(class);
+    // Copy packed struct fields to local variables to avoid E0793
+    let (fw, fh) = (frame.size.width, frame.size.height);
+    // Log frames with 320 dimension (the problematic Y cap value) or GL-related views
+    if fh == 320.0 || fw == 320.0 || class_name.contains("EAGL") || class_name.contains("GL") {
+        let origin_x = frame.origin.x;
+        let origin_y = frame.origin.y;
+        log!("[DIAG-ERR-FRAME] {}.frame = origin=({:.1},{:.1}), size={:.1}x{:.1}",
+             class_name, origin_x, origin_y, fw, fh);
+    }
+    frame
 }
 - (())setFrame:(CGRect)frame {
+    // [DIAG-E10-SETFRAME] Error-focused diagnostic: log setFrame mutations with 320 dimension
+    // If a view is explicitly set to 320 height, this catches the caller
+    let (fw, fh) = (frame.size.width, frame.size.height);
+    if fw == 320.0 || fh == 320.0 {
+        let class: Class = msg![env; this class];
+        let class_name = env.objc.get_class_name(class);
+        let origin_x = frame.origin.x;
+        let origin_y = frame.origin.y;
+        log!("[DIAG-E10-SETFRAME] {}.setFrame: origin=({:.1},{:.1}), size={:.1}x{:.1}",
+             class_name, origin_x, origin_y, fw, fh);
+    }
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
     msg![env; layer setFrame:frame]
 }

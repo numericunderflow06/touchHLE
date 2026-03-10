@@ -6,8 +6,10 @@
 //! `CAEAGLLayer`.
 
 use super::ca_layer::CALayerHostObject;
-use crate::frameworks::core_graphics::{CGPoint, CGRect};
-use crate::objc::{id, msg, msg_class, nil, objc_classes, Class, ClassExports};
+use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
+use crate::frameworks::foundation::ns_string::from_rust_string;
+use crate::objc::{autorelease, id, msg, msg_class, nil, objc_classes, Class, ClassExports};
+use crate::window::DeviceOrientation;
 use crate::Environment;
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -15,6 +17,12 @@ pub const CLASSES: ClassExports = objc_classes! {
 (env, this, _cmd);
 
 @implementation CAEAGLLayer: CALayer
+
+// Class method for description - used when calling [CAEAGLLayer description]
++ (id)description {
+    let ns_string = from_rust_string(env, "CAEAGLLayer".to_string());
+    autorelease(env, ns_string)
+}
 
 // EAGLDrawable implementation (the only one)
 
@@ -26,6 +34,31 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (())setDrawableProperties:(id)props { // NSDictionary<NSString*, id>*
     let props: id = msg![env; props copy];
     env.objc.borrow_mut::<CALayerHostObject>(this).drawable_properties = props;
+}
+
+// Override bounds to return landscape dimensions when the device is in
+// landscape orientation. This simulates UIKit's view rotation which would
+// resize the EAGLView's layer to landscape on a real device.
+- (CGRect)bounds {
+    let mut bounds = env.objc.borrow::<CALayerHostObject>(this).bounds;
+    let orientation = env.window().current_rotation();
+    if matches!(orientation, DeviceOrientation::LandscapeLeft | DeviceOrientation::LandscapeRight) {
+        let (w, h) = (bounds.size.width, bounds.size.height);
+        // If bounds are portrait (height > width), swap to landscape
+        if h > w {
+            bounds.size = CGSize { width: h, height: w };
+        }
+    }
+    let (w, h) = (bounds.size.width, bounds.size.height);
+    log!("[CAEAGLLayer] bounds = {:.0}x{:.0}", w, h);
+    bounds
+}
+
+// NSObject method - required for debugging/logging (instance method)
+- (id)description {
+    let desc = format!("<CAEAGLLayer: {:?}>", this);
+    let ns_string = from_rust_string(env, desc);
+    autorelease(env, ns_string)
 }
 
 @end
@@ -76,6 +109,19 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
 
         let layer_host_obj: &CALayerHostObject = env.objc.borrow(layer);
 
+        // [DIAG-C1] Code-focused diagnostic: Log layer properties for debugging fullscreen checks
+        log!("[DIAG-C1] find_fullscreen_eagl_layer checking layer {:?}:", layer);
+        log!("[DIAG-C1]   bounds.size={:?} vs screen={:?}",
+             layer_host_obj.bounds.size, screen_bounds.size);
+        log!("[DIAG-C1]   bounds.origin={:?} (expect (0,0))", layer_host_obj.bounds.origin);
+        log!("[DIAG-C1]   anchor_point={:?} (expect (0.5,0.5))", layer_host_obj.anchor_point);
+        log!("[DIAG-C1]   position={:?} (expect ({}, {}))",
+             layer_host_obj.position,
+             screen_bounds.size.width / 2.0,
+             screen_bounds.size.height / 2.0);
+        log!("[DIAG-C1]   hidden={}, opacity={}, identity_transform={}",
+             layer_host_obj.hidden, layer_host_obj.opacity, layer_host_obj.affine_transform.is_identity());
+
         // This is stricter than it should be. In theory we should accumulate
         // the transforms and handle different anchor points etc, but real apps
         // probably only use this common case.
@@ -93,10 +139,15 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
             //       layer (typical example is 90° rotation).
             || !layer_host_obj.affine_transform.is_identity()
         {
+            // [DIAG-C2] Code-focused diagnostic: Log which check failed
+            log!("[DIAG-C2] Layer {:?} FAILED fullscreen check - falling back to slow path", layer);
             return nil;
         }
 
-        if let Some(&next) = layer_host_obj.sublayers.last() {
+        // Find the last visible sublayer (skip hidden ones)
+        if let Some(&next) = layer_host_obj.sublayers.iter().rev().find(|&&l| {
+            !env.objc.borrow::<CALayerHostObject>(l).hidden
+        }) {
             layer = next;
         } else {
             break;
@@ -104,14 +155,18 @@ pub fn find_fullscreen_eagl_layer(env: &mut Environment) -> id {
     }
 
     if !env.objc.borrow::<CALayerHostObject>(layer).opaque {
+        log!("[DIAG-C2] Layer {:?} is not opaque - falling back to slow path", layer);
         return nil;
     }
 
     let ca_eagl_layer_class: Class = msg_class![env; CAEAGLLayer class];
     if !msg![env; layer isKindOfClass:ca_eagl_layer_class] {
+        log!("[DIAG-C2] Layer {:?} is not CAEAGLLayer - falling back to slow path", layer);
         return nil;
     }
 
+    // [DIAG-C2] Code-focused diagnostic: Layer passed all checks
+    log!("[DIAG-C2] Layer {:?} PASSED all fullscreen checks - using fast path", layer);
     layer
 }
 

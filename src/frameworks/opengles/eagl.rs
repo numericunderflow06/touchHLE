@@ -225,8 +225,9 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     let window = env.window.as_mut().expect("OpenGL ES is not supported in headless mode");
 
-    // FIXME: get width and height from the layer!
-    let (width, height) = window.size_unrotated_scalehacked();
+    // Use current rotated dimensions so landscape apps get a landscape
+    // renderbuffer (e.g. 480x320 instead of 320x480).
+    let (width, height) = window.size_rotated_scalehacked();
     log!("[renderbufferStorage] Creating renderbuffer with size {}x{}", width, height);
 
     // Unclear from documentation if this method requires an appropriate context
@@ -238,6 +239,26 @@ pub const CLASSES: ClassExports = objc_classes! {
         gles.GetIntegerv(gles11::RENDERBUFFER_BINDING_OES, &mut renderbuffer);
         renderbuffer as _
     };
+
+    // Update the drawable layer's stored bounds to match the actual
+    // renderbuffer dimensions. This is needed because for landscape apps,
+    // the layer bounds from the nib are portrait (320x480) but the
+    // renderbuffer is landscape (480x320). The composition code reads
+    // bounds directly from the host object, so we need to update them.
+    {
+        use crate::frameworks::core_graphics::{CGPoint, CGRect, CGSize};
+        let new_bounds = CGRect {
+            origin: CGPoint { x: 0.0, y: 0.0 },
+            size: CGSize { width: width as f32, height: height as f32 },
+        };
+        () = msg![env; drawable setBounds:new_bounds];
+        let new_position = CGPoint {
+            x: width as f32 / 2.0,
+            y: height as f32 / 2.0,
+        };
+        () = msg![env; drawable setPosition:new_position];
+        log!("[renderbufferStorage] Updated layer bounds to {}x{}", width, height);
+    }
 
     retain(env, drawable);
     let host_obj = env.objc.borrow_mut::<EAGLContextHostObject>(this);

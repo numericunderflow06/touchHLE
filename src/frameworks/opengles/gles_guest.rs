@@ -155,6 +155,8 @@ fn glGetError(env: &mut Environment) -> GLenum {
     })
 }
 fn glEnable(env: &mut Environment, cap: GLenum) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glEnable(cap={:#x})", cap);
     // Log important state enables
     // GL_DEPTH_TEST=0x0B71, GL_CULL_FACE=0x0B44, GL_BLEND=0x0BE2, GL_ALPHA_TEST=0x0BC0
     // GL_STENCIL_TEST=0x0B90, GL_SCISSOR_TEST=0x0C11, GL_CLIP_PLANE0=0x3000
@@ -175,6 +177,10 @@ fn glEnable(env: &mut Environment, cap: GLenum) {
     if !cap_name.is_empty() {
         log_dbg!("glEnable({} / {:#x})", cap_name, cap);
     }
+    // [DIAG-E2-SCISSOR] Error-focused diagnostic: log scissor test enable
+    if cap == 0x0C11 {
+        log!("[DIAG-E2-SCISSOR] glEnable(GL_SCISSOR_TEST)");
+    }
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Enable(cap) };
     });
@@ -183,6 +189,8 @@ fn glIsEnabled(env: &mut Environment, cap: GLenum) -> GLboolean {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.IsEnabled(cap) })
 }
 fn glDisable(env: &mut Environment, cap: GLenum) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glDisable(cap={:#x})", cap);
     let cap_name = match cap {
         0x0B71 => "GL_DEPTH_TEST",
         0x0B44 => "GL_CULL_FACE",
@@ -198,6 +206,10 @@ fn glDisable(env: &mut Environment, cap: GLenum) {
     };
     if !cap_name.is_empty() {
         log_dbg!("glDisable({} / {:#x})", cap_name, cap);
+    }
+    // [DIAG-E2-SCISSOR] Error-focused diagnostic: log scissor test disable
+    if cap == 0x0C11 {
+        log!("[DIAG-E2-SCISSOR] glDisable(GL_SCISSOR_TEST)");
     }
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Disable(cap) };
@@ -219,12 +231,14 @@ fn glDisableClientState(env: &mut Environment, array: GLenum) {
     });
 }
 fn glGetBooleanv(env: &mut Environment, pname: GLenum, params: MutPtr<GLboolean>) {
+    log!("[DIAG-H1-QUERY] glGetBooleanv(pname={:#x})", pname);
     with_ctx_and_mem(env, |gles, mem| {
         let params = mem.ptr_at_mut(params, 16 /* upper bound */);
         unsafe { gles.GetBooleanv(pname, params) };
     });
 }
 fn glGetFloatv(env: &mut Environment, pname: GLenum, params: MutPtr<GLfloat>) {
+    log!("[DIAG-H1-QUERY] glGetFloatv(pname={:#x})", pname);
     assert_ne!(gles11::NUM_COMPRESSED_TEXTURE_FORMATS, pname);
     assert_ne!(gles11::COMPRESSED_TEXTURE_FORMATS, pname);
     with_ctx_and_mem(env, |gles, mem| {
@@ -233,6 +247,12 @@ fn glGetFloatv(env: &mut Environment, pname: GLenum, params: MutPtr<GLfloat>) {
     });
 }
 fn glGetIntegerv(env: &mut Environment, pname: GLenum, params: MutPtr<GLint>) {
+    log!("[DIAG-H1-QUERY] glGetIntegerv(pname={:#x})", pname);
+    // [DIAG-H2-VIEWPORT] Log GL_VIEWPORT queries for dimension debugging
+    const GL_VIEWPORT: GLenum = 0x0BA2;
+    if pname == GL_VIEWPORT {
+        log!("[DIAG-H2-VIEWPORT] glGetIntegerv(GL_VIEWPORT) called");
+    }
     with_ctx_and_mem(env, |gles, mem| {
         match pname {
             gles11::NUM_COMPRESSED_TEXTURE_FORMATS => {
@@ -250,6 +270,17 @@ fn glGetIntegerv(env: &mut Environment, pname: GLenum, params: MutPtr<GLint>) {
                 // but we return 1 to match the real device.
                 mem.write(params, 1 as _);
             }
+            GL_VIEWPORT => {
+                // [DIAG-H2-VIEWPORT] Get and log viewport dimensions
+                let params_ptr = mem.ptr_at_mut(params, 4);
+                unsafe { gles.GetIntegerv(pname, params_ptr) };
+                let x = unsafe { *params_ptr };
+                let y = unsafe { *params_ptr.add(1) };
+                let w = unsafe { *params_ptr.add(2) };
+                let h = unsafe { *params_ptr.add(3) };
+                log!("[DIAG-H2-VIEWPORT] glGetIntegerv(GL_VIEWPORT) returning [x={}, y={}, w={}, h={}]",
+                     x, y, w, h);
+            }
             _ => {
                 let params = mem.ptr_at_mut(params, 16 /* upper bound */);
                 unsafe { gles.GetIntegerv(pname, params) };
@@ -258,6 +289,7 @@ fn glGetIntegerv(env: &mut Environment, pname: GLenum, params: MutPtr<GLint>) {
     });
 }
 fn glGetPointerv(env: &mut Environment, pname: GLenum, params: MutPtr<ConstVoidPtr>) {
+    log!("[DIAG-H1-QUERY] glGetPointerv(pname={:#x})", pname);
     use crate::gles::gles1_on_gl2::{ArrayInfo, ARRAYS};
     let &ArrayInfo { buffer_binding, .. } =
         ARRAYS.iter().find(|info| info.pointer == pname).unwrap();
@@ -419,17 +451,22 @@ fn glShadeModel(env: &mut Environment, mode: GLenum) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.ShadeModel(mode) })
 }
 fn glScissor(env: &mut Environment, x: GLint, y: GLint, width: GLsizei, height: GLsizei) {
+    // [DIAG-E2-SCISSOR] Error-focused diagnostic: log scissor rect changes
+    // Scissor test can clip rendering to a rectangle - if set incorrectly, could cause black screen
+    log!("[DIAG-E2-SCISSOR] glScissor(x={}, y={}, width={}, height={})", x, y, width, height);
     // apply scale hack: assume framebuffer's size is larger than the app thinks
     // and scale scissor appropriately
     let factor = env.options.scale_hack.get() as GLsizei;
     let (x, y) = (x * factor, y * factor);
     let (width, height) = (width * factor, height * factor);
-    log_dbg!("glScissor(x={}, y={}, width={}, height={})", x, y, width, height);
+    log_dbg!("glScissor scaled: (x={}, y={}, width={}, height={})", x, y, width, height);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.Scissor(x, y, width, height)
     })
 }
 fn glViewport(env: &mut Environment, x: GLint, y: GLint, width: GLsizei, height: GLsizei) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glViewport(x={}, y={}, width={}, height={})", x, y, width, height);
     // apply scale hack: assume framebuffer's size is larger than the app thinks
     // and scale viewport appropriately
     let factor = env.options.scale_hack.get() as GLsizei;
@@ -580,6 +617,8 @@ fn glIsBuffer(env: &mut Environment, buffer: GLuint) -> GLboolean {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.IsBuffer(buffer) })
 }
 fn glGenBuffers(env: &mut Environment, n: GLsizei, buffers: MutPtr<GLuint>) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glGenBuffers(n={})", n);
     with_ctx_and_mem(env, |gles, mem| {
         let n_usize: GuestUSize = n.try_into().unwrap();
         let buffers = mem.ptr_at_mut(buffers, n_usize);
@@ -741,6 +780,10 @@ fn glTexCoordPointer(
     stride: GLsizei,
     pointer: ConstVoidPtr,
 ) {
+    // [DIAG-TCOORD] Log texture coordinate pointer configuration for UV mapping debugging
+    // size=2 is standard 2D texturing, type_=0x1406 is GL_FLOAT
+    log!("[DIAG-TCOORD] glTexCoordPointer(size={}, type={:#x}, stride={}, ptr={:?})",
+         size, type_, stride, pointer);
     with_ctx_and_mem(env, |gles, mem| unsafe {
         let pointer =
             translate_pointer_or_offset_to_host(gles, mem, pointer, gles11::ARRAY_BUFFER_BINDING);
@@ -754,6 +797,17 @@ fn glVertexPointer(
     stride: GLsizei,
     pointer: ConstVoidPtr,
 ) {
+    // [DIAG-E1] Error-focused diagnostic: Categorize vertex buffer memory source
+    let ptr_addr = pointer.to_bits();
+    let region = match ptr_addr {
+        0x00000000..=0x00ffffff => "CODE/LOW",
+        0x01000000..=0x2fffffff => "STACK",
+        0x30000000..=0x3fffffff => "HEAP",
+        0x40000000..=0xffffffff => "MMAP/HIGH",
+        _ => "UNKNOWN"
+    };
+    log!("[DIAG-E1] glVertexPointer: region={}, ptr=0x{:08x}, size={}, type={:#x}, stride={}",
+         region, ptr_addr, size, type_, stride);
     with_ctx_and_mem(env, |gles, mem| unsafe {
         let pointer =
             translate_pointer_or_offset_to_host(gles, mem, pointer, gles11::ARRAY_BUFFER_BINDING);
@@ -765,14 +819,232 @@ fn glVertexPointer(
 static DRAW_CALL_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 // [DIAG-E3] Frame counter for frame summary logging
 static FRAME_NUM: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+// [DIAG-E8-TRANSITION] One-shot flag to capture first Y<400 transition
+static TRANSITION_LOGGED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+// [DIAG-VERTEX-SAMPLE] Toggle to test if vertex sampling causes regression
+// Set to false to disable vertex sampling diagnostic code (50.55% vs 42.22% regression check)
+const ENABLE_VERTEX_SAMPLING: bool = false;
+
+// [DIAG-ERR-MAXY-FRAME] Per-frame max Y tracking
+// Uses AtomicU32 with f32 bit representation for thread-safe max Y tracking
+static FRAME_MAX_Y: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+static FRAME_MAX_X: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+// [DIAG-H1-SCENE] Per-frame unique texture count tracking
+static FRAME_TEXTURE_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+// [DIAG-E12-PROJ] One-shot flag to capture projection matrix state at first draw call
+static PROJ_LOGGED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 fn glDrawArrays(env: &mut Environment, mode: GLenum, first: GLint, count: GLsizei) {
     let call_num = DRAW_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     // GL_POINTS=0x0000, GL_LINES=0x0001, GL_LINE_LOOP=0x0002, GL_LINE_STRIP=0x0003
     // GL_TRIANGLES=0x0004, GL_TRIANGLE_STRIP=0x0005, GL_TRIANGLE_FAN=0x0006
     // [DIAG-E3] Error-focused diagnostic: log all draw calls for geometry analysis
-    log!("[DIAG-E3] DrawArrays[{}]: mode={:#x}, first={}, count={}", call_num, mode, first, count);
+    log!("[DIAG-E2] DrawArrays[{}]: mode={:#x}, first={}, count={}", call_num, mode, first, count);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
+        // [DIAG-E12-PROJ] One-shot projection matrix query at first draw call
+        // Queries STATE not CALLS - reveals if projection uses 320 height (would show proj[5] ≈ 0.00625 = 2/320)
+        // vs correct 480 height (would show proj[5] ≈ 0.00417 = 2/480)
+        if !PROJ_LOGGED.load(std::sync::atomic::Ordering::Relaxed) {
+            PROJ_LOGGED.store(true, std::sync::atomic::Ordering::Relaxed);
+            // GL_PROJECTION_MATRIX = 0x0BA7
+            const GL_PROJECTION_MATRIX: GLenum = 0x0BA7;
+            let mut proj: [f32; 16] = [0.0; 16];
+            gles.GetFloatv(GL_PROJECTION_MATRIX, proj.as_mut_ptr());
+            log!("[DIAG-E12-PROJ] Projection matrix at first draw:");
+            log!("[DIAG-E12-PROJ]   [{:.6}, {:.6}, {:.6}, {:.6}]", proj[0], proj[4], proj[8], proj[12]);
+            log!("[DIAG-E12-PROJ]   [{:.6}, {:.6}, {:.6}, {:.6}]", proj[1], proj[5], proj[9], proj[13]);
+            log!("[DIAG-E12-PROJ]   [{:.6}, {:.6}, {:.6}, {:.6}]", proj[2], proj[6], proj[10], proj[14]);
+            log!("[DIAG-E12-PROJ]   [{:.6}, {:.6}, {:.6}, {:.6}]", proj[3], proj[7], proj[11], proj[15]);
+            // Key diagnostic: proj[5] = 2/height in orthographic projection
+            // If proj[5] ≈ 0.00625, projection uses 320 height (problem!)
+            // If proj[5] ≈ 0.00417, projection uses 480 height (correct)
+            if proj[5].abs() > 0.001 {
+                let implied_height = 2.0 / proj[5].abs();
+                log!("[DIAG-E12-PROJ] Implied height from proj[5]: {:.1}", implied_height);
+            }
+
+            // Also log modelview matrix to understand camera position
+            const GL_MODELVIEW_MATRIX: GLenum = 0x0BA6;
+            let mut mv: [f32; 16] = [0.0; 16];
+            gles.GetFloatv(GL_MODELVIEW_MATRIX, mv.as_mut_ptr());
+            log!("[DIAG-E12-PROJ] Modelview matrix at first draw:");
+            log!("[DIAG-E12-PROJ]   MV[{:.3}, {:.3}, {:.3}, {:.3}]", mv[0], mv[4], mv[8], mv[12]);
+            log!("[DIAG-E12-PROJ]   MV[{:.3}, {:.3}, {:.3}, {:.3}]", mv[1], mv[5], mv[9], mv[13]);
+            log!("[DIAG-E12-PROJ]   MV[{:.3}, {:.3}, {:.3}, {:.3}]", mv[2], mv[6], mv[10], mv[14]);
+            log!("[DIAG-E12-PROJ]   MV[{:.3}, {:.3}, {:.3}, {:.3}]", mv[3], mv[7], mv[11], mv[15]);
+            // Camera translation is in the last column (mv[12], mv[13], mv[14])
+            log!("[DIAG-E12-PROJ] Camera position: ({:.2}, {:.2}, {:.2})", -mv[12], -mv[13], -mv[14]);
+        }
+        // [DIAG-ERR-MAXY-FRAME] Lightweight max Y tracking (always runs)
+        // Only check first few vertices for quads to minimize overhead
+        if count >= 4 {
+            let mut vertex_size: GLint = 0;
+            let mut vertex_type: GLint = 0;
+            let mut vertex_stride: GLint = 0;
+            let mut vertex_ptr: *const GLvoid = std::ptr::null();
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_SIZE, &mut vertex_size);
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_TYPE, &mut vertex_type);
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_STRIDE, &mut vertex_stride);
+            gles.GetPointerv(gles11::VERTEX_ARRAY_POINTER, &mut vertex_ptr);
+
+            if !vertex_ptr.is_null() && vertex_type == gles11::FLOAT as GLint && vertex_size >= 2 {
+                let actual_stride = if vertex_stride == 0 { vertex_size * 4 } else { vertex_stride };
+                let base = vertex_ptr as *const f32;
+                let stride_floats = (actual_stride / 4) as usize;
+                // Sample from first 4 vertices
+                let n = std::cmp::min(count as usize, 4);
+                let y0 = *base.add(1);
+                let y1 = if n > 1 { *base.add(stride_floats + 1) } else { y0 };
+                let y2 = if n > 2 { *base.add(stride_floats * 2 + 1) } else { y0 };
+                let y3 = if n > 3 { *base.add(stride_floats * 3 + 1) } else { y0 };
+                let max_y = y0.max(y1).max(y2).max(y3);
+                let min_y = y0.min(y1).min(y2).min(y3);
+                let x0 = *base.add(0);
+                let x1 = if n > 1 { *base.add(stride_floats) } else { x0 };
+                let x2 = if n > 2 { *base.add(stride_floats * 2) } else { x0 };
+                let x3 = if n > 3 { *base.add(stride_floats * 3) } else { x0 };
+                let max_x = x0.max(x1).max(x2).max(x3);
+                let min_x = x0.min(x1).min(x2).min(x3);
+
+                // Detailed per-draw log for frames 50-52
+                let frame = FRAME_NUM.load(std::sync::atomic::Ordering::Relaxed);
+                if frame >= 50 && frame <= 52 {
+                    let depth_test: u8 = { let mut v: u8 = 0; gles.GetBooleanv(gles11::DEPTH_TEST, &mut v); v };
+                    let blend: u8 = { let mut v: u8 = 0; gles.GetBooleanv(gles11::BLEND, &mut v); v };
+                    let scissor: u8 = { let mut v: u8 = 0; gles.GetBooleanv(gles11::SCISSOR_TEST, &mut v); v };
+                    let tex_id: i32 = { let mut v: i32 = 0; gles.GetIntegerv(gles11::TEXTURE_BINDING_2D, &mut v); v };
+                    let vp: [i32; 4] = { let mut v = [0i32; 4]; gles.GetIntegerv(gles11::VIEWPORT, v.as_mut_ptr()); v };
+                    // Get modelview to understand transforms
+                    let mut mv: [f32; 16] = [0.0; 16];
+                    gles.GetFloatv(0x0BA6, mv.as_mut_ptr()); // GL_MODELVIEW_MATRIX
+                    log!("[FRAME-DETAIL] f={} draw={} x=[{:.0},{:.0}] y=[{:.0},{:.0}] depth={} blend={} scissor={} tex={} vp={}x{}",
+                         frame, call_num, min_x, max_x, min_y, max_y, depth_test, blend, scissor, tex_id, vp[2], vp[3]);
+                    // Log modelview: rotation (m[0],m[1],m[4],m[5]) and translation (m[12],m[13])
+                    log!("[FRAME-DETAIL]   mv: rot=[{:.3},{:.3},{:.3},{:.3}] pos=[{:.1},{:.1},{:.1}]",
+                         mv[0], mv[1], mv[4], mv[5], mv[12], mv[13], mv[14]);
+                    // Dump all 4 vertex positions for zero-height or near-zero draws
+                    if max_y - min_y < 1.0 || frame == 50 {
+                        for vi in 0..n {
+                            let vx = *base.add(stride_floats * vi);
+                            let vy = *base.add(stride_floats * vi + 1);
+                            let vz = if vertex_size >= 3 { *base.add(stride_floats * vi + 2) } else { 0.0 };
+                            log!("[FRAME-DETAIL]   v[{}]=({:.2}, {:.2}, {:.2})", vi, vx, vy, vz);
+                        }
+                        // Also dump tex coords if available
+                        let mut tc_size: GLint = 0;
+                        let mut tc_type: GLint = 0;
+                        let mut tc_stride: GLint = 0;
+                        let mut tc_ptr: *const GLvoid = std::ptr::null();
+                        gles.GetIntegerv(0x8088, &mut tc_size); // TEXTURE_COORD_ARRAY_SIZE
+                        gles.GetIntegerv(0x8089, &mut tc_type); // TEXTURE_COORD_ARRAY_TYPE
+                        gles.GetIntegerv(0x808A, &mut tc_stride); // TEXTURE_COORD_ARRAY_STRIDE
+                        gles.GetPointerv(0x8092, &mut tc_ptr); // TEXTURE_COORD_ARRAY_POINTER
+                        if !tc_ptr.is_null() && tc_type == gles11::FLOAT as GLint {
+                            let tc_actual_stride = if tc_stride == 0 { tc_size * 4 } else { tc_stride };
+                            let tc_base = tc_ptr as *const f32;
+                            let tc_sf = (tc_actual_stride / 4) as usize;
+                            for vi in 0..std::cmp::min(n, 4) {
+                                let u = *tc_base.add(tc_sf * vi);
+                                let v = *tc_base.add(tc_sf * vi + 1);
+                                log!("[FRAME-DETAIL]   tc[{}]=({:.4}, {:.4})", vi, u, v);
+                            }
+                        }
+                        log!("[FRAME-DETAIL]   stride={} size={}", actual_stride, vertex_size);
+                    }
+                }
+                let max_x = x0.max(x1).max(x2).max(x3);
+                {
+                    let mut cx = FRAME_MAX_X.load(std::sync::atomic::Ordering::Relaxed);
+                    loop {
+                        let cx_f = f32::from_bits(cx);
+                        if max_x <= cx_f { break; }
+                        match FRAME_MAX_X.compare_exchange_weak(cx, max_x.to_bits(), std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed) {
+                            Ok(_) => break,
+                            Err(x) => cx = x,
+                        }
+                    }
+                }
+                // Atomically update frame max Y using compare-and-swap
+                let mut current = FRAME_MAX_Y.load(std::sync::atomic::Ordering::Relaxed);
+                loop {
+                    let current_f = f32::from_bits(current);
+                    if max_y <= current_f {
+                        break;
+                    }
+                    match FRAME_MAX_Y.compare_exchange_weak(
+                        current,
+                        max_y.to_bits(),
+                        std::sync::atomic::Ordering::Relaxed,
+                        std::sync::atomic::Ordering::Relaxed,
+                    ) {
+                        Ok(_) => break,
+                        Err(x) => current = x,
+                    }
+                }
+
+                // [DIAG-E9-YCORR] Error-focused diagnostic: correlate vertex memory region with Y=320 vertices
+                // Reveals if Y=320 comes from MMAP (assets - can't fix) or HEAP/STACK (runtime - fixable)
+                // Only log significant Y values (Y=320 is the problematic cap)
+                if max_y > 0.0 && max_y <= 320.5 && max_y >= 319.5 {
+                    let ptr_addr = vertex_ptr as usize as u32;
+                    let region = match ptr_addr {
+                        0x00000000..=0x00ffffff => "CODE",
+                        0x01000000..=0x2fffffff => "STACK",
+                        0x30000000..=0x3fffffff => "HEAP",
+                        _ => "MMAP",
+                    };
+                    log!("[DIAG-E9-YCORR] Draw[{}]: region={} max_y={:.1} ptr={:#x}",
+                         call_num, region, max_y, ptr_addr);
+                }
+            }
+        }
+
+        // [DIAG-VERTEX-SAMPLE] Conditional detailed vertex sampling - disabled to check for regression
+        if ENABLE_VERTEX_SAMPLING {
+            // [DIAG-E1-VERTEX] Error-focused diagnostic: sample vertex Y coordinates
+            // Query vertex array state to determine if terrain geometry is being submitted
+            let mut vertex_size: GLint = 0;
+            let mut vertex_type: GLint = 0;
+            let mut vertex_stride: GLint = 0;
+            let mut vertex_ptr: *const GLvoid = std::ptr::null();
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_SIZE, &mut vertex_size);
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_TYPE, &mut vertex_type);
+            gles.GetIntegerv(gles11::VERTEX_ARRAY_STRIDE, &mut vertex_stride);
+            gles.GetPointerv(gles11::VERTEX_ARRAY_POINTER, &mut vertex_ptr);
+
+            // Only sample for quad draws (count=4) which are typical 2D sprites
+            // Sample first 4 Y coordinates if pointer is valid and type is GL_FLOAT
+            if count >= 4 && !vertex_ptr.is_null() && vertex_type == gles11::FLOAT as GLint {
+                let actual_stride = if vertex_stride == 0 {
+                    vertex_size * 4  // sizeof(float) = 4
+                } else {
+                    vertex_stride
+                };
+                // Read Y coordinates (assuming 2D or 3D vertices, Y is at offset 1)
+                if vertex_size >= 2 {
+                    let base = vertex_ptr as *const f32;
+                    let stride_floats = (actual_stride / 4) as usize; // convert byte stride to float stride
+                    let y0 = *base.add(1);
+                    let y1 = *base.add(stride_floats + 1);
+                    let y2 = *base.add(stride_floats * 2 + 1);
+                    let y3 = *base.add(stride_floats * 3 + 1);
+                    log!("[DIAG-E1-VERTEX] DrawArrays[{}]: Y coords = [{:.1}, {:.1}, {:.1}, {:.1}]",
+                         call_num, y0, y1, y2, y3);
+
+                    // [DIAG-E8-TRANSITION] One-shot log for first Y<400 transition
+                    // This captures the exact moment when gameplay vertices replace menu vertices
+                    let max_y = y0.max(y1).max(y2).max(y3);
+                    let frame = FRAME_NUM.load(std::sync::atomic::Ordering::Relaxed);
+                    if max_y < 400.0 && max_y > 0.0 && !TRANSITION_LOGGED.swap(true, std::sync::atomic::Ordering::SeqCst) {
+                        log!("[DIAG-E8-TRANSITION] FIRST Y<400 vertex! frame={} max_y={:.1} call_num={}",
+                             frame, max_y, call_num);
+                    }
+                }
+            }
+        }
         let fog_state_backup = clamp_fog_state_values(gles);
         gles.DrawArrays(mode, first, count);
         restore_fog_state_values(gles, fog_state_backup);
@@ -813,13 +1085,23 @@ fn glDrawElements(
 
 // Clearing
 fn glClear(env: &mut Environment, mask: GLbitfield) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glClear(mask={:#x})", mask);
     // [DIAG-E3] Frame summary: log draw call count from previous frame
     // glClear with color buffer bit typically marks a new frame
     if (mask & 0x4000) != 0 {
         let frame = FRAME_NUM.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let total_draws = DRAW_CALL_COUNT.swap(0, std::sync::atomic::Ordering::Relaxed);
+        // [DIAG-ERR-MAXY-FRAME] Get and reset per-frame max Y
+        let max_y_bits = FRAME_MAX_Y.swap(0, std::sync::atomic::Ordering::Relaxed);
+        let max_y = f32::from_bits(max_y_bits);
+        // [DIAG-H1-SCENE] Get and reset per-frame texture count
+        let tex_count = FRAME_TEXTURE_COUNT.swap(0, std::sync::atomic::Ordering::Relaxed);
+        let max_x_bits = FRAME_MAX_X.swap(0, std::sync::atomic::Ordering::Relaxed);
+        let max_x = f32::from_bits(max_x_bits);
         if frame > 0 {
-            log!("[DIAG-E3] Frame {} complete: {} draw calls total", frame - 1, total_draws);
+            log!("[DIAG-E2] Frame {} complete: {} draw calls, max_x={:.1}, max_y={:.1}, textures={}",
+                 frame - 1, total_draws, max_x, max_y, tex_count);
         }
     }
     // GL_COLOR_BUFFER_BIT = 0x4000, GL_DEPTH_BUFFER_BIT = 0x100, GL_STENCIL_BUFFER_BIT = 0x400
@@ -838,6 +1120,8 @@ fn glClearColor(
     blue: GLclampf,
     alpha: GLclampf,
 ) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glClearColor(r={}, g={}, b={}, a={})", red, green, blue, alpha);
     log_dbg!("glClearColor({}, {}, {}, {})", red, green, blue, alpha);
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.ClearColor(red, green, blue, alpha)
@@ -867,6 +1151,14 @@ fn glClearStencil(env: &mut Environment, s: GLint) {
 
 // Matrix stack operations
 fn glMatrixMode(env: &mut Environment, mode: GLenum) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    let mode_str = match mode {
+        0x1700 => "GL_MODELVIEW",
+        0x1701 => "GL_PROJECTION",
+        0x1702 => "GL_TEXTURE",
+        _ => "UNKNOWN",
+    };
+    log!("[DIAG-H1-GLCALL] glMatrixMode({} / {:#x})", mode_str, mode);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.MatrixMode(mode) };
     });
@@ -877,9 +1169,21 @@ fn glLoadIdentity(env: &mut Environment) {
     });
 }
 fn glLoadMatrixf(env: &mut Environment, m: ConstPtr<GLfloat>) {
+    // [DIAG-E1] Log projection matrix values to detect 320 vs 480 coordinate space
     with_ctx_and_mem(env, |gles, mem| {
-        let m = mem.ptr_at(m, 16);
-        unsafe { gles.LoadMatrixf(m) };
+        let m_ptr = mem.ptr_at(m, 16);
+        // Read matrix values for diagnostic logging
+        let matrix: [f32; 16] = unsafe {
+            std::ptr::read(m_ptr as *const [f32; 16])
+        };
+        // For orthographic projection: m[0] = 2/width, m[5] = 2/height
+        // If m[5] ≈ 0.00625 (2/320), game thinks height is 320
+        // If m[5] ≈ 0.00417 (2/480), projection is correct for 480 height
+        log!(
+            "[DIAG-E1-MATRIX] glLoadMatrixf: m[0]={:.6} m[5]={:.6} m[10]={:.6} m[12]={:.4} m[13]={:.4} m[14]={:.4}",
+            matrix[0], matrix[5], matrix[10], matrix[12], matrix[13], matrix[14]
+        );
+        unsafe { gles.LoadMatrixf(m_ptr) };
     });
 }
 fn glLoadMatrixx(env: &mut Environment, m: ConstPtr<GLfixed>) {
@@ -919,7 +1223,12 @@ fn glOrthof(
     near: GLfloat,
     far: GLfloat,
 ) {
-    log_dbg!("glOrthof(left={}, right={}, bottom={}, top={}, near={}, far={})", left, right, bottom, top, near, far);
+    // [DIAG-ERR1-ORTHOF] Log orthographic projection parameters (float version)
+    // If top=320, game thinks height is 320 instead of 480
+    log!(
+        "[DIAG-ERR1-ORTHOF] glOrthof: left={:.1}, right={:.1}, bottom={:.1}, top={:.1}, near={:.1}, far={:.1}",
+        left, right, bottom, top, near, far
+    );
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Orthof(left, right, bottom, top, near, far) };
     });
@@ -933,6 +1242,18 @@ fn glOrthox(
     near: GLfixed,
     far: GLfixed,
 ) {
+    // [DIAG-E3] Log fixed-point orthographic projection parameters
+    // GLfixed is 16.16 fixed-point, divide by 65536.0 to get float value
+    let l = (left as f32) / 65536.0;
+    let r = (right as f32) / 65536.0;
+    let b = (bottom as f32) / 65536.0;
+    let t = (top as f32) / 65536.0;
+    let n = (near as f32) / 65536.0;
+    let f = (far as f32) / 65536.0;
+    log!(
+        "[DIAG-E3-ORTHOX] glOrthox: left={:.1}, right={:.1}, bottom={:.1}, top={:.1}, near={:.1}, far={:.1}",
+        l, r, b, t, n, f
+    );
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Orthox(left, right, bottom, top, near, far) };
     });
@@ -946,8 +1267,32 @@ fn glFrustumf(
     near: GLfloat,
     far: GLfloat,
 ) {
+    // [DIAG-FRUSTUM] Log frustum parameters - critical for screen truncation debugging
+    // A symmetric frustum would have left=-right and bottom=-top
+    // Aspect ratio = (right-left)/(top-bottom) should match screen aspect (320/480 = 0.667)
+    let width = right - left;
+    let height = top - bottom;
+    let aspect = if height != 0.0 { width / height } else { 0.0 };
+    log!(
+        "[DIAG-FRUSTUM] glFrustumf: left={:.6}, right={:.6}, bottom={:.6}, top={:.6}, near={:.2}, far={:.2}",
+        left, right, bottom, top, near, far
+    );
+    log!(
+        "[DIAG-FRUSTUM]   width={:.6}, height={:.6}, aspect={:.4} (expected 0.6667 for 320x480)",
+        width, height, aspect
+    );
+
+    // [FIX-FRUSTUM] Experimental: extend frustum vertically to capture more content
+    // Testing shows black at both top and bottom - the scene is NARROWER than the frustum.
+    // This might indicate the game expects a different aspect ratio (like square or landscape).
+    // Let's try removing the fix for now and investigate the actual aspect ratio issue.
+    let adjusted_bottom = bottom;
+    let adjusted_top = top;
+    log!(
+        "[FIX-FRUSTUM] No shift applied (investigating aspect ratio mismatch)");
+
     with_ctx_and_mem(env, |gles, _mem| {
-        unsafe { gles.Frustumf(left, right, bottom, top, near, far) };
+        unsafe { gles.Frustumf(left, right, adjusted_bottom, adjusted_top, near, far) };
     });
 }
 fn glFrustumx(
@@ -959,11 +1304,30 @@ fn glFrustumx(
     near: GLfixed,
     far: GLfixed,
 ) {
+    // [DIAG-FRUSTUM] Log fixed-point frustum parameters (16.16 format)
+    let l = (left as f32) / 65536.0;
+    let r = (right as f32) / 65536.0;
+    let b = (bottom as f32) / 65536.0;
+    let t = (top as f32) / 65536.0;
+    let n = (near as f32) / 65536.0;
+    let f = (far as f32) / 65536.0;
+    let width = r - l;
+    let height = t - b;
+    let aspect = if height != 0.0 { width / height } else { 0.0 };
+    log!(
+        "[DIAG-FRUSTUM] glFrustumx: left={:.6}, right={:.6}, bottom={:.6}, top={:.6}, near={:.2}, far={:.2}",
+        l, r, b, t, n, f
+    );
+    log!(
+        "[DIAG-FRUSTUM]   width={:.6}, height={:.6}, aspect={:.4} (expected 0.6667 for 320x480)",
+        width, height, aspect
+    );
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Frustumx(left, right, bottom, top, near, far) };
     });
 }
 fn glRotatef(env: &mut Environment, angle: GLfloat, x: GLfloat, y: GLfloat, z: GLfloat) {
+    log!("[DIAG-ROT] glRotatef(angle={}, x={}, y={}, z={})", angle, x, y, z);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Rotatef(angle, x, y, z) };
     });
@@ -1018,6 +1382,8 @@ fn glReadPixels(
     })
 }
 fn glGenTextures(env: &mut Environment, n: GLsizei, textures: MutPtr<GLuint>) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glGenTextures(n={})", n);
     with_ctx_and_mem(env, |gles, mem| {
         let n_usize: GuestUSize = n.try_into().unwrap();
         let textures = mem.ptr_at_mut(textures, n_usize);
@@ -1038,6 +1404,17 @@ fn glIsTexture(env: &mut Environment, texture: GLuint) -> GLboolean {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.IsTexture(texture) })
 }
 fn glBindTexture(env: &mut Environment, target: GLenum, texture: GLuint) {
+    // [DIAG-H1-SCENE] Track texture binds per frame for scene transition detection
+    if texture != 0 {
+        FRAME_TEXTURE_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    // [DIAG-E4-TEXTURE] Error-focused diagnostic: track texture binding for texture chain analysis
+    // GL_TEXTURE_2D = 0x0DE1
+    if target == gles11::TEXTURE_2D {
+        log!("[DIAG-E2] glBindTexture(GL_TEXTURE_2D, id={})", texture);
+    } else {
+        log!("[DIAG-E2] glBindTexture(target={:#x}, id={})", target, texture);
+    }
     with_ctx_and_mem(env, |gles, _mem| unsafe {
         gles.BindTexture(target, texture)
     })
@@ -1140,6 +1517,9 @@ fn glTexImage2D(
     type_: GLenum,
     pixels: ConstVoidPtr,
 ) {
+    // [DIAG-H1-GLCALL] Error-focused diagnostic: trace GL function entry for crash analysis
+    log!("[DIAG-H1-GLCALL] glTexImage2D(target={:#x}, level={}, internalformat={:#x}, width={}, height={}, format={:#x}, type={:#x})",
+         target, level, internalformat, width, height, format, type_);
     with_ctx_and_mem(env, |gles, mem| unsafe {
         let pixels = if pixels.is_null() {
             std::ptr::null()

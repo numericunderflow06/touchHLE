@@ -1218,6 +1218,13 @@ impl Window {
         size_for_orientation(DeviceOrientation::Portrait, self.scale_hack)
     }
 
+    /// Get the size in pixels based on the current device orientation, with
+    /// the scale hack applied. Returns landscape dimensions (480x320) when
+    /// the device is in landscape orientation.
+    pub fn size_rotated_scalehacked(&self) -> (u32, u32) {
+        size_for_orientation(self.device_orientation, self.scale_hack)
+    }
+
     /// Get the region of the on-screen window (x, y, width, height) used to
     /// display the app content.
     ///
@@ -1264,11 +1271,10 @@ impl Window {
     /// rotating texture co-ordinates to display the image in the window; when
     /// rotating input co-ordinates, invert the matrix.
     pub fn rotation_matrix(&self) -> Matrix<2> {
-        match self.device_orientation {
-            DeviceOrientation::Portrait => Matrix::identity(),
-            DeviceOrientation::LandscapeLeft => Matrix::z_rotation(-FRAC_PI_2),
-            DeviceOrientation::LandscapeRight => Matrix::z_rotation(FRAC_PI_2),
-        }
+        // The renderbuffer now uses rotated dimensions (via
+        // size_rotated_scalehacked), so it always matches the window
+        // orientation. No rotation is needed for presentation or input.
+        Matrix::identity()
     }
 
     pub fn is_screen_saver_enabled(&self) -> bool {
