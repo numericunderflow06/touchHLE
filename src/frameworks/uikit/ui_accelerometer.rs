@@ -122,6 +122,8 @@ pub const CLASSES: ClassExports = objc_classes! {
 /// update is due and send one if appropriate.
 ///
 /// Returns the time an accelerometer update is due, if any.
+static ACCEL_LOG_COUNT: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
 pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
     let state = &mut env.framework_state.uikit.ui_accelerometer;
 
@@ -181,12 +183,17 @@ pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
 
     let accelerometer: id = msg_class![env; UIAccelerometer sharedAccelerometer];
 
-    log_dbg!(
-        "Sending [{:?} accelerometer:{:?} didAccelerate:{:?}]",
-        delegate,
-        accelerometer,
-        acceleration,
-    );
+    let count = ACCEL_LOG_COUNT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if count < 10 || (x != 0.0 || y != 0.0) {
+        log!(
+            "[DIAG-ACCEL] #{} Sending [{:?} accelerometer:{:?} didAccelerate:{:?}] x={:.3} y={:.3} z={:.3}",
+            count,
+            delegate,
+            accelerometer,
+            acceleration,
+            x, y, z,
+        );
+    }
     let sel: SEL = env
         .objc
         .register_host_selector("accelerometer:didAccelerate:".to_string(), &mut env.mem);
@@ -194,7 +201,11 @@ pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
     if responds {
         let _: () = msg![env; delegate accelerometer:accelerometer
                                        didAccelerate:acceleration];
+    } else {
+        log!("[DIAG-ACCEL] delegate {:?} does NOT respond to accelerometer:didAccelerate:", delegate);
     }
+
+    // (hierarchy enumeration removed - className crashes on guest classes)
 
     release(env, pool);
 

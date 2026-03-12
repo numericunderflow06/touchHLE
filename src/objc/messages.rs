@@ -13,7 +13,8 @@
 
 use super::{id, nil, Class, ObjC, IMP, SEL};
 use crate::abi::{CallFromHost, GuestRet};
-use crate::mem::{ConstPtr, MutVoidPtr, SafeRead};
+use crate::mem::{ConstPtr, MutVoidPtr, Ptr, SafeRead};
+use crate::window::DeviceOrientation;
 use crate::Environment;
 use std::any::TypeId;
 
@@ -33,9 +34,143 @@ use std::any::TypeId;
 fn objc_msgSend_inner(env: &mut Environment, receiver: id, selector: SEL, super2: Option<Class>) {
     let message_type_info = env.objc.message_type_info.take();
 
+    // For landscape apps: intercept Cocos2D orientation methods.
+    // Our framebuffer is already landscape (480x320), so we don't want Cocos2D
+    // to apply its own landscape rotation/coordinate transforms (double-rotation).
+    if env.options.initial_orientation != DeviceOrientation::Portrait && receiver != nil {
+        let sel_name = selector.as_str(&env.mem);
+        if sel_name == "setDeviceOrientation:" {
+            // Force portrait orientation so Cocos2D doesn't apply landscape transforms
+            log!("[DIAG-ORI] Intercepted setDeviceOrientation: → forcing portrait (0)");
+            env.cpu.regs_mut()[2] = 0; // kCCDeviceOrientationPortrait = 0
+        } else if sel_name == "applyLandscape" || sel_name == "applyOrientation" {
+            // Skip the GL rotation — our framebuffer is already landscape
+            log!("[DIAG-ORI] Intercepted {} → skipping (already landscape)", sel_name);
+            return;
+        }
+    }
+
+    // Track stret pointers so we can read outputs after dispatch
+    let mut convert_to_gl_stret: Option<u32> = None;
+    let mut winsize_stret: Option<u32> = None;
+
+    // (scroll hack removed, moved to accelerometer handler)
+
+    // Broad trace for camera and scroll-related activity
+    {
+        let sel_name = selector.as_str(&env.mem);
+
+        // Log ALL camera-related method calls (broad search)
+        if sel_name.contains("amera") || sel_name.contains("ollow")
+            || sel_name.contains("croll") && !sel_name.contains("ContentS")
+            || sel_name.contains("setEye") || sel_name.contains("setCentre")
+            || sel_name.contains("setCenter") && !sel_name.contains("ContentCenter")
+            || sel_name.contains("eyeX") || sel_name.contains("centerX")
+            || sel_name == "locate"
+        {
+            let receiver_class = ObjC::read_isa(receiver, &env.mem);
+            let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                    ch.name.clone()
+                } else { format!("{:?}", receiver_class) }
+            } else { format!("{:?}", receiver_class) };
+            log!("[DIAG-CAM2] [{} {:?} {}]", class_name, receiver, sel_name);
+        }
+
+        // Log ALL touch-related message dispatches to trace forwarding chain
+        if sel_name.contains("touchesBegan") || sel_name.contains("touchesMoved")
+            || sel_name.contains("touchesEnded") || sel_name.contains("ccTouch")
+            || sel_name.contains("ccTouches")
+            || sel_name.contains("previousLocation")
+        {
+            let receiver_class = ObjC::read_isa(receiver, &env.mem);
+            let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                    ch.name.clone()
+                } else { format!("{:?}", receiver_class) }
+            } else { format!("{:?}", receiver_class) };
+            log!("[DIAG-TOUCH-CHAIN] [{} {:?} {}]", class_name, receiver, sel_name);
+        }
+
+        // Log convertToGL:, setPosition:, actionManager activity, and
+        // Log convertToGL: input args - dump all registers to determine calling convention
+        if sel_name == "convertToGL:" {
+            let regs = env.cpu.regs();
+            let r0 = regs[0]; let r1 = regs[1]; let r2 = regs[2]; let r3 = regs[3];
+            let sp = regs[13];
+            let sp0: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(sp));
+            log!("[DIAG-CONVERT] convertToGL: r0(stret)={:#010x} r1(self)={:#010x} r2(sel)={:#010x} r3(x)={:#010x} sp[0](y)={:#010x}",
+                 r0, r1, r2, r3, sp0);
+            log!("[DIAG-CONVERT]   INPUT stret(r3,sp0): ({:.1}, {:.1})",
+                 f32::from_bits(r3), f32::from_bits(sp0));
+            // Save stret pointer so we can read the output after dispatch
+            convert_to_gl_stret = Some(r0);
+        }
+
+        // Also capture winSize calls to verify Cocos2D's internal window size
+        if sel_name == "winSize" {
+            let receiver_class = ObjC::read_isa(receiver, &env.mem);
+            let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                    ch.name.clone()
+                } else { format!("{:?}", receiver_class) }
+            } else { format!("{:?}", receiver_class) };
+            log!("[DIAG-WINSIZE] winSize called on [{} {:?}], r0(stret)={:#010x}", class_name, receiver, env.cpu.regs()[0]);
+            winsize_stret = Some(env.cpu.regs()[0]);
+        }
+
+        // any method that might relate to camera/layer movement
+        if sel_name == "convertToGL:"
+            || sel_name == "convertToNodeSpace:"
+            || (sel_name == "setPosition:" && {
+                let receiver_class = ObjC::read_isa(receiver, &env.mem);
+                let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                    if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                        ch.name.contains("Layer") || ch.name.contains("Scene")
+                            || ch.name.contains("Camera") || ch.name.contains("Node")
+                    } else { false }
+                } else { false };
+                class_name
+            })
+            || sel_name.starts_with("runAction")
+            || sel_name == "step:" || sel_name == "tick:"
+            || sel_name.contains("ActionManager")
+        {
+            let receiver_class = ObjC::read_isa(receiver, &env.mem);
+            let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                    ch.name.clone()
+                } else { format!("{:?}", receiver_class) }
+            } else { format!("{:?}", receiver_class) };
+            log!("[DIAG-ACTION] [{} {:?} {}]", class_name, receiver, sel_name);
+        }
+
+        // Log game-specific Update* selectors (capital U) without limit
+        if sel_name.starts_with("Update") {
+            let receiver_class = ObjC::read_isa(receiver, &env.mem);
+            let class_name = if let Some(host) = env.objc.get_host_object(receiver_class) {
+                if let Some(ch) = host.as_any().downcast_ref::<super::ClassHostObject>() {
+                    ch.name.clone()
+                } else { "?".to_string() }
+            } else { "?".to_string() };
+            log!("[DIAG-UPD] [{} {:?} {}]", class_name, receiver, sel_name);
+        }
+    }
+
     if receiver == nil {
         // https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/ObjectiveC/Chapters/ocObjectsClasses.html#//apple_ref/doc/uid/TP30001163-CH11-SW7
-        log_dbg!("[nil {}]", selector.as_str(&env.mem));
+        let sel_name = selector.as_str(&env.mem);
+        // Log nil sends for potentially interesting selectors
+        if sel_name.contains("amera") || sel_name.contains("ollow") || sel_name.contains("croll")
+            || sel_name.contains("chedule") || sel_name.contains("ction")
+            || sel_name.contains("irector") || sel_name == "winSize"
+            || sel_name.contains("ick:") || sel_name.contains("tep:")
+            || sel_name.starts_with("update") || sel_name.starts_with("Update")
+        {
+            log!("[DIAG-NIL] [nil {}]", sel_name);
+        } else {
+            log_dbg!("[nil {}]", sel_name);
+        }
         env.cpu.regs_mut()[0..2].fill(0);
         return;
     }
@@ -137,11 +272,33 @@ Type mismatch when sending message {} to {:?}!
                                 );
                             }
                         }
-                        host_imp.call_from_guest(env)
+                        host_imp.call_from_guest(env);
+                        // After host dispatch: read stret outputs
+                        if let Some(stret_addr) = winsize_stret {
+                            let w: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr));
+                            let h: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr + 4));
+                            log!("[DIAG-WINSIZE] winSize OUTPUT (host): ({:.1}, {:.1})",
+                                 f32::from_bits(w), f32::from_bits(h));
+                        }
                     }
                     // We can't create a new stack frame, because that would
                     // interfere with pass-through of stack arguments.
-                    IMP::Guest(guest_imp) => guest_imp.call_without_pushing_stack_frame(env),
+                    IMP::Guest(guest_imp) => {
+                        guest_imp.call_without_pushing_stack_frame(env);
+                        // After guest dispatch: read stret outputs
+                        if let Some(stret_addr) = convert_to_gl_stret {
+                            let out_x: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr));
+                            let out_y: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr + 4));
+                            log!("[DIAG-CONVERT] convertToGL OUTPUT: ({:.1}, {:.1})",
+                                 f32::from_bits(out_x), f32::from_bits(out_y));
+                        }
+                        if let Some(stret_addr) = winsize_stret {
+                            let w: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr));
+                            let h: u32 = env.mem.read(crate::mem::Ptr::<u32, false>::from_bits(stret_addr + 4));
+                            log!("[DIAG-WINSIZE] winSize OUTPUT: ({:.1}, {:.1})",
+                                 f32::from_bits(w), f32::from_bits(h));
+                        }
+                    }
                 }
                 return;
             } else {

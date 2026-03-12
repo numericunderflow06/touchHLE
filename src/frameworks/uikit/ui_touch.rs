@@ -13,7 +13,7 @@ use crate::objc::{
     autorelease, id, msg, msg_class, nil, objc_classes, release, retain, ClassExports, HostObject,
     NSZonePtr,
 };
-use crate::window::{Coords, Event, FingerId};
+use crate::window::{Coords, DeviceOrientation, Event, FingerId};
 use crate::Environment;
 use crate::event_capture;
 use std::collections::hash_map::{Entry, HashMap};
@@ -71,13 +71,21 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (CGPoint)locationInView:(id)that_view { // UIView*
-    let &UITouchHostObject { location, window, .. } = env.objc.borrow(this);
+    let host = env.objc.borrow::<UITouchHostObject>(this);
+    let location = host.location;
+    let window = host.window;
     let location_in_window: CGPoint = msg![env; window convertPoint:location fromWindow:nil];
-    if that_view == nil {
+    let result = if that_view == nil {
         location_in_window
     } else {
         msg![env; that_view convertPoint:location_in_window fromView:window]
-    }
+    };
+    let (lx, ly) = (location.x, location.y);
+    let (wx, wy) = (location_in_window.x, location_in_window.y);
+    let (rx, ry) = (result.x, result.y);
+    log!("[DIAG-LIV] locationInView: stored=({:.1},{:.1}) in_window=({:.1},{:.1}) result=({:.1},{:.1}) view={:?}",
+         lx, ly, wx, wy, rx, ry, that_view);
+    result
 }
 - (CGPoint)previousLocationInView:(id)that_view { // UIView*
     let &UITouchHostObject { previous_location, window, .. } = env.objc.borrow(this);
