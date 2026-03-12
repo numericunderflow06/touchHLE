@@ -205,7 +205,58 @@ pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
         log!("[DIAG-ACCEL] delegate {:?} does NOT respond to accelerometer:didAccelerate:", delegate);
     }
 
-    // (hierarchy enumeration removed - className crashes on guest classes)
+    // Enumerate MainGameLayer children + force-scroll child[0] (game world node)
+    {
+        use crate::frameworks::core_graphics::CGPoint;
+        static WORLD_NODE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        static SCROLL_FRAME: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+        // One-time: find and log hierarchy, save child[0] pointer
+        if WORLD_NODE.load(std::sync::atomic::Ordering::Relaxed) == 0 {
+            let children: id = msg![env; delegate children];
+            if children != nil {
+                let count: u32 = msg![env; children count];
+                log!("[DIAG-HIERARCHY] MainGameLayer {:?} has {} children:", delegate, count);
+                let mut child_info: Vec<(id, String, i32)> = Vec::new();
+                for i in 0..count {
+                    let child: id = msg![env; children objectAtIndex:i];
+                    let child_isa = crate::objc::ObjC::read_isa(child, &env.mem);
+                    let class_name = env.objc.get_class_name(child_isa).to_string();
+                    let tag: i32 = msg![env; child tag];
+                    child_info.push((child, class_name, tag));
+                }
+                for (i, (child, class_name, tag)) in child_info.iter().enumerate() {
+                    log!("[DIAG-HIERARCHY]   child[{}]: {:?} class={} tag={}", i, child, class_name, tag);
+                }
+                if count > 0 {
+                    let first_child: id = msg![env; children objectAtIndex:(0u32)];
+                    WORLD_NODE.store(first_child.to_bits(), std::sync::atomic::Ordering::Relaxed);
+                    log!("[DIAG-SCROLL-HACK] Saved world node: {:?}", first_child);
+                }
+            }
+            let parent: id = msg![env; delegate parent];
+            if parent != nil {
+                let parent_isa = crate::objc::ObjC::read_isa(parent, &env.mem);
+                let pname = env.objc.get_class_name(parent_isa).to_string();
+                log!("[DIAG-HIERARCHY] MainGameLayer parent: {:?} class={}", parent, pname);
+            }
+        }
+
+        // Force-scroll child[0] after a delay
+        let world_bits = WORLD_NODE.load(std::sync::atomic::Ordering::Relaxed);
+        if world_bits != 0 {
+            let frame = SCROLL_FRAME.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            if frame > 300 && frame < 900 {
+                let scroll_x = -((frame - 300) as f32) * 0.5;
+                let world_node = crate::objc::id::from_bits(world_bits);
+                let pos = CGPoint { x: scroll_x, y: 0.0 };
+                let _: () = msg![env; world_node setPosition:pos];
+                if frame % 60 == 0 {
+                    log!("[DIAG-SCROLL-HACK] Frame {}, forced child[0] position to ({:.0}, 0)", frame, scroll_x);
+                }
+            }
+        }
+    }
 
     release(env, pool);
 
