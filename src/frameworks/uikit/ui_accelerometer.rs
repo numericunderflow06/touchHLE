@@ -242,19 +242,24 @@ pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
             }
         }
 
-        // Force-scroll child[0] after a delay
+        // Manual scroll: use accelerometer x-tilt (right-click drag) to scroll child[0]
         let world_bits = WORLD_NODE.load(std::sync::atomic::Ordering::Relaxed);
         if world_bits != 0 {
-            let frame = SCROLL_FRAME.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            if frame > 300 && frame < 900 {
-                let scroll_x = -((frame - 300) as f32) * 0.5;
-                let world_node = crate::objc::id::from_bits(world_bits);
-                let pos = CGPoint { x: scroll_x, y: 0.0 };
-                let _: () = msg![env; world_node setPosition:pos];
-                if frame % 60 == 0 {
-                    log!("[DIAG-SCROLL-HACK] Frame {}, forced child[0] position to ({:.0}, 0)", frame, scroll_x);
-                }
-            }
+            // Use accel x value as scroll velocity (tilt left = scroll left, tilt right = scroll right)
+            // x is the accelerometer reading: ~0 when level, positive when tilted right
+            let scroll_speed = 300.0; // pixels per second at full tilt
+            let dt = 1.0 / 60.0; // approximate frame time
+            let velocity = x as f32 * scroll_speed * dt;
+
+            // Accumulate scroll position
+            let cur_bits = SCROLL_FRAME.load(std::sync::atomic::Ordering::Relaxed);
+            let cur_scroll = f32::from_bits(cur_bits);
+            let new_scroll = (cur_scroll - velocity).clamp(-1000.0, 0.0); // limit scroll range
+            SCROLL_FRAME.store(new_scroll.to_bits(), std::sync::atomic::Ordering::Relaxed);
+
+            let world_node = crate::objc::id::from_bits(world_bits);
+            let pos = CGPoint { x: new_scroll, y: 0.0 };
+            let _: () = msg![env; world_node setPosition:pos];
         }
     }
 
