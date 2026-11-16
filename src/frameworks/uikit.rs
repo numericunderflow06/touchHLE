@@ -115,6 +115,8 @@ pub fn handle_events(env: &mut Environment) -> Option<Instant> {
     // input they inject is delivered in this same iteration.
     crate::control::service(env);
 
+    ui_view::layout_views_if_needed(env);
+
     // NSRunLoop will never call this function in headless mode.
     while let Some(event) = env.window_mut().pop_event() {
         match event {

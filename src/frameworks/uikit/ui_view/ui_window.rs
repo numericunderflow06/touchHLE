@@ -13,10 +13,10 @@ use super::UIViewHostObject;
 use crate::dyld::{ConstantExports, HostConstant};
 use crate::frameworks::core_graphics::cg_affine_transform::CGAffineTransform;
 use crate::frameworks::core_graphics::{CGPoint, CGRect};
-use crate::frameworks::foundation::ns_string;
+use crate::frameworks::foundation::{ns_string, NSTimeInterval};
 use crate::frameworks::uikit::ui_application::{
     UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight,
-    UIInterfaceOrientationPortraitUpsideDown,
+    UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown,
 };
 use crate::frameworks::uikit::ui_device::{
     UIDeviceOrientationLandscapeLeft, UIDeviceOrientationLandscapeRight,
@@ -176,7 +176,11 @@ pub const CLASSES: ClassExports = objc_classes! {
     //        mentions a breaking behaviour change in iOS 6 that makes
     //        auto-rotation rely on rootViewController (a property only found in
     //        iOS 6), so the current implementation is specific to iOS <= 5.
-    // FIXME: Are we supposed to notify the view somehow of the rotation?
+    // The view controller is told about the rotation with the same three
+    // messages the real OS sends, with a duration of zero since nothing is
+    // animated. Apps rely on these to adapt their views: for example the
+    // Cocos2D view controller template resizes its OpenGL ES view in
+    // willRotateToInterfaceOrientation:duration:.
     // FIXME: What do we do if shouldAutorotateToInterfaceOrientation:
     //        returns false? The status bar has already been rotated…
     // FIXME: The device orientation stored on env.window can come from one of
@@ -196,6 +200,8 @@ pub const CLASSES: ClassExports = objc_classes! {
         log_dbg!("[{:?} shouldAutorotateToInterfaceOrientation:{:?}] => {:?}", vc, orientation, should);
         if should {
             log_dbg!("App requested autorotation; applying orientation transform to view {:?}.", view);
+            let duration: NSTimeInterval = 0.0;
+            () = msg![env; vc willRotateToInterfaceOrientation:orientation duration:duration];
             let transform = match orientation {
                 UIInterfaceOrientationPortraitUpsideDown => CGAffineTransform::make_rotation(-std::f32::consts::PI),
                 UIInterfaceOrientationLandscapeLeft => CGAffineTransform::make_rotation(-std::f32::consts::FRAC_PI_2),
@@ -222,6 +228,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 
             let view_frame: CGRect = msg![env; view frame];
             log_dbg!("New view frame after re-applying old view frame: {view_frame:?}");
+
+            () = msg![env; vc willAnimateRotationToInterfaceOrientation:orientation
+                                                              duration:duration];
+            // Interfaces always start out in portrait.
+            () = msg![env; vc didRotateFromInterfaceOrientation:UIInterfaceOrientationPortrait];
         }
     }
 }

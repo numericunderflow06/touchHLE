@@ -72,6 +72,34 @@ pub struct State {
     pub(super) views: Vec<id>,
     pub ui_window: ui_window::State,
     pub animation_block_count: usize,
+    /// Views whose size changed (or that asked for it) and which are due a
+    /// `layoutSubviews` call. Non-retaining!
+    needs_layout: Vec<id>,
+}
+
+/// Mark a view as needing `layoutSubviews`. It will be called on the next
+/// iteration of the main run loop (see [layout_views_if_needed]).
+fn set_needs_layout(env: &mut Environment, view: id) {
+    let list = &mut env.framework_state.uikit.ui_view.needs_layout;
+    if !list.contains(&view) {
+        list.push(view);
+    }
+}
+
+/// For use by `NSRunLoop` via [super::handle_events]: call `layoutSubviews`
+/// on views that need it. On the real OS this happens when the current
+/// transaction is committed at the end of a run loop iteration.
+pub(super) fn layout_views_if_needed(env: &mut Environment) {
+    // Laying out one view may invalidate others, but those can wait for the
+    // next iteration; this avoids looping forever on apps that resize views
+    // from within layoutSubviews.
+    let views = std::mem::take(&mut env.framework_state.uikit.ui_view.needs_layout);
+    for view in views {
+        // The list doesn't retain, so the view may be gone by now.
+        if env.framework_state.uikit.ui_view.views.contains(&view) {
+            () = msg![env; view layoutSubviews];
+        }
+    }
 }
 
 pub(super) struct UIViewHostObject {
@@ -635,6 +663,8 @@ pub const CLASSES: ClassExports = objc_classes! {
         release(env, subview);
     }
 
+    env.framework_state.uikit.ui_view.needs_layout.retain(|&v| v != this);
+
     let state = &mut env.framework_state.uikit.ui_view.views;
     state.swap_remove(
         state.iter().position(|&v| v == this).unwrap()
@@ -724,7 +754,11 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())setBounds:(CGRect)bounds {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer setBounds:bounds]
+    let old_bounds: CGRect = msg![env; layer bounds];
+    () = msg![env; layer setBounds:bounds];
+    if old_bounds.size != bounds.size {
+        set_needs_layout(env, this);
+    }
 }
 - (CGPoint)center {
     // FIXME: what happens if [layer anchorPoint] isn't (0.5, 0.5)?
@@ -741,7 +775,23 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (())setFrame:(CGRect)frame {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;
-    msg![env; layer setFrame:frame]
+    let old_bounds: CGRect = msg![env; layer bounds];
+    () = msg![env; layer setFrame:frame];
+    let new_bounds: CGRect = msg![env; layer bounds];
+    if old_bounds.size != new_bounds.size {
+        set_needs_layout(env, this);
+    }
+}
+
+- (())setNeedsLayout {
+    set_needs_layout(env, this);
+}
+- (())layoutIfNeeded {
+    let list = &mut env.framework_state.uikit.ui_view.needs_layout;
+    if let Some(index) = list.iter().position(|&view| view == this) {
+        list.remove(index);
+        () = msg![env; this layoutSubviews];
+    }
 }
 - (CGAffineTransform)transform {
     let layer = env.objc.borrow::<UIViewHostObject>(this).layer;

@@ -11,7 +11,7 @@
 use crate::frameworks::core_graphics::CGRect;
 use crate::frameworks::foundation::ns_objc_runtime::NSStringFromClass;
 use crate::frameworks::foundation::ns_string::{from_rust_string, get_static_str, to_rust_string};
-use crate::frameworks::foundation::NSInteger;
+use crate::frameworks::foundation::{NSInteger, NSTimeInterval};
 use crate::frameworks::uikit::ui_application::{
     UIInterfaceOrientation, UIInterfaceOrientationPortrait,
 };
@@ -200,6 +200,18 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 - (bool)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interface_orientation {
     interface_orientation == UIInterfaceOrientationPortrait
+}
+
+// Rotation callbacks, sent by UIKit around an interface rotation (see
+// `-[UIWindow addSubview:]`). The default implementations do nothing;
+// subclasses override them to adjust their views.
+- (())willRotateToInterfaceOrientation:(UIInterfaceOrientation)_to_orientation
+                              duration:(NSTimeInterval)_duration {
+}
+- (())willAnimateRotationToInterfaceOrientation:(UIInterfaceOrientation)_to_orientation
+                                       duration:(NSTimeInterval)_duration {
+}
+- (())didRotateFromInterfaceOrientation:(UIInterfaceOrientation)_from_orientation {
 }
 
 // UIResponder implementation
