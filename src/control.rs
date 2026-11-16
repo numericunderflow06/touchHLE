@@ -270,6 +270,8 @@ pub fn on_message(env: &mut Environment, receiver: id, selector: SEL) {
         "class": class_name,
         "self": hex(receiver.to_bits()),
         "args": [regs[2], regs[3]],
+        // Return address, which identifies the caller.
+        "lr": hex(regs[14]),
         "frame": frame_count(),
     }));
 }
