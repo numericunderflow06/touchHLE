@@ -40,6 +40,19 @@ def tap_expect(control, x, y, expect, timeout=6.0, attempts=5, log=None):
                    f"still on {scene and scene['screen']} {scene and scene['layers']}")
 
 
+def wait_settled(control, timeout=6.0, gap=0.15):
+    """Wait until on-screen buttons stop moving (entrance animations)."""
+    deadline = time.time() + timeout
+    last = None
+    while time.time() < deadline:
+        now = [(b["ptr"], b["center"]) for b in game.buttons(control)]
+        if now and now == last:
+            return True
+        last = now
+        time.sleep(gap)
+    return False
+
+
 def find_object(control, class_name):
     found = control.find(class_name, limit=5)["objects"]
     if not found:
@@ -103,6 +116,35 @@ def new_game_to_map(control, slot=1, log=None):
     if scene["screen"] == "opening_story":
         tap_expect(control, 240, 200, "campaign_map", log=log)
     return game.current_scene(control)
+
+
+def load_game_to_map(control, slot=1, log=None):
+    """From the main menu: Campaign, then Load an existing save slot."""
+    tap_expect(control, 115, 160, "profile", log=log)
+    wait_settled(control)
+    slot_x = {1: 85, 2: 245, 3: 405}[slot]
+    tap_expect(control, slot_x, 167, "campaign_map", log=log)
+    wait_settled(control)
+    return game.current_scene(control)
+
+
+BATTLE_FIELDS = {
+    "Stage": "i32", "Round": "i32", "difficulty": "i32", "wave": "i32", "Money": "i32",
+    "Score": "i32", "Mana": "f32", "PlayerCastleHP": "f32", "EnemyCastleHP": "f32",
+    "TotalSoldierInScreen": "i32", "TotalEnemyInScreen": "i32", "StagePlayTime": "f32",
+    "defenseTimeLeft": "f32", "isDefenseGame": "bool", "haveEnemyCastle": "bool",
+    "isCampaignStageClear": "bool", "isGameProcessing": "bool", "HeroDeadCount": "i32",
+}
+
+
+def battle_state(control, logic=None):
+    """The battle's own numbers, read from the game's MainGameLogic object."""
+    logic = logic or find_object(control, "MainGameLogic")
+    state = {}
+    for name, type_ in BATTLE_FIELDS.items():
+        value = control.read(logic, name, type_)
+        state[name] = round(value, 1) if isinstance(value, float) else value
+    return state
 
 
 def map_to_battle(control, stage_index=1, log=None):
