@@ -55,7 +55,14 @@ def body(s, index):
 
     samples = []
     try:
-        for _ in range(MEASURE_SECONDS):
+        for second in range(MEASURE_SECONDS):
+            if second == 4:
+                # While the field is still crowded.
+                try:
+                    raw = c.profile(ms=2500)
+                    s.notes["profile"] = profile.summarize(raw, version=s.session.version())
+                except ControlError:
+                    pass  # a build without the profiler
             c.wait_ms(1000)
             if not c.read(logic, "isGameProcessing", "bool"):
                 break
@@ -66,11 +73,6 @@ def body(s, index):
             })
     except ControlError:
         pass  # the battle ended under us; what was measured still counts
-    try:
-        raw = c.profile(ms=3000)
-        s.notes["profile"] = profile.summarize(raw, version=s.session.version())
-    except ControlError:
-        pass  # battle over, or a build without the profiler
     s.shot("battle")
 
     s.check("measured at least 10 seconds of battle", len(samples) >= 10, len(samples))
