@@ -1169,6 +1169,13 @@ pub(super) fn class_replaceMethod(
     existing
 }
 
+/// For `NSObject`'s `methodForSelector:` and `instanceMethodForSelector:`:
+/// the implementation instances of `cls` use for a selector. Same limitations
+/// as [class_getMethodImplementation].
+pub fn method_implementation(env: &mut Environment, cls: Class, name: SEL) -> IMP {
+    class_getMethodImplementation(env, cls, name)
+}
+
 pub(super) fn class_getMethodImplementation(env: &mut Environment, cls: Class, name: SEL) -> IMP {
     if cls == nil {
         return IMP::guest_null();

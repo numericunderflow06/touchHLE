@@ -21,8 +21,8 @@ use crate::frameworks::foundation::ns_thread::detach_new_thread_inner;
 use crate::libc::semaphore::{host_destroy_semaphore, sem_wait};
 use crate::mem::MutVoidPtr;
 use crate::objc::{
-    autorelease, id, msg, msg_class, msg_send, msg_send_no_type_checking, nil, objc_classes,
-    retain, Class, ClassExports, NSZonePtr, ObjC, TrivialHostObject, SEL,
+    autorelease, id, method_implementation, msg, msg_class, msg_send, msg_send_no_type_checking,
+    nil, objc_classes, retain, Class, ClassExports, NSZonePtr, ObjC, TrivialHostObject, IMP, SEL,
 };
 
 pub const CLASSES: ClassExports = objc_classes! {
@@ -64,6 +64,10 @@ pub const CLASSES: ClassExports = objc_classes! {
 
 + (bool)instancesRespondToSelector:(SEL)selector {
     env.objc.class_has_method(this, selector)
+}
+
++ (IMP)instanceMethodForSelector:(SEL)selector {
+    method_implementation(env, this, selector)
 }
 
 + (())cancelPreviousPerformRequestsWithTarget:(id)target selector:(SEL)selector object:(id)arg {
@@ -246,6 +250,11 @@ forUndefinedKey:(id)key { // NSString*
 }
 - (())didChangeValueForKey:(id)_key { // NSString *
     log_once!("TODO: NSObject didChangeValueForKey:");
+}
+
+- (IMP)methodForSelector:(SEL)selector {
+    let class = ObjC::read_isa(this, &env.mem);
+    method_implementation(env, class, selector)
 }
 
 - (bool)respondsToSelector:(SEL)selector {
