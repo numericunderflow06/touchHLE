@@ -21,7 +21,7 @@ import json
 import time
 from pathlib import Path
 
-from harness import checks, game, nav, save
+from harness import checks, game, nav, profile, save
 from harness.client import ControlError
 
 from .common import run_scenario
@@ -188,6 +188,7 @@ def play(s, limit_seconds):
     s.notes["soldier_buttons"] = buttons
     limit = -c.read(layer, "lastScreenBLPosX", "i32")
     timeline = []
+    profiles = s.notes.setdefault("slow_profiles", [])
     orders = {"given": 0, "confirmed": 0}
     start = time.time()
     last_log = last_order = last_follow = 0.0
@@ -235,7 +236,14 @@ def play(s, limit_seconds):
                 state = nav.battle_state(c, logic)
                 state["t"] = round(now - start)
                 state["camera_x"] = c.read(layer, "gameNode.position_", "point")[0]
+                state["fps"] = c.ping()["fps"]
                 timeline.append(state)
+                # A slow battle is worth explaining: keep up to three
+                # profiles of the emulator from the moments it was slow.
+                if state["fps"] < 30 and len(profiles) < 3:
+                    summary = profile.summarize(c.profile(ms=3000), version=s.session.version())
+                    summary["battle"] = {k: state.get(k) for k in ("t", "fps", "TotalSoldierInScreen", "TotalEnemyInScreen")}
+                    profiles.append(summary)
         except ControlError:
             # The battle layer went away under us: the stage ended while an
             # action was in progress, or the game rebuilt the layer (it does
@@ -304,6 +312,9 @@ def body(s, index, info, limit_seconds):
 
     outcome, timeline = play(s, limit_seconds)
     s.notes["timeline"] = timeline[-6:]
+    rates = [entry["fps"] for entry in timeline if "fps" in entry]
+    if rates:
+        s.notes["battle_fps"] = {"min": min(rates), "mean": round(sum(rates) / len(rates), 1)}
     s.notes["outcome"] = outcome
     calls = {}
     for event in c.drain_events():

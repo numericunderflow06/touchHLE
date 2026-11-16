@@ -12,7 +12,7 @@ A scenario passes only if every check passed and the emulator did not crash.
 import time
 import traceback
 
-from harness import checks, game, nav
+from harness import checks, game, known, nav
 from harness.client import ControlError, ControlGone
 from harness.session import Session
 
@@ -112,6 +112,9 @@ class Scenario:
             result["error"] = error
         if crash:
             result["guest_state"] = self.session.guest_state()
+            known_bug = known.classify(crash, result["guest_state"], self.session.version())
+            if known_bug:
+                result["known_game_bug"] = known_bug
         if self.notes:
             result["notes"] = self.notes
         # Keep the result with the run it describes.

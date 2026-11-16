@@ -61,6 +61,7 @@ def run(version="1.1", parallel="3", stages="", difficulty="0", money="300000", 
             "seconds": result.get("seconds"),
             "failed": result.get("failed", []),
             "crash": result.get("crash"),
+            "known_game_bug": (result.get("known_game_bug") or {}).get("id"),
             "error": (result.get("error") or "")[:300] or None,
             "run_dir": result.get("run_dir"),
         })

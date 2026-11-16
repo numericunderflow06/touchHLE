@@ -185,6 +185,12 @@ class Control:
     def unwatch(self, *selectors):
         return self.command("unwatch", selectors=list(selectors) or None)
 
+    def profile(self, ms=3000, top=40):
+        """Profile the emulator for `ms` milliseconds; see harness/profile.py."""
+        self.command("profile", action="start")
+        self.wait_ms(ms)
+        return self.command("profile", action="stop", top=top)
+
     def quit(self):
         try:
             return self.command("quit", timeout=5.0)

@@ -226,6 +226,16 @@ def cmd_watch(args):
     return 0
 
 
+def cmd_profile(args):
+    from harness import profile
+
+    session = Session.current()
+    raw = session.control().profile(ms=args.ms, top=max(args.top, 40))
+    version = "2.0" if "v2.0" in session.info.get("ipa", "") else "1.1"
+    out(profile.summarize(raw, version=version, top=args.top))
+    return 0
+
+
 def cmd_events(args):
     out(Session.current().control().drain_events())
     return 0
@@ -463,6 +473,11 @@ def main():
     p.set_defaults(func=cmd_watch)
 
     sub.add_parser("events", help="print and clear collected events").set_defaults(func=cmd_events)
+
+    p = sub.add_parser("profile", help="where the emulator's time goes, per frame")
+    p.add_argument("--ms", type=int, default=3000, help="how long to measure")
+    p.add_argument("--top", type=int, default=25, help="entries per list")
+    p.set_defaults(func=cmd_profile)
 
     p = sub.add_parser("log", help="show the emulator log")
     p.add_argument("--grep")
