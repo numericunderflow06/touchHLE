@@ -549,14 +549,22 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (NSRange)rangeOfCharacterFromSet:(id)set { // NSCharacterSet *
+    msg![env; this rangeOfCharacterFromSet:set options:0u32]
+}
+
+- (NSRange)rangeOfCharacterFromSet:(id)set // NSCharacterSet *
+                           options:(NSStringCompareOptions)options {
+    // Literal search is what we do anyway. Other options (case-insensitive,
+    // anchored) are not supported yet.
+    assert!(options & !(NSLiteralSearch | NSBackwardsSearch) == 0, "TODO: options {options}");
     let length: NSUInteger = msg![env; this length];
-    let mut idx: NSUInteger = 0;
-    while idx < length {
+    let backwards = options & NSBackwardsSearch != 0;
+    for i in 0..length {
+        let idx = if backwards { length - 1 - i } else { i };
         let c: u16 = msg![env; this characterAtIndex:idx];
         if msg![env; set characterIsMember:c] {
             return NSRange { location: idx, length: 1 };
         }
-        idx += 1;
     }
     NSRange { location: NSNotFound as NSUInteger, length: 0 }
 }
