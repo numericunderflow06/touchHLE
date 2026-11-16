@@ -934,6 +934,20 @@ impl Environment {
         match res {
             Ok(ret) => ret,
             Err(e) => {
+                // Report the guest state here, while the environment is still
+                // in reach. The handler in `run` does the same, but on some
+                // hosts (seen on Windows) carrying the panic out of the
+                // coroutine crashes the process before it gets there.
+                if !self.is_app_picker && !self.threads.is_empty() {
+                    echo_no_panic!("Guest state at panic (thread {}):", self.current_thread);
+                    let dump = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        self.dump_all_regs();
+                        self.stack_trace_all();
+                    }));
+                    if dump.is_err() {
+                        echo_no_panic!("(could not dump the guest state)");
+                    }
+                }
                 std::panic::resume_unwind(e);
             }
         }
