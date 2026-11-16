@@ -17,15 +17,15 @@ use crate::frameworks::uikit::ui_application::{
 };
 use crate::frameworks::uikit::ui_view::set_view_controller;
 use crate::objc::{
-    id, msg, msg_class, nil, objc_classes, release, retain, todo_objc_setter, Class, ClassExports,
-    HostObject, NSZonePtr,
+    autorelease, id, msg, msg_class, nil, objc_classes, release, retain, todo_objc_setter, Class,
+    ClassExports, HostObject, NSZonePtr,
 };
 use crate::Environment;
 
 pub mod ui_navigation_controller;
 
 #[derive(Default)]
-struct UIViewControllerHostObject {
+pub struct UIViewControllerHostObject {
     /// The root view.
     /// `UIView*`
     view: id,
@@ -37,6 +37,12 @@ struct UIViewControllerHostObject {
     /// of the nib by name, may be nil.
     /// `NSBundle*`
     bundle: id,
+    /// The view controller this one is presenting modally, if any.
+    /// `UIViewController*`, strong.
+    modal_view_controller: id,
+    /// The view controller that is presenting this one modally, if any.
+    /// `UIViewController*`, weak.
+    parent_view_controller: id,
 }
 impl HostObject for UIViewControllerHostObject {}
 
@@ -77,7 +83,13 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (())dealloc {
-    let &UIViewControllerHostObject { view, nib_name, bundle } = env.objc.borrow(this);
+    let &UIViewControllerHostObject {
+        view,
+        nib_name,
+        bundle,
+        modal_view_controller,
+        ..
+    } = env.objc.borrow(this);
 
     if view != nil {
         set_view_controller(env, view, nil);
@@ -85,6 +97,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     release(env, view);
     release(env, nib_name);
     release(env, bundle);
+    if modal_view_controller != nil {
+        env.objc
+            .borrow_mut::<UIViewControllerHostObject>(modal_view_controller)
+            .parent_view_controller = nil;
+        release(env, modal_view_controller);
+    }
 
     env.objc.dealloc_object(this, &mut env.mem);
 }
@@ -191,8 +209,106 @@ pub const CLASSES: ClassExports = objc_classes! {
     todo_objc_setter!(this, style);
 }
 
+// Modal presentation (the API before iOS 5).
+// TODO: animations and transition styles; the change is immediate.
+
+- (())presentModalViewController:(id)modal // UIViewController*
+                        animated:(bool)animated {
+    assert!(modal != nil && modal != this);
+    if env.objc.borrow::<UIViewControllerHostObject>(this).modal_view_controller != nil {
+        log!(
+            "Warning: [(UIViewController*){:?} presentModalViewController:{:?} animated:{}] while already presenting one, ignoring.",
+            this,
+            modal,
+            animated,
+        );
+        return;
+    }
+    log_dbg!(
+        "[(UIViewController*){:?} presentModalViewController:{:?} animated:{}]",
+        this,
+        modal,
+        animated,
+    );
+
+    retain(env, modal);
+    env.objc
+        .borrow_mut::<UIViewControllerHostObject>(this)
+        .modal_view_controller = modal;
+    env.objc
+        .borrow_mut::<UIViewControllerHostObject>(modal)
+        .parent_view_controller = this;
+
+    // The presented view covers the screen: it goes into the window, on top
+    // of the presenting view controller's view. -[UIWindow addSubview:] sends
+    // the appearance messages and gives the new view the interface
+    // orientation, as it does for any view controller's view.
+    let this_view: id = msg![env; this view];
+    let window: id = msg![env; this_view window];
+    let modal_view: id = msg![env; modal view];
+    if window == nil {
+        log!(
+            "Warning: [(UIViewController*){:?} presentModalViewController:{:?} animated:{}]: the presenting view is not in a window, so nothing is shown.",
+            this,
+            modal,
+            animated,
+        );
+        return;
+    }
+    () = msg![env; this viewWillDisappear:animated];
+    () = msg![env; window addSubview:modal_view];
+    () = msg![env; this viewDidDisappear:animated];
+}
+
 - (())dismissModalViewControllerAnimated:(bool)animated {
-    log!("TODO: [(UIViewController*){:?} dismissModalViewControllerAnimated:{}]", this, animated); // TODO
+    let &UIViewControllerHostObject {
+        modal_view_controller: modal,
+        parent_view_controller: parent,
+        ..
+    } = env.objc.borrow(this);
+    if modal == nil {
+        // Sent to the presented view controller itself, this is passed on
+        // to the one that presented it.
+        if parent != nil {
+            () = msg![env; parent dismissModalViewControllerAnimated:animated];
+        }
+        return;
+    }
+    log_dbg!(
+        "[(UIViewController*){:?} dismissModalViewControllerAnimated:{}], dismissing {:?}",
+        this,
+        animated,
+        modal,
+    );
+
+    () = msg![env; modal viewWillDisappear:animated];
+    () = msg![env; this viewWillAppear:animated];
+    let modal_view = env.objc.borrow::<UIViewControllerHostObject>(modal).view;
+    if modal_view != nil {
+        () = msg![env; modal_view removeFromSuperview];
+    }
+    () = msg![env; modal viewDidDisappear:animated];
+    () = msg![env; this viewDidAppear:animated];
+
+    env.objc
+        .borrow_mut::<UIViewControllerHostObject>(this)
+        .modal_view_controller = nil;
+    env.objc
+        .borrow_mut::<UIViewControllerHostObject>(modal)
+        .parent_view_controller = nil;
+    // This is usually reached from inside one of the presented view
+    // controller's own methods (the action of one of its buttons, a call to
+    // its delegate), so it has to outlive this call.
+    autorelease(env, modal);
+}
+
+- (id)modalViewController {
+    env.objc.borrow::<UIViewControllerHostObject>(this).modal_view_controller
+}
+// Before iOS 5, a modally presented view controller's parent is the view
+// controller that presented it.
+- (id)parentViewController {
+    env.objc.borrow::<UIViewControllerHostObject>(this).parent_view_controller
 }
 - (())dismissMoviePlayerViewControllerAnimated {
     log!("TODO: [(UIViewController*){:?} dismissMoviePlayerViewControllerAnimated]", this); // TODO
