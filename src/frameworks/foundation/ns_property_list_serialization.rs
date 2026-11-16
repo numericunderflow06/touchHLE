@@ -303,10 +303,19 @@ fn serialize_plist(env: &mut Environment, plist: id) -> Value {
             NSNumberHostObject::Char(c) => Value::from(*c),
             _ => todo!("num {:?}", num),
         }
-    } else if class == env.objc.get_known_class("NSData", &mut env.mem) {
+    } else if {
+        // NSMutableData is a property list object too.
+        let data_class = env.objc.get_known_class("NSData", &mut env.mem);
+        env.objc.class_is_subclass_of(class, data_class)
+    } {
         let data = env.objc.borrow::<NSDataHostObject>(plist);
-        let buffer_slice = env.mem.bytes_at(data.bytes.cast(), data.length);
-        Value::Data(buffer_slice.to_vec())
+        if data.length == 0 {
+            // An empty data object may have no buffer at all.
+            Value::Data(Vec::new())
+        } else {
+            let buffer_slice = env.mem.bytes_at(data.bytes.cast(), data.length);
+            Value::Data(buffer_slice.to_vec())
+        }
     } else if class == env.objc.get_known_class("NSDate", &mut env.mem) {
         let date = env.objc.borrow::<NSDateHostObject>(plist);
         let time = apple_epoch().add(Duration::from_secs_f64(date.time_interval));
