@@ -453,7 +453,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (id)objectAtIndex:(NSUInteger)index {
     // TODO: throw real exception rather than panic if out-of-bounds?
-    env.objc.borrow::<ArrayHostObject>(this).array[index as usize]
+    let array = &env.objc.borrow::<ArrayHostObject>(this).array;
+    match array.get(index as usize) {
+        Some(&object) => object,
+        // The real implementation raises NSRangeException here, which ends
+        // the app unless it is caught, so this is the app's bug rather than
+        // a missing feature.
+        None => panic!(
+            "NSRangeException: -[NSArray objectAtIndex:]: index {} beyond bounds, the array {:?} has {} object(s). A real device would terminate the app here.",
+            index,
+            this,
+            array.len()
+        ),
+    }
 }
 
 - (id)description {
@@ -651,7 +663,19 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 - (id)objectAtIndex:(NSUInteger)index {
     // TODO: throw real exception rather than panic if out-of-bounds?
-    env.objc.borrow::<ArrayHostObject>(this).array[index as usize]
+    let array = &env.objc.borrow::<ArrayHostObject>(this).array;
+    match array.get(index as usize) {
+        Some(&object) => object,
+        // The real implementation raises NSRangeException here, which ends
+        // the app unless it is caught, so this is the app's bug rather than
+        // a missing feature.
+        None => panic!(
+            "NSRangeException: -[NSArray objectAtIndex:]: index {} beyond bounds, the array {:?} has {} object(s). A real device would terminate the app here.",
+            index,
+            this,
+            array.len()
+        ),
+    }
 }
 
 - (id)description {
