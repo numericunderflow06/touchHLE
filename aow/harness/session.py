@@ -282,10 +282,14 @@ class Session:
 
 def _guest_state(self, max_lines=40):
     """Registers and guest call stack printed by the emulator when it crashed."""
+    from . import symbols
+
+    version = "2.0" if "v2.0" in self.info.get("ipa", "") else "1.1"
     lines = self.log_text().splitlines()
     for i, line in enumerate(lines):
         if line.startswith("Guest state at panic"):
-            return [entry.rstrip()[:200] for entry in lines[i:i + max_lines]]
+            return [symbols.annotate(entry.rstrip(), version)[:240]
+                    for entry in lines[i:i + max_lines]]
     return None
 
 

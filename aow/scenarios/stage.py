@@ -30,7 +30,8 @@ OVERLAYS = ("tutorial", "battle_help", "pause", "shop", "upgrade")
 
 # Command panel (opened with the button at the top-left of the battle screen).
 COMMAND_PANEL = (19, 14)
-COMMANDS = {"forward": (59, 71), "backward": (126, 71), "charge": (193, 71), "retreat": (260, 71)}
+# Button position and the value MainGameLayer.curCommandType takes afterwards.
+COMMANDS = {"forward": ((59, 71), 0), "charge": ((193, 71), 2)}
 # Icons on the upgrade screen, both tabs.
 UPGRADE_ITEMS = [(x, y) for y in (111, 204) for x in (246, 310, 374, 438)]
 
@@ -40,27 +41,62 @@ def stage_info(index, version):
     return data["stages"][index - 1]
 
 
+def wait_for(condition, timeout=2.0, poll=0.06):
+    """Poll the game's state until `condition()` holds. The game acts on a tap
+    only after the button's own animation, so effects arrive a little later."""
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return True
+        time.sleep(poll)
+    return False
+
+
 def buy_upgrades(s, levels=3):
-    """On the campaign map: buy `levels` levels of everything."""
+    """On the campaign map: buy up to `levels` levels of every troop and hero
+    item on the game's upgrade screen. Each purchase is confirmed by the gold
+    shown on that screen going down. Returns the gold spent."""
     c = s.control
     x, y = nav.named_button(c, "CampaignMapLayer", "btnUpgrade")
     nav.tap_expect(c, x, y, "upgrade")
     nav.wait_settled(c)
-    for tab in ("btnUpgradeTypeTroop", "btnUpgradeTypeHero"):
+    layer = nav.find_object(c, "UpgradeLayer")
+
+    def gold():
+        value = c.read(layer, "lblMoney.string_", "id") or {}
+        text = value.get("string") or ""
+        return int(text) if text.isdigit() else -1
+
+    def selected():
+        return c.read(layer, "SelectedIndex", "i32")
+
+    start = gold()
+    purchases = 0
+    for tab, item_levels in (("btnUpgradeTypeTroop", levels), ("btnUpgradeTypeHero", max(1, levels - 1))):
         tx, ty = nav.named_button(c, "UpgradeLayer", tab)
+        kind = c.read(layer, "SelectedType", "i32")
         c.tap(tx, ty)
-        c.wait_ms(500)
+        wait_for(lambda: c.read(layer, "SelectedType", "i32") != kind, 2.5)
+        c.wait_ms(400)
         bx, by = nav.named_button(c, "UpgradeLayer", "btnUpgrade")
         for ix, iy in UPGRADE_ITEMS:
+            previous = selected()
             c.tap(ix, iy)
-            c.wait_ms(250)
-            for _ in range(levels):
-                c.tap(bx, by, hold_frames=3)
-                c.wait_ms(200)
+            if not wait_for(lambda: selected() != previous, 2.5):
+                continue  # locked, or the tap did not select anything
+            for _ in range(item_levels):
+                before = gold()
+                c.tap(bx, by)
+                if not wait_for(lambda: gold() < before, 2.5):
+                    break  # at its maximum level, or not for sale
+                purchases += 1
+    spent = start - gold()
+    s.notes["upgrades"] = {"purchases": purchases, "gold_spent": spent}
     s.shot("upgrades_bought")
     x, y = nav.named_button(c, "UpgradeLayer", "btnBack")
     nav.tap_expect(c, x, y, "campaign_map")
     nav.wait_settled(c)
+    return spent
 
 
 def soldier_buttons(control):
@@ -81,16 +117,60 @@ def soldier_buttons(control):
 
 
 def order(control, layer, command):
-    """Give a troop command through the command panel."""
-    control.tap(*COMMAND_PANEL, hold_frames=3)
-    control.wait_ms(350)
-    if control.read(layer, "isCommandMenuShown", "bool"):
-        control.tap(*COMMANDS[command], hold_frames=3)
-        control.wait_ms(250)
+    """Give a troop command through the command panel, and confirm the game
+    registered it. Returns True if it did."""
+    position, code = COMMANDS[command]
+
+    def shown():
+        return control.read(layer, "isCommandMenuShown", "bool")
+
+    done = False
+    for _ in range(3):
+        if not shown():
+            control.tap(*COMMAND_PANEL)
+            if not wait_for(shown, 2.5):
+                continue
+        control.wait_ms(300)  # let the panel finish opening
+        control.tap(*position)
+        if wait_for(lambda: control.read(layer, "curCommandType", "i32") == code and not shown(), 2.5):
+            done = True
+            break
     # Never leave the panel open: it covers the field.
-    if control.read(layer, "isCommandMenuShown", "bool"):
-        control.tap(*COMMAND_PANEL, hold_frames=3)
-        control.wait_ms(250)
+    if shown():
+        control.tap(*COMMAND_PANEL)
+        wait_for(lambda: not shown(), 2.5)
+    return done
+
+
+def front_line(control):
+    """World x of the player's foremost living troop, or None."""
+    best = None
+    for soldier in control.find("SoldierLayer", limit=60)["objects"]:
+        try:
+            if control.read(soldier["ptr"], "_hp", "f32") <= 0:
+                continue
+            x = control.read(soldier["ptr"], "_worldPos", "point")[0]
+        except Exception:
+            continue
+        if best is None or x > best:
+            best = x
+    return best
+
+
+def follow(control, layer, limit):
+    """Scroll (by tilting) so the foremost troop is in view."""
+    front = front_line(control)
+    if front is None:
+        return
+    target = max(limit, min(0, -(front - 300)))
+    camera = control.read(layer, "gameNode.position_", "point")[0]
+    distance = target - camera
+    if abs(distance) < 60:
+        return
+    # Full tilt scrolls about 400 points per second.
+    control.tilt(-1 if distance > 0 else 1, 0)
+    control.wait_ms(int(min(2500, abs(distance) / 0.4)))
+    control.tilt_clear()
 
 
 def play(s, limit_seconds):
@@ -101,9 +181,11 @@ def play(s, limit_seconds):
     layer = nav.find_object(c, "MainGameLayer")
     buttons = soldier_buttons(c) or [(173, 290)]
     s.notes["soldier_buttons"] = buttons
+    limit = -c.read(layer, "lastScreenBLPosX", "i32")
     timeline = []
+    orders = {"given": 0, "confirmed": 0}
     start = time.time()
-    last_log = last_order = 0.0
+    last_log = last_order = last_follow = 0.0
     turn = 0
     while time.time() - start < limit_seconds:
         scene = game.current_scene(c)
@@ -111,8 +193,10 @@ def play(s, limit_seconds):
         if screen == "stage_result":
             # Touch nothing here: the same screen serves wins and losses.
             won = c.read(logic, "isCampaignStageClear", "bool")
+            s.notes["orders"] = orders
             return ("won" if won else "lost"), timeline
         if screen in ("game_over", "ending", "conflict_result", "campaign_map"):
+            s.notes["orders"] = orders
             return screen, timeline
         if scene["transition"] or screen is None:
             c.wait_ms(200)
@@ -120,30 +204,40 @@ def play(s, limit_seconds):
         if screen in OVERLAYS:
             # Tutorials and help pages are dismissed with a tap.
             c.tap(240, 160)
-            c.wait_ms(300)
+            c.wait_ms(400)
             continue
         if screen != "battle" or not c.read(logic, "isGameProcessing", "bool"):
             c.wait_ms(200)
             continue
         now = time.time()
-        if now - last_order > 8:
+        charging = c.read(layer, "curCommandType", "i32") == COMMANDS["charge"][1]
+        if now - last_order > (20 if charging else 4):
             last_order = now
-            order(c, layer, "charge")
+            orders["given"] += 1
+            orders["confirmed"] += bool(order(c, layer, "charge"))
+            continue
+        if now - last_follow > 4:
+            last_follow = now
+            follow(c, layer, limit)
             continue
         x, y = buttons[turn % len(buttons)]
         turn += 1
-        c.tap(x, y, hold_frames=3)
-        c.wait_ms(100)
+        c.tap(x, y)
+        c.wait_ms(150)
         if now - last_log > 10:
             last_log = now
             state = nav.battle_state(c, logic)
             state["t"] = round(now - start)
+            state["camera_x"] = c.read(layer, "gameNode.position_", "point")[0]
             timeline.append(state)
+    s.notes["orders"] = orders
     return "timeout", timeline
 
 
 def body(s, index, info, limit_seconds):
     c = s.control
+    # Evidence that sound callbacks and scene changes happen, without logging.
+    c.watch("audioPlayerDidFinishPlaying:successfully:", "playBGM:Force:")
     nav.to_main_menu(c)
     nav.load_game_to_map(c)
     if not s.check_screen("campaign_map"):
@@ -193,6 +287,10 @@ def body(s, index, info, limit_seconds):
     outcome, timeline = play(s, limit_seconds)
     s.notes["timeline"] = timeline[-6:]
     s.notes["outcome"] = outcome
+    calls = {}
+    for event in c.drain_events():
+        calls[event["sel"]] = calls.get(event["sel"], 0) + 1
+    s.notes["watched_calls"] = calls
     s.check("stage was won", outcome == "won", outcome)
     if outcome in ("won", "lost"):
         c.wait_ms(1500)
