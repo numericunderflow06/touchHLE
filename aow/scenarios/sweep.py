@@ -33,9 +33,9 @@ def parse_range(text, count):
     return stages
 
 
-def run_stage_once(index, version, difficulty, money, limit):
+def run_stage_once(index, version, difficulty, money, limit, levels=()):
     command = [sys.executable, str(REPO / "aow" / "aow.py"), "run", "stage", str(index),
-               str(difficulty), str(money), str(limit), version]
+               str(difficulty), str(money), str(limit), version, *levels]
     proc = subprocess.run(command, cwd=REPO, capture_output=True, text=True)
     try:
         return json.loads(proc.stdout)
@@ -47,10 +47,13 @@ def run_stage_once(index, version, difficulty, money, limit):
 def run_stage(index, version, difficulty, money, limit, attempts=3):
     """Play a stage. A run that ends in one of the game's own crashes (see
     harness/known.py) says nothing about the emulator, so the stage is played
-    again; those runs are listed in the result."""
+    again; those runs are listed in the result. The enemy-pool crash needs a
+    crowd of enemies on the field, so the later attempts start with every
+    upgrade at its maximum, which keeps the crowd smaller."""
     game_bug_runs = []
-    for _ in range(attempts):
-        result = run_stage_once(index, version, difficulty, money, limit)
+    for attempt in range(attempts):
+        levels = ("10", "10") if attempt else ()
+        result = run_stage_once(index, version, difficulty, money, limit, levels)
         if not result.get("known_game_bug"):
             break
         game_bug_runs.append({"id": result["known_game_bug"]["id"], "run_dir": result.get("run_dir")})

@@ -57,12 +57,13 @@ The game acts on a tap only after the tapped button's press animation, so the ef
 |---|---|---|
 | `run smoke` | 12 s | Boots to the main menu; picture is 480x320, upright, no black bands, animating, at least 30 FPS; the menu reacts to touch. |
 | `run battle` | 55 s | New game to stage 1-1; tilt scrolls the battlefield over its full range and the HUD stays put. |
-| `run stage N [difficulty] [gold] [limit] [version]` | 3-7 min | Stage N (campaign order) from a written save: buys upgrades, recruits, orders charges, follows the troops, and reports win or loss as the game itself records it. |
+| `run stage N [difficulty] [gold] [limit] [version] [troop level] [hero level]` | 3-7 min | Stage N (campaign order) from a written save: buys upgrades, recruits, orders charges, follows the troops, and reports win or loss as the game itself records it. |
 | `run sweep [version] [parallel] [stages]` | about half an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. A stage that ends in one of the game's own crashes (`harness/known.py`) is played again and the crash is listed, not counted against the emulator. |
 | `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
-| `run dialogs [version]` | 80 s | Every system dialog the game shows (quit a battle, quit the map, delete a save): opened, read, declined, opened again and confirmed. |
+| `run dialogs [version]` | 90 s | Every system screen the game shows on top of itself: the three confirmation dialogs (quit a battle, quit the map, delete a save), each declined and confirmed, and the music picker behind the playlist button. |
+| `run menus [version]` | 40 s | Options, Help, Ranking and Achievements: opened, looked at, every button pressed, and back to the main menu. |
 | `run perf [stage] [version]` | 70 s | A crowded battle left to fight: frame rate against the number of units, a profile, and the cost of a bare message send. |
-| `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen; crashes and black pictures are findings; writes a map of the screens. |
+| `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen (waiting for each screen to accept taps); crashes and black pictures are findings; writes a map of the screens, dialogs included. |
 
 A scenario's result is also saved as `result.json` in its run directory. A lost or timed-out stage is not automatically an emulator problem: the bot plays simply. Look at the run (screenshots, `notes.timeline`) before concluding.
 

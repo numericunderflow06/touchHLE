@@ -91,8 +91,14 @@ def current_scene(control):
 
     Returns {"screen": short name or None, "layers": [class names],
     "transition": bool, "root": class of the running scene, "dialog": the
-    system dialog covering the screen or None}. With a dialog up, `screen` is
-    "dialog": whatever is under it cannot be reached until it is answered.
+    system dialog covering the screen or None, "ready": whether the screen
+    accepts taps yet}. With a dialog up, `screen` is "dialog": whatever is
+    under it cannot be reached until it is answered.
+
+    `ready` is the game's own flag (`canClick_` of the screen's layer): a
+    screen that has just appeared ignores taps until its entrance animation
+    is over, which can take two or three seconds. None if the layer has no
+    such flag.
     """
     try:
         # Deep enough to see overlays such as the pause menu, which the game
@@ -101,14 +107,18 @@ def current_scene(control):
     except ControlError as e:
         return {"screen": None, "layers": [], "transition": False, "root": None, "error": str(e)}
     layers = []
+    top = None  # the layer of the screen the player is looking at
 
     def collect(node, visible):
         # A layer is showing only if it and everything above it is visible.
+        nonlocal top
         if not isinstance(node, dict):
             return
         visible = visible and node.get("visible", True)
         if visible and node.get("class", "").endswith("Layer"):
             layers.append(node["class"])
+            if node["class"] in SCREENS:
+                top = node.get("ptr")
         for child in node.get("children", []):
             collect(child, visible)
 
@@ -116,6 +126,12 @@ def current_scene(control):
     known = [SCREENS[c] for c in layers if c in SCREENS]
     root_class = root.get("class", "")
     shown = dialog(control)
+    ready = None
+    if top is not None:
+        try:
+            ready = bool(control.read(top, "canClick_", "bool"))
+        except ControlError:
+            pass
     # Overlays (pause, shop, ...) are added on top of the screen they cover,
     # so the last known layer is the one the player is looking at.
     return {
@@ -125,6 +141,7 @@ def current_scene(control):
         "transition": "Transition" in root_class,
         "root": root_class,
         "dialog": shown,
+        "ready": ready,
     }
 
 

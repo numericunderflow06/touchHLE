@@ -40,6 +40,23 @@ def tap_expect(control, x, y, expect, timeout=6.0, attempts=5, log=None):
                    f"still on {scene and scene['screen']} {scene and scene['layers']}")
 
 
+def wait_ready(control, timeout=12.0):
+    """Wait until the screen that is showing accepts taps: no transition
+    running and the game's own "can click" flag set (or, for a screen
+    without that flag, its buttons at rest). Returns the scene."""
+    deadline = time.time() + timeout
+    scene = game.current_scene(control)
+    while time.time() < deadline:
+        if scene["screen"] is not None and not scene["transition"]:
+            if scene["ready"] or scene["dialog"]:
+                break
+            if scene["ready"] is None and wait_settled(control, timeout=2.0):
+                break
+        time.sleep(0.2)
+        scene = game.current_scene(control)
+    return scene
+
+
 def wait_settled(control, timeout=6.0, gap=0.15):
     """Wait until on-screen buttons stop moving (entrance animations)."""
     deadline = time.time() + timeout

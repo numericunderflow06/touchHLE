@@ -2,9 +2,11 @@
 
     python aow/aow.py run stage 5            # stage index 1..23, campaign order
     python aow/aow.py run stage 5 0 300000 420 2.0
+    python aow/aow.py run stage 16 0 300000 420 1.1 10 10
 
 Arguments: stage index, difficulty (0 easy, 1 normal, 2 hard), starting gold,
-time limit in seconds, game version.
+time limit in seconds, game version, troop upgrade level and hero upgrade
+level the save starts with (0 to 10; default 8 and 6).
 
 The run starts from a written save with every stage and item unlocked. It buys
 upgrades on the game's own upgrade screen, opens the stage from the campaign
@@ -329,13 +331,16 @@ def body(s, index, info, limit_seconds):
         s.shot(f"end_{outcome}")
 
 
-def run(index="1", difficulty="0", money="300000", limit_seconds="420", version="1.1"):
+def run(index="1", difficulty="0", money="300000", limit_seconds="420", version="1.1",
+        troop_level=TROOP_LEVEL, hero_level=HERO_LEVEL):
     index, difficulty = int(index), int(difficulty)
     info = stage_info(index, version)
-    upgrades = {i: TROOP_LEVEL for i in range(8)} | {i: HERO_LEVEL for i in range(14, 24)}
+    upgrades = ({i: int(troop_level) for i in range(8)}
+                | {i: int(hero_level) for i in range(14, 24)})
     plist = save.make_save(unlock="all", money=int(money), difficulty=difficulty, version=version,
                            upgrades=upgrades, extra={f"UnlockItem_{i}": True for i in range(40)})
     result = run_scenario(f"stage{index:02d}", lambda s: body(s, index, info, float(limit_seconds)),
                           ipa=version, save_plist=plist)
-    result["stage"] = {"index": index, "id": info["id"], "title": info["title"], "win": info["win"]}
+    result["stage"] = {"index": index, "id": info["id"], "title": info["title"], "win": info["win"],
+                       "troop_level": int(troop_level), "hero_level": int(hero_level)}
     return result

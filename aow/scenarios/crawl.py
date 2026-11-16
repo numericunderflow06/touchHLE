@@ -35,6 +35,13 @@ def observe(control):
     return scene, buttons
 
 
+def signature(scene):
+    """What tells two moments of the game apart without looking at pixels."""
+    shown = scene.get("dialog")
+    return (scene["root"], tuple(scene["layers"]), scene["transition"],
+            shown and tuple(shown["texts"]))
+
+
 def explore(path, version, label):
     """Replay `path` (a list of [x, y] taps) from the main menu and describe
     the screen it ends on."""
@@ -49,15 +56,18 @@ def explore(path, version, label):
     try:
         control = session.control()
         nav.to_main_menu(control)
-        nav.wait_settled(control)
+        nav.wait_ready(control)
         for x, y in path:
+            before = signature(game.current_scene(control))
             control.tap(x, y)
-            control.wait_ms(900)
-            # Let transitions and entrance animations finish.
-            deadline = time.time() + 12
-            while time.time() < deadline and game.current_scene(control)["transition"]:
+            # The game acts on a tap only after the button's own animation:
+            # a change of screen starts up to two seconds later.
+            deadline = time.time() + 3.0
+            while time.time() < deadline and signature(game.current_scene(control)) == before:
                 time.sleep(0.2)
-            nav.wait_settled(control, timeout=4.0)
+            # Then let the transition and the entrance animation finish.
+            nav.wait_ready(control)
+            nav.wait_settled(control, timeout=3.0)
         scene, buttons = observe(control)
         shot = session.shot("screen")
         info = checks.describe(shot)
@@ -89,8 +99,14 @@ def explore(path, version, label):
 def same_screen(a, b):
     if a["layers"] != b["layers"] or a["root"] != b["root"] or a.get("dialog") != b.get("dialog"):
         return False
-    if a["screen"] == "battle":
-        return True  # the battlefield never looks the same twice
+    if a["screen"] not in ("battle", "stage_info") and len(a["buttons"]) != len(b["buttons"]):
+        # Two screens can share a layer and a backdrop and still differ in
+        # what they offer (the save slots of Campaign and of Conflict).
+        return False
+    if a["screen"] in ("battle", "stage_info"):
+        # The battlefield never looks the same twice, and every stage has its
+        # own briefing; one of each is enough (the sweep enters every stage).
+        return True
     return checks.similarity(checks.load(a["shot"]), checks.load(b["shot"])) >= SAME_SCREEN_SIMILARITY
 
 
