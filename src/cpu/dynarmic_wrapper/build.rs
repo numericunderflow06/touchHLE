@@ -41,6 +41,28 @@ fn main() {
     build.define("DYNARMIC_USE_BUNDLED_EXTERNALS", "ON");
     build.define("CMAKE_POLICY_VERSION_MINIMUM", "3.5");
 
+    // With the Visual Studio generators, the `cmake` crate replaces CMake's
+    // per-configuration compiler flags (CMAKE_CXX_FLAGS_RELEASE and friends)
+    // with the flags of the `cc` crate, which it deliberately asks for without
+    // optimization, expecting CMake's build type to take care of that. The
+    // result is a "Release" build of dynarmic compiled with no optimization at
+    // all, which makes every transition between guest and host code several
+    // times more expensive than it should be. Put back what CMake itself uses
+    // for these configurations.
+    let target_env = env::var("CARGO_CFG_TARGET_ENV").unwrap_or_default();
+    let opt_level = env::var("OPT_LEVEL").unwrap_or_default();
+    if target_env == "msvc" {
+        let flags: &[&str] = match opt_level.as_str() {
+            "0" => &[],
+            "s" | "z" => &["/O1", "/Ob1", "/DNDEBUG"],
+            _ => &["/O2", "/Ob2", "/DNDEBUG"],
+        };
+        for flag in flags {
+            build.cflag(flag);
+            build.cxxflag(flag);
+        }
+    }
+
     // This is Windows- and Android-specific because on macOS or Linux, you can
     // easily get Boost with a package manager.
     let os = env::var("CARGO_CFG_TARGET_OS").expect("CARGO_CFG_TARGET_OS was not set");
