@@ -605,6 +605,7 @@ impl GLES for GLES1OnGL2 {
         gl21::GetError()
     }
     unsafe fn Enable(&mut self, cap: GLenum) {
+        log!("[DIAG-H2-CAP] gles1_on_gl2::Enable(cap={:#x})", cap);
         if ARRAYS.iter().any(|&ArrayInfo { name, .. }| name == cap) {
             log_dbg!("Tolerating glEnable({:#x}) of client state", cap);
         } else if cap == gl21::PERSPECTIVE_CORRECTION_HINT
@@ -628,6 +629,7 @@ impl GLES for GLES1OnGL2 {
         gl21::IsEnabled(cap)
     }
     unsafe fn Disable(&mut self, cap: GLenum) {
+        log!("[DIAG-H2-CAP] gles1_on_gl2::Disable(cap={:#x})", cap);
         if CAPABILITIES.contains(&cap) {
             log_dbg!("glDisable{:#x}", cap);
         } else if ARRAYS.iter().any(|&ArrayInfo { name, .. }| name == cap) {
@@ -637,6 +639,7 @@ impl GLES for GLES1OnGL2 {
         } else if GET_PARAMS.contains(cap) || UNSUPPORTED_GET_PARAMS.contains(cap) {
             log_dbg!("Tolerating glDisable({:#x}) of parameter", cap);
         } else {
+            log!("[DIAG-H2-CAP] WARNING: About to panic - unexpected cap={:#x}", cap);
             panic!("Unexpected glDisable({cap:#x})");
         }
         gl21::Disable(cap);
@@ -645,6 +648,7 @@ impl GLES for GLES1OnGL2 {
         gl21::ClientActiveTexture(texture);
     }
     unsafe fn EnableClientState(&mut self, array: GLenum) {
+        log!("[DIAG-H2-CAP] gles1_on_gl2::EnableClientState(array={:#x})", array);
         if CAPABILITIES.contains(&array) {
             log_dbg!(
                 "Tolerating glEnableClientState({:#x}) of a capability",
@@ -656,6 +660,7 @@ impl GLES for GLES1OnGL2 {
         gl21::EnableClientState(array);
     }
     unsafe fn DisableClientState(&mut self, array: GLenum) {
+        log!("[DIAG-H2-CAP] gles1_on_gl2::DisableClientState(array={:#x})", array);
         if CAPABILITIES.contains(&array) {
             log_dbg!(
                 "Tolerating glDisableClientState({:#x}) of a capability",

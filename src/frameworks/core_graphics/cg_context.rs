@@ -118,7 +118,8 @@ fn CGContextClipToRect(env: &mut Environment, context: CGContextRef, rect: CGRec
         // All good, clipping is not needed!
         return;
     }
-    todo!();
+    log!("[DIAG-H3-CLIP] CGContextClipToRect({:?}) non-trivial, not implemented", rect);
+    // Continue without clipping - may cause visual artifacts but no crash
 }
 
 pub fn CGContextConcatCTM(

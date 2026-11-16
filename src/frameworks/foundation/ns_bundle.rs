@@ -142,7 +142,13 @@ pub const CLASSES: ClassExports = objc_classes! {
 - (id)resourcePath {
     // This seems to be the same as the bundle path. The iPhone OS bundle
     // structure is a lot flatter than the macOS one.
-    msg![env; this bundlePath]
+    let path: id = msg![env; this bundlePath];
+    // [DIAG-BUNDLE] Code-focused diagnostic: Log mainBundle resourcePath
+    if path != nil {
+        let path_str = ns_string::to_rust_string(env, path);
+        log!("[DIAG-BUNDLE] mainBundle resourcePath: '{}'", path_str);
+    }
+    path
 }
 - (id)resourceURL {
     // This seems to be the same as the bundle path. The iPhone OS bundle

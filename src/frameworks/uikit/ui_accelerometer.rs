@@ -205,61 +205,78 @@ pub(super) fn handle_accelerometer(env: &mut Environment) -> Option<Instant> {
         log!("[DIAG-ACCEL] delegate {:?} does NOT respond to accelerometer:didAccelerate:", delegate);
     }
 
-    // Enumerate MainGameLayer children + force-scroll child[0] (game world node)
+    // Scroll game world via accelerometer tilt.
+    // child[0] = backgrounds (CCNode), child[1] = entities+HUD (CCNode)
+    // Strategy: scroll child[0] and child[1] together, then compensate HUD
+    // sub-children within child[1] so they stay fixed on screen.
+    // HUD identification: CDEButton, CDELabelAtlas, CDELabel, CDEProgressBar,
+    // CDEColorNode, and CDESprite at HUD y-positions (y<50 or y>280).
     {
         use crate::frameworks::core_graphics::CGPoint;
-        static WORLD_NODE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-        static SCROLL_FRAME: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+        static SCROLL_POS: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0); // f32 bits
+        static LAST_DELEGATE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
-        // One-time: find and log hierarchy, save child[0] pointer
-        if WORLD_NODE.load(std::sync::atomic::Ordering::Relaxed) == 0 {
-            let children: id = msg![env; delegate children];
-            if children != nil {
-                let count: u32 = msg![env; children count];
-                log!("[DIAG-HIERARCHY] MainGameLayer {:?} has {} children:", delegate, count);
-                let mut child_info: Vec<(id, String, i32)> = Vec::new();
-                for i in 0..count {
-                    let child: id = msg![env; children objectAtIndex:i];
-                    let child_isa = crate::objc::ObjC::read_isa(child, &env.mem);
-                    let class_name = env.objc.get_class_name(child_isa).to_string();
-                    let tag: i32 = msg![env; child tag];
-                    child_info.push((child, class_name, tag));
-                }
-                for (i, (child, class_name, tag)) in child_info.iter().enumerate() {
-                    log!("[DIAG-HIERARCHY]   child[{}]: {:?} class={} tag={}", i, child, class_name, tag);
-                }
-                if count > 0 {
-                    let first_child: id = msg![env; children objectAtIndex:(0u32)];
-                    WORLD_NODE.store(first_child.to_bits(), std::sync::atomic::Ordering::Relaxed);
-                    log!("[DIAG-SCROLL-HACK] Saved world node: {:?}", first_child);
-                }
-            }
-            let parent: id = msg![env; delegate parent];
-            if parent != nil {
-                let parent_isa = crate::objc::ObjC::read_isa(parent, &env.mem);
-                let pname = env.objc.get_class_name(parent_isa).to_string();
-                log!("[DIAG-HIERARCHY] MainGameLayer parent: {:?} class={}", parent, pname);
-            }
+        // Reset scroll when delegate (MainGameLayer) changes (new level loaded)
+        let delegate_bits = delegate.to_bits();
+        let prev_delegate = LAST_DELEGATE.swap(delegate_bits, std::sync::atomic::Ordering::Relaxed);
+        if prev_delegate != 0 && prev_delegate != delegate_bits {
+            log!("[DIAG-SCROLL] Delegate changed ({:#x} -> {:#x}), resetting scroll", prev_delegate, delegate_bits);
+            SCROLL_POS.store(0u32, std::sync::atomic::Ordering::Relaxed);
         }
 
-        // Manual scroll: use accelerometer x-tilt (right-click drag) to scroll child[0]
-        let world_bits = WORLD_NODE.load(std::sync::atomic::Ordering::Relaxed);
-        if world_bits != 0 {
-            // Use accel x value as scroll velocity (tilt left = scroll left, tilt right = scroll right)
-            // x is the accelerometer reading: ~0 when level, positive when tilted right
-            let scroll_speed = 300.0; // pixels per second at full tilt
-            let dt = 1.0 / 60.0; // approximate frame time
+        let children: id = msg![env; delegate children];
+        if children != nil {
+            let count: u32 = msg![env; children count];
+
+            // Compute scroll from tilt
+            let scroll_speed = 300.0f32;
+            let dt = 1.0f32 / 60.0;
             let velocity = x as f32 * scroll_speed * dt;
-
-            // Accumulate scroll position
-            let cur_bits = SCROLL_FRAME.load(std::sync::atomic::Ordering::Relaxed);
+            let cur_bits = SCROLL_POS.load(std::sync::atomic::Ordering::Relaxed);
             let cur_scroll = f32::from_bits(cur_bits);
-            let new_scroll = (cur_scroll - velocity).clamp(-1000.0, 0.0); // limit scroll range
-            SCROLL_FRAME.store(new_scroll.to_bits(), std::sync::atomic::Ordering::Relaxed);
+            let new_scroll = (cur_scroll - velocity).clamp(-1000.0, 0.0);
+            SCROLL_POS.store(new_scroll.to_bits(), std::sync::atomic::Ordering::Relaxed);
 
-            let world_node = crate::objc::id::from_bits(world_bits);
-            let pos = CGPoint { x: new_scroll, y: 0.0 };
-            let _: () = msg![env; world_node setPosition:pos];
+            // Scroll child[0] (backgrounds) and child[1] (entities+HUD)
+            for i in 0..2u32.min(count) {
+                let child: id = msg![env; children objectAtIndex:i];
+                let pos = CGPoint { x: new_scroll, y: 0.0 };
+                let _: () = msg![env; child setPosition:pos];
+            }
+
+            // Compensate HUD elements within child[1] so they stay fixed
+            if count > 1 {
+                let child1: id = msg![env; children objectAtIndex:(1u32)];
+                let sub_children: id = msg![env; child1 children];
+                if sub_children != nil {
+                    let sub_count: u32 = msg![env; sub_children count];
+                    // Collect HUD nodes to compensate (can't borrow env during iteration)
+                    let mut hud_nodes: Vec<(id, f32, f32)> = Vec::new();
+                    for i in 0..sub_count {
+                        let sub: id = msg![env; sub_children objectAtIndex:i];
+                        let sub_isa = crate::objc::ObjC::read_isa(sub, &env.mem);
+                        let sub_class = env.objc.get_class_name(sub_isa).to_string();
+                        let sub_pos: CGPoint = msg![env; sub position];
+
+                        // HUD elements: buttons, labels, progress bars, color nodes
+                        // Also CDESprite at HUD y-positions (bottom bar y<50, top bar y>280)
+                        let is_hud = match sub_class.as_str() {
+                            "CDEButton" | "CDELabelAtlas" | "CDELabel"
+                            | "CDEProgressBar" | "CDEColorNode" => true,
+                            "CDESprite" => sub_pos.y < 50.0 || sub_pos.y > 280.0,
+                            _ => false,
+                        };
+                        if is_hud {
+                            hud_nodes.push((sub, sub_pos.x, sub_pos.y));
+                        }
+                    }
+                    // Apply compensation: shift HUD nodes by -scroll to cancel parent scroll
+                    for (node, orig_x, orig_y) in hud_nodes {
+                        let compensated = CGPoint { x: orig_x - new_scroll, y: orig_y };
+                        let _: () = msg![env; node setPosition:compensated];
+                    }
+                }
+            }
         }
     }
 

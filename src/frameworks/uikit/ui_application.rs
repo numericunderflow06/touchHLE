@@ -92,13 +92,29 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (UIInterfaceOrientation)statusBarOrientation {
-    match env.window().current_rotation() {
-        DeviceOrientation::Portrait => UIDeviceOrientationPortrait,
-        DeviceOrientation::LandscapeLeft => UIDeviceOrientationLandscapeLeft,
-        DeviceOrientation::LandscapeRight => UIDeviceOrientationLandscapeRight
+    // For landscape apps: always report portrait so Cocos2D/game engines
+    // don't apply their own landscape rotation (we already handle landscape
+    // at the framebuffer level). This prevents double-rotation of GL content
+    // and coordinate transform mismatches.
+    if env.options.initial_orientation != DeviceOrientation::Portrait {
+        log_dbg!("[DIAG-ORI] statusBarOrientation → portrait (suppressed landscape)");
+        UIDeviceOrientationPortrait
+    } else {
+        match env.window().current_rotation() {
+            DeviceOrientation::Portrait => UIDeviceOrientationPortrait,
+            DeviceOrientation::LandscapeLeft => UIDeviceOrientationLandscapeLeft,
+            DeviceOrientation::LandscapeRight => UIDeviceOrientationLandscapeRight
+        }
     }
 }
 - (())setStatusBarOrientation:(UIInterfaceOrientation)orientation {
+    // For landscape apps: ignore orientation changes from game engines
+    // (like Cocos2D CCDirector) to prevent them from triggering the
+    // landscape rotation path. Our framebuffer is already landscape.
+    if env.options.initial_orientation != DeviceOrientation::Portrait {
+        log_dbg!("[DIAG-ORI] setStatusBarOrientation:{} ignored", orientation);
+        return;
+    }
     env.window_mut().rotate_device(match orientation {
         UIDeviceOrientationPortrait => DeviceOrientation::Portrait,
         UIDeviceOrientationLandscapeLeft => DeviceOrientation::LandscapeLeft,

@@ -684,6 +684,7 @@ impl Fs {
     }
 
     /// [Self::lookup_node] with a pre-resolved path.
+    /// Uses case-insensitive fallback to match iOS HFS+ behavior (case-preserving, case-insensitive).
     fn lookup_node_inner(&self, resolved_path_components: &[&str]) -> Option<&FsNode> {
         let mut node = &self.root;
         for component in resolved_path_components {
@@ -694,7 +695,21 @@ impl Fs {
             else {
                 return None;
             };
-            node = children.get(*component)?
+            // Try exact match first, then case-insensitive fallback (iOS HFS+ behavior)
+            node = children.get(*component)
+                .or_else(|| {
+                    // [DIAG-CASE] Case-insensitive fallback for iOS compatibility
+                    children.iter()
+                        .find(|(k, _)| k.eq_ignore_ascii_case(component))
+                        .map(|(actual_name, v)| {
+                            log!(
+                                "[DIAG-CASE] Exact match failed for '{}', case-insensitive match found: '{}'",
+                                component,
+                                actual_name
+                            );
+                            v
+                        })
+                })?;
         }
         Some(node)
     }

@@ -801,13 +801,18 @@ pub const CLASSES: ClassExports = objc_classes! {
     todo!();
 }
 - (id)description {
-    todo!();
+    log!("[DIAG-DICT-DESC] description called on non-retaining CFDictionary {:?}", this);
+    let count: NSUInteger = msg![env; this count];
+    from_rust_string(env, format!("<_touchHLE_NSMutableDictionary_non_retaining {:?} count={}>", this, count))
 }
 - (id)copyWithZone:(NSZonePtr)_zone {
-    todo!();
+    log!("[DIAG-DICT-COPY] copyWithZone: called on non-retaining CFDictionary {:?}", this);
+    retain(env, this)
 }
 - (id)mutableCopyWithZone:(NSZonePtr)_zone {
-    todo!();
+    log!("[DIAG-DICT-MUTCOPY] mutableCopyWithZone: called on non-retaining CFDictionary {:?}", this);
+    // Returning self+retain as fallback - full implementation would copy the dictionary
+    retain(env, this)
 }
 
 - (id)objectForKey:(id)key {

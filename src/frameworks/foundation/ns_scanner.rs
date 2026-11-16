@@ -94,6 +94,25 @@ pub const CLASSES: ClassExports = objc_classes! {
     len == pos
 }
 
+// [DIAG-SCAN-LOC] scanLocation getter - per Apple documentation
+// Returns the index of the character at which the scanner will begin its next scanning operation
+- (NSUInteger)scanLocation {
+    let pos = env.objc.borrow::<NSScannerHostObject>(this).pos;
+    log!("[DIAG-SCAN-LOC] scanLocation called, returning {}", pos);
+    pos
+}
+
+// [DIAG-SCAN-LOC] setScanLocation: setter - per Apple documentation
+// Sets the location at which the scanner will begin its next scanning operation
+- (())setScanLocation:(NSUInteger)location {
+    let host = env.objc.borrow_mut::<NSScannerHostObject>(this);
+    let old_pos = host.pos;
+    // Per Apple docs: "If index is beyond the string's end, the behavior is undefined"
+    // We clamp to len for safety
+    host.pos = location.min(host.len);
+    log!("[DIAG-SCAN-LOC] setScanLocation:{} (was {}, clamped to {})", location, old_pos, host.pos);
+}
+
 - (bool)scanUpToCharactersFromSet:(id)cset intoString:(MutPtr<id>)str {
     skip_characters(env, this);
 
@@ -128,8 +147,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 }
 
 - (bool)scanCharactersFromSet:(id)cset intoString:(MutPtr<id>)str {
+    // [DIAG-C4] Log scanCharactersFromSet call
+    let pos = env.objc.borrow::<NSScannerHostObject>(this).pos;
+    log!("[DIAG-C4-SCAN-CHARS] pos={} scanning characters from set", pos);
     let inv_cset: id = msg![env; cset invertedSet];
-    msg![env; this scanUpToCharactersFromSet:inv_cset intoString:str]
+    let result: bool = msg![env; this scanUpToCharactersFromSet:inv_cset intoString:str];
+    let new_pos = env.objc.borrow::<NSScannerHostObject>(this).pos;
+    log!("[DIAG-C4-SCAN-CHARS] scanned {} characters, success={}", new_pos - pos, result);
+    result
 }
 
 - (bool)scanHexInt:(MutPtr<u32>)result {
@@ -151,12 +176,15 @@ pub const CLASSES: ClassExports = objc_classes! {
     skip_characters(env, this);
 
     let NSScannerHostObject { to_be_skipped, string, len, pos } = std::mem::take(env.objc.borrow_mut::<NSScannerHostObject>(this));
-    log_dbg!("scanUpToString:'{}' intoString: from '{}' at {}", to_rust_string(env, stop_string), to_rust_string(env, string), pos);
+    let stop_str_preview = to_rust_string(env, stop_string);
+    log_dbg!("scanUpToString:'{}' intoString: from '{}' at {}", stop_str_preview, to_rust_string(env, string), pos);
 
     // TODO: avoid string copying
     let left: id = msg![env; string substringFromIndex:pos];
     let range: NSRange = msg![env; left rangeOfString:stop_string];
     if range.location == 0 {
+        // [DIAG-C1] Log scanUpToString failure (stop string at current position)
+        log!("[DIAG-C1-SCAN-UPTO] pos={} stop='{}' result=FAILED(at_start)", pos, &stop_str_preview[..50.min(stop_str_preview.len())]);
         *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos };
         return false;
     }
@@ -171,9 +199,18 @@ pub const CLASSES: ClassExports = objc_classes! {
 
     if !result.is_null() {
         let copy: id = msg![env; left substringToIndex:scan_len];
-        log_dbg!("scanned '{}' up to {}", to_rust_string(env, copy), pos + scan_len);
+        let scanned_str = to_rust_string(env, copy);
+        // [DIAG-C1] Log scanUpToString success with scanned content
+        log!("[DIAG-C1-SCAN-UPTO] pos={} stop='{}' scanned='{}' success=true",
+             pos, &stop_str_preview[..50.min(stop_str_preview.len())],
+             &scanned_str[..80.min(scanned_str.len())]);
+        log_dbg!("scanned '{}' up to {}", scanned_str, pos + scan_len);
         // Note: substring is already autoreleased
         env.mem.write(result, copy);
+    } else {
+        // [DIAG-C1] Log scanUpToString success (no output requested)
+        log!("[DIAG-C1-SCAN-UPTO] pos={} stop='{}' scanned_len={} success=true(no_output)",
+             pos, &stop_str_preview[..50.min(stop_str_preview.len())], scan_len);
     }
     true
 }
@@ -183,12 +220,16 @@ pub const CLASSES: ClassExports = objc_classes! {
     skip_characters(env, this);
 
     let NSScannerHostObject { to_be_skipped, string, len, pos } = std::mem::take(env.objc.borrow_mut::<NSScannerHostObject>(this));
-    log_dbg!("scanString:{} intoString: from '{}' at {}", to_rust_string(env, scan_string), to_rust_string(env, string), pos);
+    let scan_str_preview = to_rust_string(env, scan_string);
+    log_dbg!("scanString:{} intoString: from '{}' at {}", scan_str_preview, to_rust_string(env, string), pos);
 
     // TODO: avoid string copying
     let left: id = msg![env; string substringFromIndex:pos];
     let same_prefix: bool = msg![env; left hasPrefix:scan_string];
     if !same_prefix {
+        // [DIAG-C2] Log scanString failure (prefix mismatch)
+        log!("[DIAG-C2-SCAN-STR] pos={} match='{}' success=false",
+             pos, &scan_str_preview[..50.min(scan_str_preview.len())]);
         *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos };
         return false;
     }
@@ -196,6 +237,10 @@ pub const CLASSES: ClassExports = objc_classes! {
     let scan_len: NSUInteger = msg![env; scan_string length];
     assert!(pos + scan_len <= len);
     *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos: pos + scan_len };
+
+    // [DIAG-C2] Log scanString success
+    log!("[DIAG-C2-SCAN-STR] pos={} match='{}' success=true",
+         pos, &scan_str_preview[..50.min(scan_str_preview.len())]);
 
     if !result.is_null() {
         let copy: id = msg![env; scan_string copy];
@@ -211,6 +256,8 @@ pub const CLASSES: ClassExports = objc_classes! {
     let NSScannerHostObject { to_be_skipped, string, len, pos } = std::mem::take(env.objc.borrow_mut::<NSScannerHostObject>(this));
     let left: id = msg![env; string substringFromIndex:pos];
     if left == nil {
+        // [DIAG-C3] Log scanInt failure (nil substring)
+        log!("[DIAG-C3-SCAN-INT] pos={} value=NONE success=false(nil)", pos);
         *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos };
         return false;
     }
@@ -224,19 +271,196 @@ pub const CLASSES: ClassExports = objc_classes! {
         }
     }
     if cutoff == 0 {
+        // [DIAG-C3] Log scanInt failure (no digits found)
+        log!("[DIAG-C3-SCAN-INT] pos={} input='{}' success=false(no_digits)",
+             pos, &st[..20.min(st.len())]);
         log_dbg!("scanInt: no valid int found for '{}'", st);
         *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos };
         return false;
     }
 
+    // TODO: handle over/underflow properly
+    let res: i32 = st[..cutoff].parse().unwrap_or(0);
+    // [DIAG-C3] Log scanInt success
+    log!("[DIAG-C3-SCAN-INT] pos={} value={} success=true", pos, res);
+    log_dbg!("scanInt: from '{}' -> {}", st, res);
+
     if !result.is_null() {
-        // TODO: handle over/underflow properly
-        let res = st[..cutoff].parse().unwrap_or(0);
-        log_dbg!("scanInt: from '{}' -> {}", st, res);
         env.mem.write(result, res);
     }
 
     *env.objc.borrow_mut::<NSScannerHostObject>(this) = NSScannerHostObject { to_be_skipped, string, len, pos: pos + cutoff as NSUInteger };
+    true
+}
+
+// [DIAG-SCANFLOAT] Implementation per Apple documentation
+// https://developer.apple.com/documentation/foundation/nsscanner/1411677-scanfloat
+- (bool)scanFloat:(MutPtr<f32>)result {
+    log!("[DIAG-SCANFLOAT] scanFloat: called at pos {}",
+         env.objc.borrow::<NSScannerHostObject>(this).pos);
+
+    skip_characters(env, this);
+
+    let NSScannerHostObject { to_be_skipped, string, len, pos } =
+        std::mem::take(env.objc.borrow_mut::<NSScannerHostObject>(this));
+
+    if pos >= len {
+        *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+            NSScannerHostObject { to_be_skipped, string, len, pos };
+        return false;
+    }
+
+    let left: id = msg![env; string substringFromIndex:pos];
+    let st = to_rust_string(env, left);
+
+    // Parse float: [+-]?[0-9]*\.?[0-9]+([eE][+-]?[0-9]+)?
+    let mut end = 0;
+    let mut found_digit = false;
+    let mut found_dot = false;
+    let chars: Vec<char> = st.chars().collect();
+
+    // Handle optional sign
+    if end < chars.len() && (chars[end] == '+' || chars[end] == '-') {
+        end += 1;
+    }
+
+    // Scan digits and optional decimal point
+    while end < chars.len() {
+        let c = chars[end];
+        if c.is_ascii_digit() {
+            found_digit = true;
+            end += 1;
+        } else if c == '.' && !found_dot {
+            found_dot = true;
+            end += 1;
+        } else {
+            break;
+        }
+    }
+
+    // Handle exponent part (e.g., 1.5e10)
+    if end < chars.len() && found_digit && (chars[end] == 'e' || chars[end] == 'E') {
+        let exp_start = end;
+        end += 1;
+        // Optional exponent sign
+        if end < chars.len() && (chars[end] == '+' || chars[end] == '-') {
+            end += 1;
+        }
+        // Exponent digits
+        let mut exp_digits = false;
+        while end < chars.len() && chars[end].is_ascii_digit() {
+            exp_digits = true;
+            end += 1;
+        }
+        // If no exponent digits, revert to before 'e'
+        if !exp_digits {
+            end = exp_start;
+        }
+    }
+
+    if !found_digit {
+        log!("[DIAG-SCANFLOAT] no float found in '{}'", &st[..20.min(st.len())]);
+        *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+            NSScannerHostObject { to_be_skipped, string, len, pos };
+        return false;
+    }
+
+    let parsed: f32 = st[..end].parse().unwrap_or(0.0);
+    log!("[DIAG-SCANFLOAT] parsed {} from '{}'", parsed, &st[..end]);
+
+    if !result.is_null() {
+        env.mem.write(result, parsed);
+    }
+
+    *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+        NSScannerHostObject { to_be_skipped, string, len, pos: pos + end as NSUInteger };
+    true
+}
+
+// [DIAG-SCANDOUBLE] Implementation per Apple documentation
+// https://developer.apple.com/documentation/foundation/nsscanner/1411893-scandouble
+// Available since iOS 2.0, mirrors scanFloat: but uses f64 (double precision)
+- (bool)scanDouble:(MutPtr<f64>)result {
+    log!("[DIAG-SCANDOUBLE] scanDouble: called at pos {}",
+         env.objc.borrow::<NSScannerHostObject>(this).pos);
+
+    skip_characters(env, this);
+
+    let NSScannerHostObject { to_be_skipped, string, len, pos } =
+        std::mem::take(env.objc.borrow_mut::<NSScannerHostObject>(this));
+
+    if pos >= len {
+        log!("[DIAG-SCANDOUBLE] at end of string, returning false");
+        *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+            NSScannerHostObject { to_be_skipped, string, len, pos };
+        return false;
+    }
+
+    let left: id = msg![env; string substringFromIndex:pos];
+    let st = to_rust_string(env, left);
+
+    // Parse double: [+-]?[0-9]*\.?[0-9]+([eE][+-]?[0-9]+)?
+    // Same algorithm as scanFloat:, just with f64 output
+    let mut end = 0;
+    let mut found_digit = false;
+    let mut found_dot = false;
+    let chars: Vec<char> = st.chars().collect();
+
+    // Handle optional sign
+    if end < chars.len() && (chars[end] == '+' || chars[end] == '-') {
+        end += 1;
+    }
+
+    // Scan digits and optional decimal point
+    while end < chars.len() {
+        let c = chars[end];
+        if c.is_ascii_digit() {
+            found_digit = true;
+            end += 1;
+        } else if c == '.' && !found_dot {
+            found_dot = true;
+            end += 1;
+        } else {
+            break;
+        }
+    }
+
+    // Handle exponent part (e.g., 1.5e10)
+    if end < chars.len() && found_digit && (chars[end] == 'e' || chars[end] == 'E') {
+        let exp_start = end;
+        end += 1;
+        // Optional exponent sign
+        if end < chars.len() && (chars[end] == '+' || chars[end] == '-') {
+            end += 1;
+        }
+        // Exponent digits
+        let mut exp_digits = false;
+        while end < chars.len() && chars[end].is_ascii_digit() {
+            exp_digits = true;
+            end += 1;
+        }
+        // If no exponent digits, revert to before 'e'
+        if !exp_digits {
+            end = exp_start;
+        }
+    }
+
+    if !found_digit {
+        log!("[DIAG-SCANDOUBLE] no double found in '{}'", &st[..20.min(st.len())]);
+        *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+            NSScannerHostObject { to_be_skipped, string, len, pos };
+        return false;
+    }
+
+    let parsed: f64 = st[..end].parse().unwrap_or(0.0);
+    log!("[DIAG-SCANDOUBLE] parsed {} from '{}'", parsed, &st[..end]);
+
+    if !result.is_null() {
+        env.mem.write(result, parsed);
+    }
+
+    *env.objc.borrow_mut::<NSScannerHostObject>(this) =
+        NSScannerHostObject { to_be_skipped, string, len, pos: pos + end as NSUInteger };
     true
 }
 

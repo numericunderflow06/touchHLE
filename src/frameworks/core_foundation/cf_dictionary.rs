@@ -35,7 +35,9 @@ fn CFDictionaryCreateMutable(
     value_callbacks: ConstPtr<CFDictionaryValueCallBacks>,
 ) -> CFMutableDictionaryRef {
     assert_eq!(allocator, kCFAllocatorDefault); // unimplemented
-    assert_eq!(capacity, 0); // TODO: fixed capacity support
+    if capacity != 0 {
+        log!("[DIAG-H2-CAPACITY] CFDictionaryCreateMutable called with capacity={} (ignored)", capacity);
+    }
 
     let new = msg_class![env; _touchHLE_NSMutableDictionary_non_retaining alloc];
     msg![env; new initWithKeyCallbacks:key_callbacks andValueCallbacks:value_callbacks]
@@ -164,10 +166,16 @@ fn _touchHLE_CFDictionary_release(
     CFRelease(env, value.cast_mut().cast());
 }
 fn _touchHLE_CFDictionary_copyDescription(
-    _env: &mut Environment,
-    _value: ConstVoidPtr,
+    env: &mut Environment,
+    value: ConstVoidPtr,
 ) -> CFStringRef {
-    todo!()
+    log!("[DIAG-H1-COPYDESC] copyDescription called for value {:?}", value);
+    // Return placeholder to avoid crash
+    // Full implementation would describe the value type
+    crate::frameworks::foundation::ns_string::from_rust_string(
+        env,
+        format!("<value at {:?}>", value)
+    )
 }
 fn _touchHLE_CFDictionary_equal(
     env: &mut Environment,

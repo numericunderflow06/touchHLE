@@ -1,7 +1,546 @@
 {
   "description": "Tracks effectiveness of multi-agent debate sessions",
-  "last_updated": "2026-01-14T13:30:00",
+  "last_updated": "2026-01-21T13:00:00",
   "sessions": [
+    {
+      "session_id": "multiagent_2026-01-21_12-08-34",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Phase 1A: Add [DIAG-EAGL-DIM] logging to compare layer bounds vs window size. Phase 1B: Fix FIXME at eagl.rs:228 by using msg![env; drawable bounds] for renderbuffer dimensions instead of window.size_unrotated_scalehacked(). Phase 1C: Add compile-time flag to disable vertex sampling code to rule out regression (50.55% vs 42.22%). Phase 2: Add Error pipeline's [DIAG-E2] per-frame max Y tracking and scene transition logging for validation.",
+      "test_result": "build_failed",
+      "black_pixels": "50.55%",
+      "effective_arguments": {
+        "code_advocate": [
+          "FIXME comment at eagl.rs:228 is documented evidence - code explicitly acknowledges using wrong dimension source",
+          "Apple EAGL documentation confirms renderbuffer dimensions must match layer bounds",
+          "Proposed phased consensus in Turn 1 with FIXME fix as primary",
+          "Connected Error's Y=320 evidence to renderbuffer dimension consumption problem",
+          "Low-risk fix - uses documented Apple API (msg![env; drawable bounds])"
+        ],
+        "error_advocate": [
+          "Y=320 coordinate cap (355 occurrences) grounded discussion on symptom evidence",
+          "UIScreen.bounds=320x480 correct supported Code's 'consumption problem' argument",
+          "Contributed [DIAG-EAGL-DIM] refinement to validate assumption before fix",
+          "Contributed [DIAG-E2] validation logging for Phase 2",
+          "Correctly dismissed NSDate random suggestion as irrelevant to geometry",
+          "Accepted consensus quickly in Turn 2 when documented evidence was stronger"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in Turn 1 with documented evidence (FIXME + Apple docs)",
+        "Error advocate accepted consensus in Turn 2 (2-turn resolution)",
+        "Error's runtime evidence (Y=320 cap) supported Code's hypothesis rather than competing",
+        "Error contributed meaningful refinement ([DIAG-EAGL-DIM] before fix)",
+        "HIGHEST CONFIDENCE fix identified: FIXME explicitly states code is wrong"
+      ],
+      "what_failed": [
+        "Build failure (14th session with issues) blocked all testing",
+        "FIXME fix remains UNTESTED despite being highest-confidence hypothesis",
+        "No diagnostic output captured",
+        "[DIAG-E1] (memory regions) and [DIAG-E2] (per-frame) implemented but untested",
+        "15 sessions now affected by build/infrastructure issues"
+      ],
+      "lessons_learned": [
+        "Documented evidence (FIXME comments + API docs) is higher confidence than runtime observation alone",
+        "Error pipeline should concede when Code has documented evidence",
+        "Error can still contribute refinements (validation logging, before-fix verification)",
+        "Framing runtime evidence as supporting Code's hypothesis (not competing) enables faster consensus",
+        "Build stability remains critical blocker - now 15 sessions with issues"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-21_11-17-26",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Phased approach: Phase 1 - Run ./crash_monitor.sh capture immediately to verify if fix is already working (Error pipeline's verification-first principle). If exit code 2 (PASS, <15% black pixels), document which change fixed it and close investigation. If exit code 3 (FAIL, >=15% black pixels), proceed to Phase 2 - Apply Code pipeline's CFDictionary method fixes (description, copyWithZone:, mutableCopyWithZone: in _touchHLE_NSMutableDictionary_non_retaining at ns_dictionary.rs lines 803-810) with [DIAG-DICT-*] logging prefixes, rebuild with ./build_monitor.sh start && ./build_monitor.sh wait, then re-test with ./crash_monitor.sh capture.",
+      "test_result": "fail",
+      "black_pixels": "50.55%",
+      "effective_arguments": {
+        "code_advocate": [
+          "Proposed phased consensus in Turn 1 respecting Error's verification-first principle",
+          "Identified 3 novel todo!() crash risks in _touchHLE_NSMutableDictionary_non_retaining",
+          "Documentation-grounded fixes per Apple NSCopying/NSMutableCopying protocols",
+          "Low-risk fixes - replace panic with working implementation",
+          "Added [DIAG-DICT-*] diagnostic prefixes for runtime visibility"
+        ],
+        "error_advocate": [
+          "Verification-first principle accepted as Phase 1",
+          "Correctly identified Y=480 in logs as potential fix evidence",
+          "Accepted Code's crash-prevention fixes as Phase 2 backup",
+          "Dismissed Mach semaphore random suggestion as LOW relevance",
+          "Accepted consensus quickly in Turn 2"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in Turn 1 with phased structure",
+        "Error advocate accepted consensus in Turn 2 (2-turn resolution)",
+        "Verification-first was correct - revealed fix assumptions were WRONG",
+        "Build succeeded after 13 consecutive failures",
+        "Both pipelines contributed valuable elements to consensus"
+      ],
+      "what_failed": [
+        "REGRESSION: Black pixels increased from 42.22% to 50.55%",
+        "Context analysis over-interpreted Y=480 logs as 'fix working'",
+        "All [DIAG-*] output shows '(None captured)' - infrastructure gap persists",
+        "CFDictionary methods never called (zero [DIAG-DICT-*] entries)",
+        "14 sessions now affected by diagnostic capture infrastructure gap"
+      ],
+      "lessons_learned": [
+        "Don't over-trust log snippets - actual test is essential",
+        "Verification-first approach correctly revealed false assumptions",
+        "Build success doesn't guarantee test success",
+        "CFDictionary methods are defensive fixes but not root cause",
+        "Infrastructure gap (14 sessions) is now critical priority"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-21_10-19-09",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "COMBINED PLAN - Phase 1A (Code): Fix CFDictionary copyDescription (return placeholder CFString), remove CFDictionary capacity assertion (log hint instead), fix CGContextClipToRect (log warning instead of todo!()), fix mmap offset assertion (log instead of assert). Phase 1B (Error): Add [DIAG-H1-QUERY] logging to glGetIntegerv, glGetFloatv, glGetBooleanv, glGetPointerv at function entry. Add [DIAG-H2-CAP] logging to gles1_on_gl2 Enable/Disable at function entry plus pre-panic WARNING. Build once, test, analyze which diagnostic path triggered to identify crash source.",
+      "test_result": "build_failed",
+      "black_pixels": "N/A",
+      "effective_arguments": {
+        "code_advocate": [
+          "Identified 4 novel crash-on-call bugs by comparing against Apple/POSIX documentation",
+          "CFDictionary copyDescription todo!() violates Apple 'never returns NULL' spec",
+          "CFDictionary capacity assertion rejects valid Apple API usage (capacity is hint)",
+          "CGContextClipToRect todo!() blocks standard clipping API",
+          "mmap offset assertion rejects valid POSIX usage",
+          "Proposed combined consensus in Turn 1 with Phase 1A/1B structure"
+        ],
+        "error_advocate": [
+          "Correctly prioritized GL query functions as likely crash point",
+          "Evidence: crash after glGetString(GL_EXTENSIONS), zero [DIAG-H1-GLCALL] before crash",
+          "Contributed [DIAG-H1-QUERY] for 4 GL query functions",
+          "Contributed [DIAG-H2-CAP] for capability handling with pre-panic WARNING",
+          "Self-deprioritized memory hypothesis (H3) based on stack overflow evidence (>1MB remaining)",
+          "Accepted Code's consensus proposal quickly in Turn 2"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in Turn 1 with clear combined structure",
+        "Error advocate accepted consensus in Turn 2 (2-turn resolution)",
+        "Both approaches recognized as complementary (CF/CG/mmap vs GL query)",
+        "Pre-panic WARNING logging added to capture exact crash trigger",
+        "Evidence-based prioritization: GL query > capability > memory"
+      ],
+      "what_failed": [
+        "13th consecutive build failure prevented all testing",
+        "No diagnostic output captured",
+        "All 4 code-focused fixes implemented but untested",
+        "All error-focused diagnostics implemented but untested",
+        "Crash hypothesis (PC=0x00108dcc) still not validated"
+      ],
+      "lessons_learned": [
+        "Build stability remains CRITICAL blocker - now 13 consecutive failures",
+        "Documentation comparison (Apple/POSIX specs) finds novel bugs",
+        "Self-deprioritizing weak hypotheses with evidence builds credibility",
+        "Pre-panic logging is strategic for crash diagnosis",
+        "13 sessions of accumulated untested code is unsustainable technical debt"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-21_09-32-22",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "HYBRID PLAN: (1A) Error's crash diagnosis - add [DIAG-H1-GLCALL] to GL functions (glEnable, glViewport, glClearColor, glMatrixMode, glGenTextures, glTexImage2D), add [DIAG-H2-STACK] for SP monitoring in panic handler. (1B) Code's regression analysis - if crash correlates with recently-modified files (dirent.rs d_type logic, ns_scanner.rs scanDouble:, gles_guest.rs diagnostics), verify implementations. (2) Based on findings: implement missing GL function OR revert/fix regression. (3) Once crash resolved, return to screen truncation investigation.",
+      "test_result": "build_failed",
+      "black_pixels": "N/A",
+      "effective_arguments": {
+        "code_advocate": [
+          "Recognized need for crash-first priority immediately",
+          "Proposed hybrid consensus in turn 1 combining crash diagnosis with regression analysis",
+          "Added regression concern - 11 sessions of build failures mean d_type/NSScanner changes NEVER tested",
+          "Contributed [DIAG-MMAP] logging for novel PNG loading investigation",
+          "Framed approaches as complementary (crash diagnosis vs regression verification)"
+        ],
+        "error_advocate": [
+          "CRITICAL REFRAMING: Identified problem may be CRASH during GL init, not screen truncation",
+          "Evidence: PC=0x00108dcc, SP=0xfffffd88, crash after glGetString(GL_EXTENSIONS)",
+          "Prior diagnostics ([DIAG-C1]/[DIAG-C3]) were NEVER TRIGGERED - crash happens first",
+          "Contributed [DIAG-H1-GLCALL] for 9 GL functions and [DIAG-H2-STACK] for stack monitoring",
+          "Accepted consensus quickly in turn 2 when crash-first priority was incorporated"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1 with clear hybrid structure",
+        "Error advocate accepted consensus in turn 2 (2-turn resolution)",
+        "Error pipeline's problem reframing (crash vs truncation) was a key insight",
+        "Both advocates agreed on crash-first priority before screen truncation investigation",
+        "Clear decision tree: diagnose crash -> fix -> then return to truncation"
+      ],
+      "what_failed": [
+        "12th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "Crash hypothesis (PC=0x00108dcc) never validated",
+        "[DIAG-H1-GLCALL] and [DIAG-H2-STACK] implemented but untested",
+        "All hypotheses remain INCONCLUSIVE"
+      ],
+      "lessons_learned": [
+        "Build stability remains the CRITICAL blocker - now 12 consecutive failures",
+        "Problem reframing (crash vs truncation) is valuable and shapes investigation approach",
+        "Crash-first priority is correct - cannot test truncation if game crashes",
+        "12 sessions of accumulated untested code represents unsustainable technical debt",
+        "Consider reverting to known-good state (multiagent_2026-01-14_21-20-46)"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-20_21-13-09",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "PHASE 1A (Code - Primary): Implement d_type fix in src/libc/dirent.rs - return DT_DIR=4 for directories, DT_REG=8 for files instead of DT_UNKNOWN=0. PHASE 1B (Error - Parallel): Add [DIAG-ERR-FRAME] logging to UIView.frame getter, [DIAG-ERR-ORIENT] logging to UIDevice.orientation getter, [DIAG-ERR-VPTR] logging to glVertexPointer. PHASE 2 (Contingency): If d_type fix doesn't reduce black pixels below 15%, analyze Error diagnostics to trace the Y=320 coordinate source.",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "d_type fix is genuinely novel - first actual implementation of dirent fix (prior sessions only added logging)",
+          "POSIX/BSD spec clearly documents d_type should be 4 (DIR) or 8 (REG), not 0 (UNKNOWN)",
+          "Low-risk fix that addresses a documented iOS compatibility gap",
+          "Proposed combined consensus in turn 1 with d_type as PRIMARY fix",
+          "Distinction between file discovery (dirent) and coordinate calculation (Error approach) is clear"
+        ],
+        "error_advocate": [
+          "UIView.frame is distinct from bounds - includes transform calculations (never logged before)",
+          "UIDevice.orientation could cause width/height confusion (never logged before)",
+          "glVertexPointer configuration could reveal stride/type issues (never logged before)",
+          "Accepted d_type fix as Phase 1A PRIMARY - error diagnostics as Phase 1B parallel",
+          "All three diagnostic targets are genuinely novel (not investigated in 10+ sessions)"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1 with clear phase structure",
+        "Error advocate accepted consensus in turn 2 with enhancement (added glVertexPointer)",
+        "Both approaches framed as complementary (file discovery vs coordinate calculation)",
+        "Code advocate implemented actual fix (d_type) not just diagnostics",
+        "Error advocate targeted three novel APIs that had never been logged"
+      ],
+      "what_failed": [
+        "11th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "d_type fix IMPLEMENTED but never executed",
+        "All three error-focused diagnostics implemented but untested",
+        "All hypotheses remain INCONCLUSIVE"
+      ],
+      "lessons_learned": [
+        "Build stability remains the CRITICAL blocker - now 11 consecutive failures",
+        "Implementing actual fixes (d_type) is more valuable than adding more diagnostics",
+        "Distinguishing frame from bounds in iOS is a novel insight worth tracking",
+        "Error diagnostics provide valuable fallback if primary fix doesn't resolve issue",
+        "11 sessions of accumulated untested code is a significant technical debt"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-20_12-58-40",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Combined diagnostic approach: Phase 1A adds Error Pipeline's [DIAG-E1] (UIView.bounds logging) and [DIAG-E3] (UIScreen.applicationFrame logging) to trace dimension queries. Phase 1B adds Code Pipeline's [DIAG-C1/C2/C3] to trace directory enumeration and verify d_type values. Total: ~5 log! statements, minimal risk. Analysis of logs determines which path to fix: if bounds show 320, fix bounds calculation; if dirent shows d_type=0 with enumeration calls, implement proper d_type values (DT_DIR=4, DT_REG=8). Fallback if neither reveals issues: investigate CALayer.bounds or CAEAGLLayer-specific dimensions.",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "dirent d_type is genuinely novel investigation - never examined in 9+ sessions",
+          "POSIX/BSD spec clearly documents d_type should be 4 (DIR) or 8 (REG), not 0",
+          "Distinction between 'known paths' (.def) and 'discovered files' (.png) is insightful",
+          "Proposed combined approach in turn 1 with complementary framing",
+          "Minimal risk - only 3 log! statements for Phase 1B"
+        ],
+        "error_advocate": [
+          "Key insight accepted: game doesn't use GL projection helpers (zero calls logged)",
+          "48K+ vertex entries showing Y=320 grounds dimension-tracing hypothesis",
+          "UIView.bounds and applicationFrame are logical dimension sources to check",
+          "Accepted dirent hypothesis as complementary (file discovery vs coordinate calculation)",
+          "Provided fallback plan (CALayer.bounds) if Phase 1 doesn't reveal issue"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1 with complementary framing",
+        "Error advocate accepted consensus in turn 2 with fallback enhancement (2-turn resolution)",
+        "Both approaches genuinely test different failure modes (file discovery vs dimension calculation)",
+        "Minimal code changes (logging only) appropriate for 10th consecutive build failure",
+        "Fallback plan ensures continuation path if Phase 1 is inconclusive"
+      ],
+      "what_failed": [
+        "10th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "dirent d_type hypothesis never tested despite novelty",
+        "UIView.bounds and applicationFrame hypotheses never tested",
+        "All hypotheses remain INCONCLUSIVE"
+      ],
+      "lessons_learned": [
+        "Build stability remains the critical blocker - now 10 consecutive failures",
+        "Providing fallback plans (CALayer) adds value to consensus proposals",
+        "Novel investigation paths (dirent) are worth pursuing even late in debugging",
+        "Complementary framing of different failure modes enables quick consensus",
+        "Accumulating untested diagnostics across 10 sessions is unsustainable"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-20_12-26-52",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Phase 1A (CODE): Implement NSScanner scanDouble: method mirroring scanFloat: pattern with [DIAG-SCANDOUBLE] logging to test parsing hypothesis. Phase 1B (ERROR): Add [DIAG-ERR1-ORTHOF] logging to glOrthof AND existing [DIAG-E1-MATRIX] logging to glLoadMatrixf to capture projection matrix values. Success criteria: (1) scanDouble: calls with parsed values = parsing root cause confirmed; (2) m[5] ≈ 0.00625 (2/320) or glOrthof top=320 = projection configured for wrong height; (3) neither = eliminate both hypotheses, proceed to view/layer dimension logging (Phase 2).",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "scanDouble: is confirmed missing API per Apple documentation (iOS 2.0+)",
+          "Implementation mirrors proven scanFloat: pattern - low build risk",
+          "Proposed combined approach in turn 1: code fix + diagnostics",
+          "Adding diagnostic logging doesn't fix bugs - implementing missing APIs does",
+          "Low-risk fix tests parsing hypothesis directly"
+        ],
+        "error_advocate": [
+          "48K+ vertex entries showing Y=320 cap is hard runtime evidence",
+          "42% black pixels matches 320/480 ratio too precisely to be coincidental",
+          "Accepted scanDouble: as valid complementary approach",
+          "Enhanced Phase 1B by adding glOrthox/glOrthof logging",
+          "Matrix logging would definitively show projection configuration"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed combined approach in turn 1",
+        "Error advocate accepted and enhanced consensus in turn 2 (2-turn resolution)",
+        "Both approaches framed as complementary, not competing",
+        "Error advocate enhanced rather than rejected code proposal",
+        "Clear success criteria defined for each hypothesis"
+      ],
+      "what_failed": [
+        "9th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "scanDouble: implementation never executed",
+        "Matrix/ortho logging never executed",
+        "All 3 hypotheses remain INCONCLUSIVE"
+      ],
+      "lessons_learned": [
+        "Build stability is the critical blocker - now 9 consecutive failures",
+        "Enhancing proposals (adding glOrthox) is more productive than rejecting",
+        "Both pipelines contributed meaningful work despite build failure",
+        "Accepting complementary fixes quickly enables faster consensus"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-20_11-59-06",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "HYBRID PLAN: (1) Implement missing NSScanner methods (scanLocation/setScanLocation) with [DIAG-SCAN-LOC] logging. (2) Add dimension-source diagnostics: [DIAG-H1-LAYER] for CALayer bounds, [DIAG-H2-VIEWPORT] for glGetIntegerv(GL_VIEWPORT), [DIAG-H3-VIEW] for UIView frame. (3) If NSScanner fixes it: done. (4) If not: analyze which diagnostic shows 320 height.",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "First session to implement MISSING methods rather than just diagnostics",
+          "NSScanner methods are fundamental API (Apple documentation)",
+          "Proposed consensus in turn 1 with hybrid approach",
+          "Connected NSScanner to .def file parsing hypothesis",
+          "Low-risk fix (~13 lines) doesn't preclude dimension diagnostics"
+        ],
+        "error_advocate": [
+          "Systematic dimension-source tracing: UIView → CALayer → GL viewport",
+          "Accepted NSScanner as complementary quick-test approach",
+          "Contributed [DIAG-H1-LAYER], [DIAG-H2-VIEWPORT], [DIAG-H3-VIEW] as Phase 2",
+          "Prior evidence: 48K+ vertex logs show Y=320 cap",
+          "Dismissed ns_date random suggestion as irrelevant to geometry"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1",
+        "Error advocate accepted consensus in turn 2 (2-turn resolution)",
+        "Framing approaches as complementary (different root causes)",
+        "NSScanner is actual code implementation, not just logging",
+        "Dimension diagnostics provide fallback investigation"
+      ],
+      "what_failed": [
+        "8th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "NSScanner methods never executed",
+        "Dimension-source hypotheses remain untested"
+      ],
+      "lessons_learned": [
+        "Implementing missing methods is more impactful than adding diagnostics",
+        "Build stability remains critical blocker - now 8 consecutive failures",
+        "Dimension-source tracing systematically covers iOS rendering stack",
+        "Both pipelines can test different root causes simultaneously"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-20_11-26-20",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Combined Diagnostic Plan: Phase 1A (Error Pipeline - HIGH PRIORITY): [DIAG-E1-MATRIX] and [DIAG-E2-MATRIX-MODE] in glLoadMatrixf/glMatrixMode. Phase 1B (Code Pipeline - PARALLEL): [DIAG-C1-SCAN-*] logging in NSScanner methods. Analysis: If m[5]≈0.00625, projection uses 320 height; if m[5]≈0.00417, check NSScanner output.",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "Recognized that approaches are complementary, not competing",
+          "Proposed combined consensus in turn 1",
+          "NSScanner tracing designated Phase 1B (parallel with matrix logging)",
+          "Acknowledged 48K+ vertex log entries as strong evidence for error hypothesis",
+          "Framed both hypotheses as testing different explanations for same symptom"
+        ],
+        "error_advocate": [
+          "48K+ log entries showing Y=320 cap provides quantitative evidence",
+          "Projection matrix hypothesis designated Phase 1A (HIGH PRIORITY)",
+          "[DIAG-E1-MATRIX] can directly test m[5] value (320 vs 480 space)",
+          "Accepted Code pipeline's NSScanner as parallel investigation",
+          "Dismissed random suggestions (blocks, ui_touch) as irrelevant to rendering"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1",
+        "Error advocate accepted consensus in turn 2 (2-turn resolution)",
+        "Both approaches framed as testing different explanations for same symptom",
+        "Quantitative evidence (48K+ entries, m[5] values) grounded discussion",
+        "Random suggestions correctly dismissed with clear reasoning"
+      ],
+      "what_failed": [
+        "7th build failure in multi-agent pipeline prevented all testing",
+        "No diagnostic output captured",
+        "Projection matrix hypothesis remains untested despite 2 sessions",
+        "NSScanner hypothesis also untested"
+      ],
+      "lessons_learned": [
+        "Quantitative evidence (48K+ entries with specific values) is highly persuasive",
+        "Designating proposals as HIGH PRIORITY helps establish consensus hierarchy",
+        "Random suggestion evaluation should be quick and decisive",
+        "Build stability remains critical blocker - 7 consecutive failures",
+        "Multiple pending hypotheses accumulating without testing"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-15_10-24-16",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Two-phase investigation with parallel vertex validation: PHASE 1A (PRIMARY) - .def file analysis with hex dump and ASCII preview; PHASE 1B (PARALLEL) - vertex coordinate sampling to determine if terrain geometry is submitted. Deferred scissor and mmap diagnostics.",
+      "test_result": "build_failed",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "Identified critical gap: .def files load but PNGs never loaded",
+          "Proposed .def file format analysis as primary investigation",
+          "Discovered 15K+ DIAG entries in touchHLE_log.txt - infrastructure works",
+          "Accepted vertex sampling as parallel validation",
+          "Zero fopen/fread refutes C stdlib hypothesis"
+        ],
+        "error_advocate": [
+          "Promoted vertex sampling from Phase 2 backup to Phase 1B parallel execution",
+          "Conceded mmap hypothesis based on zero fopen/fread evidence",
+          "Proposed [DIAG-E1-VERTEX] for runtime geometry observation",
+          "Accepted deprioritization of scissor logging",
+          "Focused on unique contribution (vertex position) vs redundant proposals"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1",
+        "Error advocate accepted with modification in turn 2 (2-turn resolution)",
+        "Parallel execution compromise satisfied both pipelines",
+        "Evidence-based concessions (zero fopen → dismiss mmap)",
+        "Infrastructure discovery (log file works) was breakthrough"
+      ],
+      "what_failed": [
+        "Build failure prevented testing any hypothesis",
+        "No progress on root cause (42.22% unchanged)",
+        "New diagnostics (DIAG-E1-VERTEX, DIAG-E2-SCISSOR, DIAG-C1, DIAG-C2) never executed"
+      ],
+      "lessons_learned": [
+        "Parallel execution is better compromise than sequential backup",
+        "Conceding weak hypotheses with evidence builds credibility",
+        "Log file discovery shows value of infrastructure investigation",
+        "Build stability remains the critical blocker"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-14_21-20-46",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Unified Observation-First Plan: Execute ./crash_monitor.sh capture with ZERO code changes, collect all [DIAG-*] output from 9 implemented prefixes, analyze using combined decision matrix, apply ONE targeted fix based on diagnostic evidence.",
+      "test_result": "fail_infrastructure",
+      "black_pixels": "42.22%",
+      "effective_arguments": {
+        "code_advocate": [
+          "Recognized remarkable convergence between pipelines",
+          "Proposed consensus in turn 1 with unified plan",
+          "Combined decision matrix integrating both pipelines' hypotheses",
+          "Accepted E5 (NSFileManager) as Phase 3 contingency",
+          "Correctly dismissed random angle (CGColor) as irrelevant"
+        ],
+        "error_advocate": [
+          "Observation-first principle: run existing diagnostics before adding code",
+          "Nine diagnostic prefixes ready but never tested due to 5 build failures",
+          "Accepted consensus quickly (turn 2)",
+          "Correctly dismissed random angle (NSURLConnection) as irrelevant",
+          "Cited MEMORY.md evidence to ground discussion"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1",
+        "Error advocate accepted consensus in turn 2 (2-turn resolution)",
+        "Both advocates dismissed irrelevant random angles with clear reasoning",
+        "Observation-first principle was core of consensus",
+        "Build succeeded (first in 5 sessions)"
+      ],
+      "what_failed": [
+        "ZERO diagnostic output captured despite 9 prefixes implemented",
+        "All hypotheses remain INCONCLUSIVE due to infrastructure gap",
+        "No progress on root cause (42.22% unchanged)"
+      ],
+      "lessons_learned": [
+        "Diagnostic infrastructure must be verified before hypotheses can be tested",
+        "Build success is necessary but not sufficient for hypothesis testing",
+        "Both pipelines converged quickly when observation-first is accepted",
+        "Random angle suggestions were both correctly dismissed this session"
+      ]
+    },
+    {
+      "session_id": "multiagent_2026-01-14_20-42-29",
+      "turns": 2,
+      "consensus_reached": true,
+      "consensus_type": "combined",
+      "consensus_summary": "Hybrid plan: (1) Run existing diagnostics (E1, E2, E3, FREAD, C2, C3), (2) Analyze output, (3) Apply case-insensitive lookup fix regardless of results (low-risk iOS compatibility improvement), (4) Rebuild and test. Combines error's observation-first with code's documentation-grounded fix.",
+      "test_result": "build_failed",
+      "effective_arguments": {
+        "code_advocate": [
+          "iOS HFS+ is case-insensitive - documented behavior difference from touchHLE's HashMap",
+          "Case-insensitive fix is additive (doesn't break existing behavior)",
+          "Low-risk fix can proceed in parallel with diagnostics",
+          "Proposed hybrid consensus in turn 1"
+        ],
+        "error_advocate": [
+          "Observation-first principle: run existing diagnostics before adding code",
+          "Prior evidence (.def loads, .png doesn't) suggests case isn't the issue",
+          "4 consecutive build failures mandate caution",
+          "Cited MEMORY.md evidence to ground discussion"
+        ]
+      },
+      "what_worked": [
+        "Code advocate proposed consensus in turn 1",
+        "Error advocate accepted consensus in turn 2 (2-turn resolution)",
+        "Observation-first principle was compelling and accepted",
+        "Prior evidence from MEMORY.md was cited effectively",
+        "Low-risk fix argument overcame deferral proposal"
+      ],
+      "what_failed": [
+        "Fifth consecutive build failure prevented validation",
+        "All 9 diagnostic prefixes remain untested",
+        "No runtime data to confirm or refute any hypothesis"
+      ],
+      "lessons_learned": [
+        "Observation-first is accepted but doesn't preclude low-risk fixes",
+        "Citing prior evidence (MEMORY.md) grounds debate effectively",
+        "Build stability is the critical blocker - must be prioritized",
+        "Comprehensive diagnostic infrastructure is ready but useless without successful build"
+      ]
+    },
     {
       "session_id": "multiagent_2026-01-14_12-32-51",
       "turns": 2,
@@ -80,13 +619,17 @@
     }
   ],
   "aggregate_stats": {
-    "total_debates": 2,
-    "consensus_reached_count": 2,
+    "total_debates": 14,
+    "consensus_reached_count": 14,
     "average_turns_to_consensus": 2,
     "code_advocate_wins": 0,
     "error_advocate_wins": 0,
-    "combined_solutions": 2,
-    "build_failures_blocking_validation": 2
+    "combined_solutions": 14,
+    "build_failures_blocking_validation": 12,
+    "infrastructure_failures": 1,
+    "test_failures": 1,
+    "successful_hypothesis_tests": 0,
+    "regressions_detected": 1
   },
   "effective_arguments": {
     "code_advocate": [
@@ -94,14 +637,34 @@
       "Proposing synthesis early (turn 1)",
       "Citing documentation gaps",
       "Identifying diagnostic pipeline gaps",
-      "Structuring decision trees for evidence-based branching"
+      "Structuring decision trees for evidence-based branching",
+      "Low-risk fix can proceed in parallel with diagnostics",
+      "Documented iOS behavior (HFS+ case-insensitive)",
+      "Combined decision matrix integrating both pipelines",
+      "Discovering infrastructure works (log file has 15K entries)",
+      "Framing approaches as testing different explanations for same symptom",
+      "Implementing missing methods (not just diagnostics) is more impactful",
+      "Adding diagnostic logging doesn't fix bugs - implementing missing APIs does",
+      "Implementing actual fixes (d_type) rather than just adding more diagnostics"
     ],
     "error_advocate": [
       "Observation-first principle (run existing before adding more)",
       "Filling critical gaps in opposing plan",
       "Accepting targeted compromises",
       "Citing prior evidence (MEMORY.md)",
-      "Accepting conditional phasing"
+      "Accepting conditional phasing",
+      "Build stability must be prioritized",
+      "Dismissing irrelevant random angles with reasoning",
+      "Promoting backup to parallel execution",
+      "Evidence-based concessions (zero fopen -> dismiss mmap)",
+      "Quantitative evidence (48K+ entries with specific values)",
+      "Designating proposals as HIGH PRIORITY for consensus hierarchy",
+      "Systematic dimension-source tracing (view -> layer -> GL) covers rendering stack",
+      "Enhancing proposals rather than rejecting them (adding glOrthox)",
+      "Distinguishing UIView.frame from UIView.bounds as distinct iOS APIs",
+      "Targeting genuinely novel APIs that have never been logged",
+      "Problem reframing: identifying when issue type has changed (crash vs truncation)",
+      "GL function entry tracing to identify crash point"
     ]
   },
   "lessons_learned": [
@@ -111,7 +674,23 @@
     "Prior session evidence (MEMORY.md) should be referenced",
     "Observation-first is a strong persuasive argument",
     "Conditional phasing reduces debate friction",
-    "Build stability is prerequisite for hypothesis testing"
+    "Build stability is prerequisite for hypothesis testing",
+    "Low-risk fixes can proceed even when observation-first is accepted",
+    "Diagnostic infrastructure must be verified before hypotheses can be tested",
+    "Parallel execution is better compromise than sequential backup",
+    "Conceding weak hypotheses with evidence builds credibility",
+    "Quantitative evidence (48K+ entries, specific values) is highly persuasive",
+    "Designating proposals as HIGH PRIORITY helps establish consensus hierarchy",
+    "Implementing missing methods is more impactful than adding diagnostics alone",
+    "Enhancing proposals (adding glOrthox) is more productive than rejecting",
+    "Implementing actual fixes (d_type) is more valuable than only adding diagnostics",
+    "12 sessions of accumulated untested code represents critical technical debt",
+    "Problem reframing (crash vs truncation) is valuable and shapes investigation approach",
+    "Crash-first priority is correct - cannot test screen truncation if game crashes first",
+    "Consider reverting to known-good state when build failures accumulate",
+    "Don't over-trust log snippets - always run actual test to verify",
+    "Verification-first approach correctly reveals when assumptions are wrong",
+    "Build success doesn't guarantee test success - both must be checked"
   ],
   "debate_patterns": {
     "successful_consensus_strategies": [
@@ -119,18 +698,94 @@
       "Acknowledge opposing plan's unique contributions",
       "Offer compromises on scope (comprehensive -> targeted)",
       "Advocate observation-first for error pipeline",
-      "Use conditional phasing to defer contentious additions"
+      "Use conditional phasing to defer contentious additions",
+      "Cite documented behavior (iOS HFS+, C99 semantics) to support fixes",
+      "Dismiss irrelevant random angles with clear reasoning",
+      "Promote backup to parallel execution as compromise",
+      "Use quantitative evidence to ground arguments",
+      "Frame approaches as testing different explanations for same symptom",
+      "Enhance proposals rather than reject them"
     ],
-    "failed_consensus_strategies": [],
+    "failed_consensus_strategies": [
+      "Arguing to defer low-risk fixes until after diagnostic analysis"
+    ],
     "common_disagreements": [
       "Comprehensive logging vs targeted diagnostics",
-      "When to add new logging vs run existing"
+      "When to add new logging vs run existing",
+      "Whether to apply fix before or after observation",
+      "Sequential vs parallel execution of diagnostic phases"
     ],
     "common_agreements": [
       "File access logging (fopen)",
       "Image decode success/failure tracking",
       "Texture upload verification",
-      "Draw call monitoring"
+      "Draw call monitoring",
+      "Observation-first principle",
+      "Matrix logging for projection hypothesis",
+      "Implementing missing APIs is valuable"
+    ]
+  },
+  "infrastructure_notes": {
+    "issue_discovered": "multiagent_2026-01-14_21-20-46",
+    "problem": "9 diagnostic prefixes implemented but ZERO output captured in crash_monitor.sh",
+    "resolution_discovered": "multiagent_2026-01-15_10-24-16",
+    "resolution": "touchHLE_log.txt contains 15K+ [DIAG-*] entries - log! writes to file, not stdout",
+    "impact": "All hypotheses remain untested despite successful build",
+    "fix_required": "Read touchHLE_log.txt directly instead of capturing stdout/stderr"
+  },
+  "pending_hypotheses": {
+    "description": "Hypotheses implemented but never tested due to build failures",
+    "count": 7,
+    "hypotheses": [
+      {
+        "name": "dirent d_type Fix",
+        "diagnostic": "[DIAG-C1/C2/C3]",
+        "test": "Verify d_type returns 4 (DT_DIR) for directories, 8 (DT_REG) for files instead of 0 (DT_UNKNOWN)",
+        "sessions_pending": ["multiagent_2026-01-20_21-13-09"],
+        "evidence_supporting": "POSIX/BSD spec documents d_type should be populated; game may filter files by d_type during directory enumeration"
+      },
+      {
+        "name": "UIView.frame/UIDevice.orientation/glVertexPointer Diagnostics",
+        "diagnostic": "[DIAG-ERR-FRAME], [DIAG-ERR-ORIENT], [DIAG-ERR-VPTR]",
+        "test": "Check UIView.frame for 320 height (distinct from bounds), UIDevice.orientation for landscape values, glVertexPointer for stride/type anomalies",
+        "sessions_pending": ["multiagent_2026-01-20_21-13-09"],
+        "evidence_supporting": "These three APIs have never been logged; Y=320 coordinate cap must come from somewhere"
+      },
+      {
+        "name": "Projection Matrix 320-Height",
+        "diagnostic": "[DIAG-E1-MATRIX], [DIAG-ERR1-ORTHOF]",
+        "test": "Check m[5] ≈ 0.00625 (2/320) vs ≈ 0.00417 (2/480) OR glOrthof top=320",
+        "sessions_pending": ["multiagent_2026-01-15_10-24-16", "multiagent_2026-01-20_11-26-20", "multiagent_2026-01-20_12-26-52"],
+        "evidence_supporting": "48K+ DIAG-E1-VERTEX entries show max Y = 320.0"
+      },
+      {
+        "name": "NSScanner Parsing Failure",
+        "diagnostic": "[DIAG-C1-SCAN-*], [DIAG-SCANDOUBLE]",
+        "test": "Check if scanDouble: is called with parsed values during .def parsing",
+        "sessions_pending": ["multiagent_2026-01-20_11-26-20", "multiagent_2026-01-20_11-59-06", "multiagent_2026-01-20_12-26-52"],
+        "evidence_supporting": ".def files load but PNG textures not loaded"
+      },
+      {
+        "name": "NSScanner Missing Methods",
+        "diagnostic": "[DIAG-SCAN-LOC]",
+        "test": "Check if scanLocation/setScanLocation methods are called, indicating parser needs them",
+        "sessions_pending": ["multiagent_2026-01-20_11-59-06"],
+        "evidence_supporting": "Apple documentation requires these methods; missing could cause silent parsing failures"
+      },
+      {
+        "name": "Dimension Source Tracing",
+        "diagnostic": "[DIAG-H1-LAYER], [DIAG-H2-VIEWPORT], [DIAG-H3-VIEW]",
+        "test": "Check if any layer/view/viewport reports 320 height instead of 480",
+        "sessions_pending": ["multiagent_2026-01-20_11-59-06", "multiagent_2026-01-20_12-26-52"],
+        "evidence_supporting": "All GL state correct (480), but vertices max at 320 - dimension must come from elsewhere"
+      },
+      {
+        "name": "NSScanner scanDouble: Missing",
+        "diagnostic": "[DIAG-SCANDOUBLE]",
+        "test": "Verify scanDouble: method is called during .def parsing (now implemented)",
+        "sessions_pending": ["multiagent_2026-01-20_12-26-52"],
+        "evidence_supporting": "Apple docs: scanDouble: available since iOS 2.0, touchHLE only had scanFloat:"
+      }
     ]
   }
 }

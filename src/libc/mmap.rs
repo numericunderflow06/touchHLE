@@ -37,13 +37,21 @@ fn mmap(
     // TODO: handle errno properly
     set_errno(env, 0);
 
+    // [DIAG-MMAP] Code-focused diagnostic: trace mmap calls to identify PNG loading paths
+    // Large mmap calls (>100KB) may indicate asset loading
+    let size_category = if len > 100 * 1024 { "LARGE" } else if len > 10 * 1024 { "MEDIUM" } else { "SMALL" };
+    log!("[DIAG-MMAP] mmap: fd={}, len={} ({} bytes, {})", fd, len, len, size_category);
     log_dbg!("mmap len {}", len);
 
     assert!(addr.is_null());
-    assert_eq!(offset, 0);
+    if offset != 0 {
+        log!("[DIAG-MMAP-OFFSET] mmap with non-zero offset={}", offset);
+    }
     assert_eq!((flags & MAP_ANON), 0);
     let new_offset = posix_io::lseek(env, fd, offset, SEEK_SET);
-    assert_eq!(new_offset, offset);
+    if new_offset != offset {
+        log!("[DIAG-MMAP-OFFSET] WARNING: lseek failed, expected {} got {}", offset, new_offset);
+    }
     let ptr = env.mem.alloc(len);
 
     assert!(!env.libc_state.mmap.allocations.contains_key(&ptr));

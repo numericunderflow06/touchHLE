@@ -802,37 +802,71 @@ def run_build(event_logger: SessionEventLogger) -> Tuple[bool, str]:
     build_env["CMAKE_POLICY_VERSION_MINIMUM"] = "3.5"
 
     try:
-        subprocess.run(
+        log("Calling build_monitor.sh start...")
+        result = subprocess.run(
             [GIT_BASH, "-c", "./build_monitor.sh start"],
             cwd=str(WORKING_DIR),
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=120,  # Increased from 60s
             env=build_env
         )
+        log(f"build_monitor.sh start returned: {result.returncode}")
+        if result.stdout:
+            log(f"build_monitor stdout: {result.stdout.strip()}")
+        if result.stderr:
+            log(f"build_monitor stderr: {result.stderr.strip()}", "WARNING")
 
-        result = subprocess.run(
-            [GIT_BASH, "-c", "./build_monitor.sh wait"],
-            cwd=str(WORKING_DIR),
-            capture_output=True,
-            text=True,
-            timeout=900,  # Increased from 600 to handle longer builds
-            env=build_env
-        )
+        # FIX: Use Python-based polling instead of subprocess wait
+        # The subprocess-based wait terminates prematurely on Windows (~268s)
+        # This directly polls the .build_status file to detect completion
+        status_file = WORKING_DIR / ".build_status"
+        build_timeout = 900  # seconds
+        poll_interval = 2  # seconds
+
+        # Safety check: Wait for status file to show "RUNNING" before starting poll
+        # This prevents race condition where old "SUCCESS" status is read
+        log("Waiting for build status to become RUNNING...")
+        wait_for_running_start = time.time()
+        while time.time() - wait_for_running_start < 30:  # Max 30s to see RUNNING
+            if status_file.exists():
+                initial_status = status_file.read_text().strip().replace('\r', '').replace('\n', '')
+                log(f"Initial status: '{initial_status}'")
+                if initial_status == "RUNNING":
+                    break
+            time.sleep(0.5)
+        else:
+            log("Warning: Never saw RUNNING status, proceeding anyway", "WARNING")
+
+        log("Waiting for build to complete (polling .build_status)...")
+        poll_count = 0
+        while time.time() - start_time < build_timeout:
+            if status_file.exists():
+                try:
+                    status = status_file.read_text().strip().replace('\r', '').replace('\n', '')
+                    # Log every 30 polls (~60 seconds)
+                    poll_count += 1
+                    if poll_count % 30 == 0:
+                        log(f"Build still running... status='{status}', elapsed={time.time() - start_time:.0f}s")
+                    if status and status != "RUNNING":
+                        log(f"Build status detected: {status}")
+                        break
+                except Exception as e:
+                    log(f"Error reading status file: {e}", "WARNING")
+            time.sleep(poll_interval)
+        else:
+            # True timeout - loop completed without break
+            raise subprocess.TimeoutExpired(cmd="build", timeout=build_timeout)
 
         duration = time.time() - start_time
-        output = result.stdout + result.stderr
 
-        status_result = subprocess.run(
-            [GIT_BASH, "-c", "./build_monitor.sh status"],
-            cwd=str(WORKING_DIR),
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-        status = status_result.stdout.strip()
-
+        # Read final status
+        status = status_file.read_text().strip().replace('\r', '').replace('\n', '') if status_file.exists() else "UNKNOWN"
         success = "SUCCESS" in status
+
+        # Get build output from log file if available
+        build_log = WORKING_DIR / "build_output.log"
+        output = build_log.read_text() if build_log.exists() else f"Build completed with status: {status}"
         warnings = output.count("warning")
 
         event_logger.log_build_end("testing", success=success, duration=duration, warnings=warnings)
@@ -890,6 +924,192 @@ def run_test(event_logger: SessionEventLogger) -> Tuple[int, str, Optional[float
         event_logger.log_test_result("testing", -1, None, str(e), duration)
         log(f"Test error: {e}", "ERROR")
         return -1, str(e), None
+
+def extract_crash_info(test_output: str) -> Optional[dict]:
+    """Extract crash information from test output for automatic fixing.
+
+    Returns a dict with crash details if a panic/crash is detected, None otherwise.
+    Also reads the game log file for more detailed crash info.
+    """
+    # Also try to read the game log file for full panic message
+    game_log_path = Path("/tmp/touchhle_game.log")
+    if game_log_path.exists():
+        try:
+            game_log = game_log_path.read_text(encoding="utf-8", errors="replace")
+            # Combine with test output for searching
+            test_output = test_output + "\n" + game_log
+        except Exception as e:
+            log(f"Could not read game log: {e}")
+
+    # Look for Rust panic message
+    panic_match = re.search(
+        r"panicked at ([^:]+):(\d+):(\d+):\s*(.+?)(?:\n\n|\nstack backtrace:)",
+        test_output,
+        re.DOTALL
+    )
+
+    if panic_match:
+        file_path = panic_match.group(1).strip()
+        line_num = panic_match.group(2)
+        col_num = panic_match.group(3)
+        message = panic_match.group(4).strip()
+
+        # Extract class chain if present (ObjC selector errors)
+        class_chain_match = re.search(r"Class chain:\n(.+?)(?:\n\nstack backtrace:|\Z)", test_output, re.DOTALL)
+        class_chain = class_chain_match.group(1).strip() if class_chain_match else None
+
+        # Extract stack backtrace (first 20 lines)
+        backtrace_match = re.search(r"stack backtrace:\n(.+?)(?:\n\n|\Z)", test_output, re.DOTALL)
+        if backtrace_match:
+            backtrace_lines = backtrace_match.group(1).strip().split("\n")[:20]
+            backtrace = "\n".join(backtrace_lines)
+        else:
+            backtrace = None
+
+        # Extract DIAG logs for context
+        diag_logs = [line.strip() for line in test_output.split("\n") if "[DIAG-" in line][-10:]
+
+        return {
+            "type": "panic",
+            "file": file_path,
+            "line": line_num,
+            "column": col_num,
+            "message": message,
+            "class_chain": class_chain,
+            "backtrace": backtrace,
+            "diag_logs": diag_logs
+        }
+
+    # Look for other crash patterns (killed, segfault, etc.)
+    if "Killed" in test_output or "SIGKILL" in test_output:
+        return {
+            "type": "killed",
+            "message": "Process was killed (possibly out of memory or timeout)"
+        }
+
+    return None
+
+def build_crash_fix_prompt(crash_info: dict, session_id: str) -> str:
+    """Build a prompt for Claude Code to automatically fix a crash."""
+
+    if crash_info["type"] == "panic":
+        prompt = f"""# Automatic Crash Fix Request
+
+## Session: {session_id}
+
+A runtime crash has been automatically detected. Please analyze and fix it.
+
+## Crash Details
+
+**Type**: Rust panic
+**Location**: `{crash_info['file']}:{crash_info['line']}:{crash_info['column']}`
+
+**Error Message**:
+```
+{crash_info['message']}
+```
+"""
+        if crash_info.get("class_chain"):
+            prompt += f"""
+**Objective-C Class Chain**:
+```
+{crash_info['class_chain']}
+```
+"""
+
+        if crash_info.get("backtrace"):
+            prompt += f"""
+**Stack Backtrace** (first 20 frames):
+```
+{crash_info['backtrace']}
+```
+"""
+
+        if crash_info.get("diag_logs"):
+            prompt += f"""
+**Recent Diagnostic Logs**:
+```
+{chr(10).join(crash_info['diag_logs'])}
+```
+"""
+
+        prompt += """
+## Instructions
+
+1. **Analyze the crash** - Identify the root cause from the error message and stack trace
+2. **Find the relevant code** - Locate the file and function that needs fixing
+3. **Implement the fix** - Make the minimal code change to fix the crash
+4. **DO NOT** change unrelated code or add unnecessary features
+
+## Common Patterns
+
+- "does not respond to selector" → Need to implement a missing Objective-C method
+- "unreachable!()" → Unimplemented code path hit
+- "unwrap() on None" → Missing null check or unhandled case
+- Stack overflow → Infinite recursion or excessive stack usage
+
+## Output
+
+After fixing, summarize:
+1. What was the root cause?
+2. What file(s) were modified?
+3. What was the fix?
+
+Focus on a minimal, targeted fix.
+"""
+    else:
+        prompt = f"""# Automatic Crash Fix Request
+
+## Session: {session_id}
+
+**Crash Type**: {crash_info['type']}
+**Message**: {crash_info.get('message', 'Unknown')}
+
+Please investigate this crash and propose a fix if possible.
+"""
+
+    return prompt
+
+def run_crash_fix_phase(crash_info: dict, session_id: str, session_dir: Path,
+                        outputs_dir: Path, event_logger: SessionEventLogger) -> bool:
+    """Run Claude Code to automatically fix a detected crash.
+
+    Returns True if a fix was attempted, False otherwise.
+    """
+    log("CRASH DETECTED - Running automatic crash fix phase...")
+    event_logger.log_phase_start("crash_fix")
+
+    prompt = build_crash_fix_prompt(crash_info, session_id)
+
+    # Save the crash fix prompt
+    crash_fix_prompt_file = outputs_dir / "007b_crash_fix_prompt.md"
+    crash_fix_prompt_file.write_text(prompt, encoding="utf-8")
+    log(f"Saved crash fix prompt to {crash_fix_prompt_file}")
+
+    # Run Claude Code with the crash fix prompt
+    output_log = session_dir / "claude_crash_fix_output.log"
+
+    try:
+        output = run_claude_code(
+            prompt,
+            session_dir,
+            f"crash_fix",
+            output_log,
+            timeout=600  # 10 minute timeout for crash fix
+        )
+
+        # Save the output
+        crash_fix_output_file = outputs_dir / "007c_crash_fix_output.md"
+        crash_fix_output_file.write_text(f"# Crash Fix Output\\n\\n{output}", encoding="utf-8")
+        log(f"Saved crash fix output to {crash_fix_output_file}")
+
+        event_logger.log_phase_end("crash_fix", success=True)
+        return True
+
+    except Exception as e:
+        log(f"Crash fix phase failed: {e}", "ERROR")
+        event_logger.log_phase_end("crash_fix", success=False)
+        return False
 
 def write_test_results(outputs_dir: Path, exit_code: int, output: str,
                        black_pct: Optional[float], build_success: bool,
@@ -1139,6 +1359,47 @@ def run_session(retry_num: int = 0, initial_black_pct: float = None) -> Tuple[bo
         exit_code, test_output, black_pct = run_test(event_logger)
         write_test_results(outputs_dir, exit_code, test_output, black_pct,
                            build_success, build_output)
+
+        # Check for crash and attempt automatic fix
+        crash_info = extract_crash_info(test_output)
+        crash_fix_attempted = False
+
+        if crash_info and crash_info["type"] == "panic":
+            print(f"\n{'=' * 70}", flush=True)
+            print("  CRASH DETECTED - AUTOMATIC FIX PHASE", flush=True)
+            print(f"{'=' * 70}\n", flush=True)
+
+            log(f"Crash detected: {crash_info['message'][:100]}...")
+
+            crash_fix_attempted = run_crash_fix_phase(
+                crash_info, session_id, session_dir, outputs_dir, event_logger
+            )
+
+            if crash_fix_attempted:
+                # Rebuild after crash fix
+                log("Rebuilding after crash fix...")
+                event_logger.log_phase_start("rebuild_after_crash_fix")
+                rebuild_success, rebuild_output = run_build(event_logger)
+                event_logger.log_phase_end("rebuild_after_crash_fix", success=rebuild_success)
+
+                if rebuild_success:
+                    # Retest after crash fix
+                    log("Retesting after crash fix...")
+                    event_logger.log_phase_start("retest_after_crash_fix")
+                    exit_code, test_output, black_pct = run_test(event_logger)
+                    event_logger.log_phase_end("retest_after_crash_fix", success=True)
+
+                    # Write updated test results
+                    write_test_results(outputs_dir, exit_code, test_output, black_pct,
+                                       rebuild_success, rebuild_output)
+
+                    # Check if the crash is fixed
+                    new_crash_info = extract_crash_info(test_output)
+                    if not new_crash_info or new_crash_info.get("type") != "panic":
+                        log("CRASH FIXED! Game no longer crashes.")
+                    else:
+                        log(f"Crash still present after fix attempt: {new_crash_info.get('message', 'Unknown')[:100]}...")
+
         event_logger.log_phase_end("testing", success=True)
 
     final_black_pct = black_pct if build_success else initial_black_pct

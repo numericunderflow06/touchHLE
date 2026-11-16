@@ -1,10 +1,715 @@
 {
   "description": "Tracks effectiveness of code-focused debugging strategies",
-  "last_updated": "2026-01-14T13:06:00",
+  "last_updated": "2026-01-21T14:00:00",
   "code_strategies_tried": [
     {
+      "session": "multiagent_2026-01-21_13-16-50",
+      "approach": "Verification-first strategy (Retry 4): Proposed testing existing renderbuffer fix (eagl.rs:227-240) before adding new code. Three hypotheses targeting renderbuffer dimensions, layer bounds source, and regression from diagnostics. Emphasized zero code changes in Phase 1 to verify FIXME fix.",
+      "documentation_used": [
+        "Apple EAGL Reference - renderbufferStorage dimensions match layer bounds",
+        "Apple CALayer Documentation - bounds calculated from frame",
+        "Apple UIView Documentation - layer updates with frame",
+        "Rust borrow checker semantics (theoretical for H3)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Renderbuffer fix works (HIGHEST)",
+          "question": "Does the implemented renderbuffer fix resolve screen truncation?",
+          "status": "inconclusive",
+          "reason": "Build failed (15th consecutive) - fix implemented but never tested"
+        },
+        {
+          "id": "H2",
+          "name": "CAEAGLLayer bounds source",
+          "question": "Does CAEAGLLayer receive correct 320x480 bounds from UIView?",
+          "status": "inconclusive",
+          "reason": "Build failed - [DIAG-EAGL-SETFRAME] logging planned but never executed"
+        },
+        {
+          "id": "H3",
+          "name": "Regression from diagnostic code",
+          "question": "Did diagnostic code cause 42.22%→50.55% regression?",
+          "status": "inconclusive",
+          "reason": "Build failed - theoretical hypothesis, no testing possible"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "Verification-first principle (test existing [DIAG-EAGL-DIM] before adding code)",
+          "Phased hybrid approach structure",
+          "[DIAG-E12-PROJ] projection query added to Phase 1 (Error's modification)"
+        ],
+        "contributions_deferred": [
+          "[DIAG-EAGL-SETFRAME] layer bounds tracing (Phase 2)"
+        ],
+        "contributions_rejected": [
+          "Media Picker Controller random suggestion (dismissed - not relevant to 3D rendering)"
+        ],
+        "contributions_from_error_pipeline": [
+          "[DIAG-E12-PROJ] one-shot projection matrix state query",
+          "[DIAG-E9-YCORR] vertex region + Y correlation",
+          "[DIAG-E10-SETFRAME] UIView setFrame mutation logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 15th consecutive multi-agent build failure. Code pipeline led debate with verification-first strategy. H1 (renderbuffer FIXME fix) remains highest-confidence target. Error pipeline successfully modified Phase 1 to include projection query. All hypotheses remain INCONCLUSIVE due to infrastructure blocker."
+    },
+    {
+      "session": "multiagent_2026-01-21_12-08-34",
+      "approach": "FIXME-driven renderbuffer dimension fix: Identified explicit FIXME comment at eagl.rs:228 acknowledging incorrect code. Fix proposed to use layer bounds via msg![env; drawable bounds] instead of window.size_unrotated_scalehacked() per Apple EAGL documentation. Also added vertex sampling disable flag and fullscreen layer check logging.",
+      "documentation_used": [
+        "Apple EAGL Reference - renderbuffer dimensions must match layer bounds",
+        "OpenGL ES 1.1 Specification Section 2.8 - vertex queries orthogonal to draw calls",
+        "Apple CALayer Programming Guide - layer bounds/position relationship"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Vertex sampling regression",
+          "question": "Did diagnostic vertex sampling code cause 42.22%→50.55% regression?",
+          "status": "inconclusive",
+          "reason": "Build failed (14th consecutive) - ENABLE_VERTEX_SAMPLING=false implemented but never tested"
+        },
+        {
+          "id": "H2",
+          "name": "Renderbuffer dimension mismatch (HIGHEST)",
+          "question": "Does renderbufferStorage use wrong dimensions causing truncation?",
+          "status": "inconclusive",
+          "reason": "Build failed - FIXME fix implemented using layer bounds but never tested"
+        },
+        {
+          "id": "H3",
+          "name": "Fullscreen layer checks fail",
+          "question": "Do strict checks in find_fullscreen_eagl_layer cause slow path?",
+          "status": "inconclusive",
+          "reason": "Build failed - [DIAG-C1/C2] logging implemented but never executed"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "FIXME-driven renderbuffer dimension fix (Phase 1A - HIGHEST PRIORITY)",
+          "Vertex sampling disable flag (Phase 1B - regression check)",
+          "[DIAG-EAGL-DIM] renderbuffer vs layer dimension logging",
+          "[DIAG-C1] fullscreen layer property logging",
+          "[DIAG-C2] fullscreen check pass/fail logging"
+        ],
+        "contributions_deferred": [],
+        "contributions_rejected": [
+          "sched_yield/threading random suggestion (dismissed - not relevant to geometric truncation)"
+        ],
+        "contributions_from_error_pipeline": [
+          "[DIAG-H1-SCENE] scene transition logging",
+          "[DIAG-H2-VSRC] vertex buffer memory region logging",
+          "[DIAG-ERR-MAXY-FRAME] per-frame max Y tracking",
+          "[DIAG-E1] vertex buffer region classification",
+          "[DIAG-E2] per-frame summary logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 14th consecutive multi-agent build failure. Code pipeline identified EXPLICIT BUG via FIXME comment - most definitive evidence yet. The fix (use layer bounds not window dimensions) is documentation-correct per Apple EAGL spec. H2 should be highest priority for next session. Debate led by code pipeline; fast consensus achieved."
+    },
+    {
+      "session": "multiagent_2026-01-21_11-17-26",
+      "approach": "CFDictionary method crash prevention: Implemented 3 methods (description, copyWithZone:, mutableCopyWithZone:) in _touchHLE_NSMutableDictionary_non_retaining to replace todo!() panics with valid implementations per Apple NSCopying/NSMutableCopying protocols.",
+      "documentation_used": [
+        "Apple NSCopying Protocol - copyWithZone: must return valid object",
+        "Apple NSMutableCopying Protocol - mutableCopyWithZone: must return mutable copy",
+        "Apple NSDictionary.description - returns string representation of contents"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "CFDictionary methods crash during loading",
+          "question": "Does game call description/copyWithZone/mutableCopyWithZone on CFDictionary-backed objects?",
+          "status": "refuted",
+          "reason": "Zero [DIAG-DICT-*] log entries - methods never called during tested execution path"
+        },
+        {
+          "id": "H2",
+          "name": "Existing fixes need verification",
+          "question": "Are previously-implemented fixes (d_type, NSScanner, etc.) actually working?",
+          "status": "inconclusive",
+          "reason": "All diagnostic prefixes returned '(None captured)' - logging infrastructure issue"
+        },
+        {
+          "id": "H3",
+          "name": "Dictionary copy breaks manifest processing",
+          "question": "Does copying dictionaries prevent asset manifest handling?",
+          "status": "refuted",
+          "reason": "Zero [DIAG-DICT-COPY] entries - dictionary copying not used in asset loading"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "Phased consensus proposal (verification first, code fixes as backup)",
+          "CFDictionary description implementation with [DIAG-DICT-DESC]",
+          "CFDictionary copyWithZone: implementation with [DIAG-DICT-COPY]",
+          "CFDictionary mutableCopyWithZone: implementation with [DIAG-DICT-MUTCOPY]"
+        ],
+        "contributions_deferred": [],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": [
+          "Verification-first principle (Phase 1)",
+          "Use existing [DIAG-E1-VERTEX] logging",
+          "Fallback diagnostics if verification fails"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD SUCCEEDED but test FAILED (50.55% black, regression from 42.22%). All 3 hypotheses either refuted or inconclusive. CFDictionary methods are NOT called during game execution - fixes are defensive but don't address root cause. Diagnostic logging infrastructure still broken (all prefixes return 'None captured')."
+    },
+    {
+      "session": "multiagent_2026-01-21_10-19-09",
+      "approach": "Novel crash-on-call bug investigation: Identified 4 API violations by comparing touchHLE code against Apple/POSIX documentation. (1) CFDictionary copyDescription todo!() violates Apple 'never returns NULL', (2) CFDictionary capacity assertion rejects valid API usage (capacity is hint per Apple), (3) CGContextClipToRect todo!() blocks standard clipping, (4) mmap offset assertion rejects valid POSIX usage.",
+      "documentation_used": [
+        "Apple Core Foundation Reference - CFCopyDescription (never returns NULL)",
+        "Apple Core Foundation Reference - CFDictionaryCreateMutable (capacity is hint)",
+        "Apple Core Graphics Reference - CGContextClipToRect (standard clipping API)",
+        "POSIX mmap(2) - non-zero offset is valid"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "CFDictionary copyDescription crash",
+          "question": "Does game call CFCopyDescription, triggering todo!() panic?",
+          "status": "inconclusive",
+          "reason": "Build failed (13th consecutive) - fix implemented but never tested"
+        },
+        {
+          "id": "H2",
+          "name": "CFDictionary capacity assertion",
+          "question": "Does game use non-zero capacity hints, triggering assertion?",
+          "status": "inconclusive",
+          "reason": "Build failed - assertion removal implemented but never tested"
+        },
+        {
+          "id": "H3",
+          "name": "CGContextClipToRect crash",
+          "question": "Does game use non-trivial clipping, triggering todo!()?",
+          "status": "inconclusive",
+          "reason": "Build failed - fix implemented but never tested"
+        },
+        {
+          "id": "H4",
+          "name": "mmap offset assertion",
+          "question": "Does game use non-zero mmap offsets, triggering assertion?",
+          "status": "inconclusive",
+          "reason": "Build failed - fix implemented but never tested"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "CFDictionary copyDescription fix (return placeholder CFString)",
+          "CFDictionary capacity assertion removal (log hint instead)",
+          "CGContextClipToRect fix (log warning instead of todo!())",
+          "mmap offset assertion removal (log instead of assert)",
+          "[DIAG-H1-COPYDESC] for copyDescription calls",
+          "[DIAG-H2-CAPACITY] for non-zero capacity creation",
+          "[DIAG-H3-CLIP] for non-trivial clipping",
+          "[DIAG-MMAP-OFFSET] for non-zero offset mapping"
+        ],
+        "contributions_deferred": [],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": [
+          "[DIAG-H1-QUERY] GL query function logging (glGetIntegerv, etc.)",
+          "[DIAG-H2-CAP] gles1_on_gl2 capability handling logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 13th consecutive multi-agent build failure. Code pipeline identified 4 NOVEL crash-on-call bugs by documentation comparison. All areas (CFDictionary, CGContext, mmap) were never investigated in 12+ prior sessions. Fast consensus by proposing combined Phase 1A (Code) + Phase 1B (Error). Hypothesis quality HIGH but infrastructure blocks ALL testing."
+    },
+    {
+      "session": "multiagent_2026-01-21_09-32-22",
+      "approach": "Verification-first strategy: (1) Verify existing fixes (d_type, NSScanner) that have been implemented but never tested due to 11 consecutive build failures, (2) Add [DIAG-MMAP] logging to investigate mmap-based PNG loading as alternative to fopen/NSData, (3) Analyze vertex coordinate generation (max Y=320 instead of 480)",
+      "documentation_used": [
+        "POSIX readdir(3) man page (d_type values)",
+        "BSD sys/dirent.h (DT_UNKNOWN=0, DT_DIR=4, DT_REG=8)",
+        "Apple File System Guide (iOS d_type always populated)",
+        "POSIX mmap(2) man page",
+        "iOS Memory-Mapped Files patterns",
+        "OpenGL ES 1.1 glVertexPointer spec"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "d_type fix resolves asset discovery",
+          "question": "Does d_type=DT_DIR/DT_REG fix allow game to correctly discover asset files?",
+          "status": "inconclusive",
+          "reason": "Build failed (12th consecutive) - fix exists but never tested"
+        },
+        {
+          "id": "H2",
+          "name": "mmap is hidden PNG loading path",
+          "question": "Does game use mmap() instead of fopen/NSData for PNG loading?",
+          "status": "inconclusive",
+          "reason": "Build failed - [DIAG-MMAP] implemented but never executed"
+        },
+        {
+          "id": "H3",
+          "name": "Vertex coordinates capped at 320",
+          "question": "Why is max Y coordinate 320 instead of 480?",
+          "status": "inconclusive",
+          "reason": "Build failed - partially refuted by Error pipeline showing UIView.frame=320x480 is correct"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "Regression analysis (Phase 1B) - check if d_type/NSScanner changes caused crash",
+          "Verification-first strategy - test existing fixes before adding more",
+          "[DIAG-MMAP] logging implementation (novel investigation path)",
+          "Post-crash return to screen truncation investigation"
+        ],
+        "contributions_deferred": [],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": [
+          "[DIAG-H1-GLCALL] GL function entry tracing (9 functions)",
+          "[DIAG-H2-STACK] Stack pointer monitoring in panic handler",
+          "Crash-first priority (game crashes before rendering)"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 12th consecutive multi-agent build failure. Code pipeline proposed sound verification-first strategy and novel mmap investigation. Fast consensus (Turn 1) by accepting error pipeline's crash-first priority. Hypothesis quality is HIGH but infrastructure blocks ALL testing."
+    },
+    {
+      "session": "multiagent_2026-01-20_21-13-09",
+      "approach": "dirent d_type FIX IMPLEMENTED: Added DT_DIR/DT_REG constants, modified DIR struct to store path, updated readdir() to compute correct d_type values (4 for directories, 8 for files) instead of always returning 0 (DT_UNKNOWN). Also added error-focused diagnostics for UIDevice.orientation, UIView.frame, and glVertexPointer.",
+      "documentation_used": [
+        "POSIX/BSD dirent specification (readdir(3) man page)",
+        "BSD sys/dirent.h (DT_UNKNOWN=0, DT_DIR=4, DT_REG=8)",
+        "Darwin/iOS HFS+ behavior (d_type always populated)",
+        "Apple UIDevice.orientation documentation",
+        "OpenGL ES 1.1 glVertexPointer specification"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "dirent d_type always 0 (PRIMARY)",
+          "question": "Does d_type=0 cause file type filtering failures during asset enumeration?",
+          "status": "inconclusive",
+          "reason": "Build failed (11th consecutive) - fix implemented but not tested"
+        },
+        {
+          "id": "H2",
+          "name": "stat() st_ino incomplete",
+          "question": "Does st_ino=0 cause caching collisions?",
+          "status": "inconclusive",
+          "reason": "Deferred - lower priority, not tested"
+        },
+        {
+          "id": "H3",
+          "name": "NSScanner scanDouble: edge cases",
+          "question": "Does scanDouble: correctly handle .def coordinate parsing?",
+          "status": "inconclusive",
+          "reason": "Prior implementation exists, not tested this session"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "d_type fix implementation (PHASE 1A - PRIMARY)",
+          "[DIAG-C1] opendir logging (already existed)",
+          "[DIAG-C2] readdir logging with d_type (already existed)",
+          "[DIAG-C3] closedir logging (already existed)",
+          "Novel: First session to IMPLEMENT d_type fix, not just log"
+        ],
+        "contributions_deferred": [
+          "stat() st_ino fix",
+          "NSScanner overflow behavior"
+        ],
+        "contributions_rejected": [
+          "sysctl investigation (random suggestion - not relevant to rendering)"
+        ],
+        "contributions_from_error_pipeline": [
+          "[DIAG-ERR-FRAME] UIView.frame logging",
+          "[DIAG-ERR-ORIENT] UIDevice.orientation logging",
+          "[DIAG-ERR-VPTR] glVertexPointer logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 11th consecutive multi-agent build failure. The d_type fix is IMPLEMENTED and logically correct, just needs a successful build to test. This is the first session to actually implement the d_type fix (prior sessions only added diagnostic logging). Documentation comparison was highly effective - POSIX/BSD specs clearly defined expected behavior."
+    },
+    {
+      "session": "multiagent_2026-01-20_12-58-40",
+      "approach": "dirent d_type implementation gap: Identified that touchHLE returns d_type=0 (DT_UNKNOWN) for all directory entries instead of proper values (DT_DIR=4, DT_REG=8) per POSIX/BSD spec. Added [DIAG-C1/C2/C3] logging to trace directory enumeration.",
+      "documentation_used": [
+        "POSIX dirent specification (d_type values)",
+        "GNU C Library Directory Entries documentation",
+        "Linux readdir(3) man page",
+        "BSD/Darwin d_type behavior (populates correctly)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "dirent d_type always 0",
+          "question": "Does d_type=0 cause file type filtering failures during asset enumeration?",
+          "status": "inconclusive",
+          "reason": "Build failed (10th consecutive) - diagnostic logging never executed"
+        },
+        {
+          "id": "H2",
+          "name": "NSScanner method verification",
+          "question": "Are previously-implemented NSScanner methods being called?",
+          "status": "inconclusive",
+          "reason": "Build failed - cannot verify method calls"
+        },
+        {
+          "id": "H3",
+          "name": "Build infrastructure blocker",
+          "question": "Is build failure blocking all hypothesis testing?",
+          "status": "confirmed",
+          "reason": "10th consecutive build failure in multi-agent pipeline"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "[DIAG-C1] opendir() logging for directory paths",
+          "[DIAG-C2] readdir() logging for entries and d_type values",
+          "[DIAG-C3] closedir() logging for enumeration lifecycle",
+          "Novel hypothesis: dirent never investigated in 9+ sessions"
+        ],
+        "contributions_deferred": [
+          "Phase 2 d_type fix (only if Phase 1 shows dirent usage)",
+          "NSScanner overflow behavior fixes"
+        ],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": [
+          "[DIAG-E1] UIView.bounds logging for dimension queries",
+          "[DIAG-E2] UIScreen.bounds verification",
+          "[DIAG-E3] UIScreen.applicationFrame logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 10th consecutive multi-agent build failure. The dirent hypothesis is NOVEL and well-grounded in documentation. H1 (d_type) should be tested once build issues are resolved. Debate reached consensus quickly with combined approach (dirent + dimensions)."
+    },
+    {
+      "session": "multiagent_2026-01-20_12-26-52",
+      "approach": "NSScanner scanDouble: implementation: Proposed implementing the missing scanDouble: method (mirrors scanFloat: pattern but uses f64) with [DIAG-SCANDOUBLE] logging - confirmed API gap per Apple documentation",
+      "documentation_used": [
+        "Apple NSScanner Class Reference (scanDouble: available since iOS 2.0)",
+        "Apple NSScanner Class Reference (scanFloat: pattern for implementation)",
+        "Apple NSScanner locale documentation (default decimal separator is period)",
+        "C99 overflow semantics (INT_MAX/MIN on overflow - for H2 de-prioritization)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Missing scanDouble:",
+          "question": "Does the absence of scanDouble: cause .def parsing failure?",
+          "status": "inconclusive",
+          "reason": "Build failed (8th consecutive) - method implemented but never executed"
+        },
+        {
+          "id": "H2",
+          "name": "scanInt overflow behavior",
+          "question": "Does unwrap_or(0) on overflow cause incorrect values?",
+          "status": "inconclusive",
+          "reason": "De-prioritized - unlikely to cause screen truncation, known discrepancy"
+        },
+        {
+          "id": "H3",
+          "name": "Locale decimal separator",
+          "question": "Does hardcoded period (.) cause parsing failures?",
+          "status": "inconclusive",
+          "reason": "De-prioritized - touchHLE matches Apple's default behavior"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "NSScanner scanDouble: implementation (Phase 1A - PRIMARY)",
+          "[DIAG-SCANDOUBLE] diagnostic logging for verification",
+          "H2/H3 de-prioritization based on documentation analysis",
+          "Novel: First session to implement scanDouble: specifically"
+        ],
+        "contributions_deferred": [
+          "scanInt overflow fix (lower priority than H1)",
+          "Locale support (touchHLE matches default behavior)"
+        ],
+        "contributions_rejected": [
+          "CFNetwork investigation (random suggestion - network not relevant to local assets)",
+          "UIWindow investigation (speculative, not documentation-grounded)"
+        ],
+        "contributions_from_error_pipeline": [
+          "[DIAG-ERR1-ORTHOF] glOrthof logging for projection validation",
+          "Verification of existing [DIAG-E1-MATRIX] and [DIAG-E3-ORTHOX] logging",
+          "Phase 1B diagnostic approach (parallel to code fix)"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 8th consecutive multi-agent build failure. The code-focused approach was sound and documentation-grounded (scanDouble: is confirmed missing per Apple docs), but infrastructure issues prevented validation. scanDouble: implementation complete but untested."
+    },
+    {
+      "session": "multiagent_2026-01-20_11-59-06",
+      "approach": "NSScanner missing method implementation: Proposed implementing scanLocation getter and setScanLocation: setter (~13 lines) with [DIAG-SCAN-LOC] logging - first session to implement MISSING methods rather than just add diagnostics",
+      "documentation_used": [
+        "Apple NSScanner Class Reference (scanLocation, setScanLocation: methods)",
+        "Apple NSScanner Class Reference (scanDouble: method)",
+        "Apple NSScanner Class Reference (edge case overflow behavior - INT_MAX/INT_MIN)",
+        "MEMORY.md historical findings (.def loads, .png doesn't)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Missing scanLocation/setScanLocation",
+          "question": "Does NSScanner lack fundamental position getter/setter methods?",
+          "status": "inconclusive",
+          "reason": "Build failed - methods were implemented but never executed"
+        },
+        {
+          "id": "H2",
+          "name": "Missing scanDouble:",
+          "question": "Is double-precision float scanning needed for .def parsing?",
+          "status": "inconclusive",
+          "reason": "Deferred - lower priority than H1, not implemented this session"
+        },
+        {
+          "id": "H3",
+          "name": "Edge case divergence",
+          "question": "Does scanInt overflow behavior (returns 0 vs INT_MAX) cause issues?",
+          "status": "inconclusive",
+          "reason": "Not tested - lowest priority hypothesis"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "NSScanner scanLocation getter implementation",
+          "NSScanner setScanLocation: setter implementation",
+          "[DIAG-SCAN-LOC] diagnostic logging for verification",
+          "Novel approach: implement MISSING methods instead of just logging"
+        ],
+        "contributions_deferred": [
+          "scanDouble: implementation (if H1 insufficient)",
+          "setCharactersToBeSkipped: implementation",
+          "Edge case compliance (INT_MAX on overflow)"
+        ],
+        "contributions_rejected": [
+          "ptrace investigation (random suggestion - not relevant to rendering)"
+        ],
+        "contributions_from_error_pipeline": [
+          "[DIAG-H1-LAYER] CALayer bounds logging",
+          "[DIAG-H2-VIEWPORT] glGetIntegerv(GL_VIEWPORT) logging",
+          "[DIAG-H3-VIEW] UIView frame logging (filtered for GL views)"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 7th consecutive multi-agent build failure. The code-focused approach was sound and novel (implementing missing methods vs just logging), but infrastructure issues prevented validation. Hypothesis remains valid for retry."
+    },
+    {
+      "session": "multiagent_2026-01-20_11-26-20",
+      "approach": "NSScanner method tracing: Added [DIAG-C1-4] logging to 4 NSScanner methods (scanUpToString, scanString, scanInt, scanCharactersFromSet) to trace .def file parsing",
+      "documentation_used": [
+        "Apple NSScanner Class Reference (method behavior)",
+        "Apple NSString Data Encoding Reference (UTF-8 BOM handling)",
+        "Apple NSString Path Methods (stringByAppendingPathExtension, etc.)",
+        "MEMORY.md historical findings (.def loads, .png doesn't)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "NSScanner parsing failure",
+          "question": "Does NSScanner correctly parse the .def file XML-like format?",
+          "status": "inconclusive",
+          "reason": "Build failed - diagnostic logging never executed"
+        },
+        {
+          "id": "H2",
+          "name": "NSString from data failure",
+          "question": "Does NSString correctly convert .def file bytes (with UTF-8 BOM) to string?",
+          "status": "inconclusive",
+          "reason": "Not implemented (deferred to Phase 2)"
+        },
+        {
+          "id": "H3",
+          "name": "Missing path construction",
+          "question": "Are all required NSString path methods available in touchHLE?",
+          "status": "inconclusive",
+          "reason": "Not tested (deferred to Phase 3)"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "Phase 1B: NSScanner method tracing as parallel diagnostic",
+          "[DIAG-C1-SCAN-UPTO] for scanUpToString:intoString:",
+          "[DIAG-C2-SCAN-STR] for scanString:intoString:",
+          "[DIAG-C3-SCAN-INT] for scanInt:",
+          "[DIAG-C4-SCAN-CHARS] for scanCharactersFromSet:intoString:",
+          "Novel contribution: First session to trace .def parsing"
+        ],
+        "contributions_deferred": [
+          "NSString initWithData:encoding: logging (Phase 2)",
+          "Post-.def resource tracking (Phase 3)"
+        ],
+        "contributions_rejected": [
+          "AudioFile random suggestion (audio works, not relevant)"
+        ],
+        "contributions_from_error_pipeline": [
+          "Phase 1A: Matrix diagnostics (HIGH PRIORITY)",
+          "[DIAG-E1-MATRIX] glLoadMatrixf logging",
+          "[DIAG-E2-MATRIX-MODE] glMatrixMode logging",
+          "[DIAG-E3-ORTHOX] glOrthox logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - 6th consecutive multi-agent build failure. NSScanner diagnostics implemented but never executed. Hypothesis remains valid for retry."
+    },
+    {
+      "session": "multiagent_2026-01-15_10-24-16",
+      "approach": "Documentation-grounded .def file analysis: Proposed hex dumping .def contents, tracing .def processing code path, with logging infrastructure verification",
+      "documentation_used": [
+        "Rust log crate behavior (log file vs stdout)",
+        "Apple NSBundle Class Reference (pathForResource returns nil)",
+        "Apple File System Guide (HFS+ case-insensitive)",
+        "MEMORY.md historical findings (PNG not via NSData)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Logging Infrastructure",
+          "question": "Is log! output being captured?",
+          "status": "confirmed",
+          "reason": "Context analysis discovered touchHLE_log.txt contains 15K+ DIAG entries - logging works, orchestrator was reading wrong source"
+        },
+        {
+          "id": "H2",
+          "name": "NSBundle pathForResource",
+          "question": "Does pathForResource return nil for PNG files?",
+          "status": "refuted",
+          "reason": "Context analysis showed game does NOT use NSBundle for PNG loading - different mechanism"
+        },
+        {
+          "id": "H3",
+          "name": ".def Manifest Analysis",
+          "question": "Do .def files contain paths that fail to resolve?",
+          "status": "inconclusive",
+          "reason": "Build failed - diagnostic logging (DIAG-C1, DIAG-C2) never executed"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "PHASE 1A: .def File Analysis (PRIMARY investigation)",
+          "[DIAG-C1] hex dump of .def file contents",
+          "[DIAG-C2] ASCII preview of .def files",
+          "Log file as source of truth (touchHLE_log.txt)"
+        ],
+        "contributions_deferred": [
+          "[DIAG-E3-MMAP] - Evidence confirms game uses Foundation APIs"
+        ],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": [
+          "PHASE 1B: Vertex Coordinate Sampling (parallel validation)",
+          "[DIAG-E1-VERTEX] Y coordinate sampling",
+          "[DIAG-E2-SCISSOR] scissor state logging"
+        ]
+      },
+      "result": "failure",
+      "notes": "BUILD FAILED - no diagnostics executed. However, context analysis made KEY DISCOVERY: touchHLE_log.txt contains 15K+ DIAG entries! The logging infrastructure works - crash_monitor.sh was reading wrong source."
+    },
+    {
+      "session": "multiagent_2026-01-14_21-20-46",
+      "approach": "Observation-first consensus: Execute 9 existing diagnostic prefixes with ZERO code changes. First successful build in 5 sessions.",
+      "documentation_used": [
+        "C99 Standard 7.21.8.1 (fread return semantics)",
+        "Apple File System Programming Guide (HFS+ case-insensitive)",
+        "iOS App Bundle Structure documentation",
+        "MEMORY.md historical findings (PNG not via NSData)"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "PNG via C stdlib",
+          "question": "Are PNG files loaded via fopen() not Foundation?",
+          "status": "inconclusive",
+          "reason": "Diagnostic output not captured - logging visibility issue discovered"
+        },
+        {
+          "id": "H2",
+          "name": "Case mismatch",
+          "question": "Does case-insensitive lookup fix resolve file not found?",
+          "status": "inconclusive",
+          "reason": "No [DIAG-CASE] messages visible in test output"
+        },
+        {
+          "id": "H3",
+          "name": "fread return value",
+          "question": "Does fread correctly return elements (C99 compliant)?",
+          "status": "inconclusive",
+          "reason": "No [DIAG-FREAD] messages visible in test output"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": [
+          "Documentation-grounded decision matrix",
+          "Observation-first principle (shared with error pipeline)",
+          "CGColor dismissal (not relevant to missing geometry)",
+          "4-phase execution plan"
+        ],
+        "contributions_deferred": [],
+        "contributions_rejected": [
+          "CGColor investigation (random suggestion)"
+        ],
+        "contributions_from_error_pipeline": [
+          "NSFileManager Phase 3 contingency (E5 hypothesis)",
+          "NSURLConnection dismissal (random suggestion)"
+        ]
+      },
+      "result": "partial",
+      "notes": "BREAKTHROUGH: First successful build in 5 sessions. NEW PROBLEM: Diagnostic logging not visible in captured output. All 3 hypotheses remain inconclusive due to logging infrastructure issue, not code correctness."
+    },
+    {
+      "session": "multiagent_2026-01-14_20-42-29",
+      "approach": "Case-insensitive filesystem lookup fix (iOS HFS+ compatibility) with [DIAG-CASE], [DIAG-PATH], [DIAG-BUNDLE] diagnostics",
+      "documentation_used": [
+        "Apple File System Programming Guide (HFS+ case behavior)",
+        "iOS Compatibility Notes (case-insensitive file paths)",
+        "Apple NSKeyedUnarchiver Documentation",
+        "ISO C99 String Handling"
+      ],
+      "hypotheses": [
+        {
+          "id": "H1",
+          "name": "Case-Sensitive Path Resolution",
+          "question": "Does case mismatch cause lookup failure?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        },
+        {
+          "id": "H2",
+          "name": "Decoded Path String Corruption",
+          "question": "Are paths from .def decoded correctly?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        },
+        {
+          "id": "H3",
+          "name": "Bundle Path Missing Prefix",
+          "question": "Is bundle root prepended to relative paths?",
+          "status": "inconclusive",
+          "reason": "Build failed - test did not run"
+        }
+      ],
+      "debate_outcome": {
+        "turns_to_consensus": 2,
+        "contributions_adopted": ["Case-insensitive lookup fix", "[DIAG-CASE] logging", "[DIAG-PATH] logging", "[DIAG-BUNDLE] logging"],
+        "contributions_deferred": [],
+        "contributions_rejected": [],
+        "contributions_from_error_pipeline": ["Observation-first principle", "Conditional fix application based on diagnostic results"]
+      },
+      "result": "failure",
+      "notes": "Fifth consecutive build failure. Case-insensitive fix was well-grounded in iOS documentation but could not be tested. Debate reached consensus quickly (2 turns) with hybrid approach adopted."
+    },
+    {
       "session": "multiagent_2026-01-14_12-32-51",
-      "approach": "Three-hypothesis diagnostic plan: H1 (fread C99 compliance), H2 (path resolution), H3 (CgBI PNG handling). Added [DIAG-FREAD] logging and [DIAG-E3] draw call tracking.",
+      "approach": "Three-hypothesis diagnostic plan: H1 (fread C99), path resolution, CgBI PNG handling. Added [DIAG-FREAD] logging and [DIAG-E3] draw call tracking.",
       "documentation_used": [
         "C99 Standard 7.21.8.1 (fread return value semantics)",
         "Apple Technical Note TN2313 (CgBI PNG format)",
@@ -88,47 +793,149 @@
     "ios_sdk": [
       "App bundle structure and resource organization",
       "NSData file loading patterns",
-      "iOS path resolution for bundle resources"
+      "iOS path resolution for bundle resources",
+      "HFS+ case-insensitive file system behavior",
+      "NSBundle pathForResource behavior (returns nil if not found)",
+      "NSScanner class reference (scanLocation, setScanLocation:, scanDouble:)",
+      "NSScanner class reference (scanUpToString, scanString, scanInt)",
+      "NSScanner edge case handling (INT_MAX on overflow)",
+      "NSScanner locale documentation (default decimal separator is period)",
+      "NSString path methods (stringByAppendingPathExtension, etc.)",
+      "UIDevice.orientation documentation",
+      "UIView.frame vs UIView.bounds distinction",
+      "iOS Memory-Mapped Files patterns",
+      "NSCopying protocol (copyWithZone: must return valid object)",
+      "NSMutableCopying protocol (mutableCopyWithZone: must return mutable copy)",
+      "NSDictionary.description specification",
+      "Apple EAGL Reference - renderbuffer dimensions must match layer bounds",
+      "Apple CALayer Programming Guide - layer bounds/position relationship",
+      "CAEAGLLayer bounds behavior for OpenGL ES rendering"
     ],
     "opengl_es": [
       "glTexImage2D parameters and error codes",
       "GL_INVALID_* error values",
-      "Draw call semantics (glDrawArrays, glDrawElements)"
+      "Draw call semantics (glDrawArrays, glDrawElements)",
+      "glScissor clipping behavior",
+      "glLoadMatrixf projection matrix setup",
+      "glOrthox fixed-point projection",
+      "glOrthof floating-point projection",
+      "glGetIntegerv(GL_VIEWPORT) viewport queries",
+      "glVertexPointer specification (size, type, stride, pointer)",
+      "glEnable/glDisable capability constants",
+      "glViewport specification",
+      "glClearColor specification",
+      "glMatrixMode specification",
+      "glGenTextures/glGenBuffers specification",
+      "OpenGL ES 1.1 Specification Section 2.8 - vertex queries orthogonal to draw calls",
+      "Renderbuffer dimensions vs viewport relationship"
     ],
     "apple_developer": [
       "CgBI PNG format (Technical Note TN2313) - referenced but not fully reviewed",
-      "iOS 3.0 era asset conventions"
+      "iOS 3.0 era asset conventions",
+      "Apple File System Programming Guide (HFS+ behavior)",
+      "NSString data encoding (UTF-8 with BOM)",
+      "Core Foundation Reference - CFCopyDescription (never returns NULL)",
+      "Core Foundation Reference - CFDictionaryCreateMutable (capacity is hint)",
+      "Core Graphics Reference - CGContextClipToRect (standard clipping API)",
+      "EAGLContext renderbufferStorage:fromDrawable: documentation"
     ],
     "c_standards": [
       "C99 Standard 7.21.8.1 - fread return value (elements not bytes)",
-      "POSIX fopen() - any path string accepted"
+      "C99 overflow semantics (INT_MAX/INT_MIN)",
+      "POSIX fopen() - any path string accepted",
+      "ISO C99 String Handling (null termination)"
+    ],
+    "posix_bsd": [
+      "POSIX dirent specification (d_type values: DT_UNKNOWN=0, DT_DIR=4, DT_REG=8)",
+      "GNU C Library Directory Entries documentation",
+      "Linux readdir(3) man page",
+      "BSD/Darwin d_type behavior (populates correctly on iOS)",
+      "BSD stat(2) man page (st_ino unique per file)",
+      "POSIX mmap(2) man page - non-zero offset is valid"
     ],
     "other": [
       "stb_image library - stbi_failure_reason() API",
-      "stb_image CgBI support configuration (stbi_convert_iphone_png_to_rgb)"
+      "stb_image CgBI support configuration (stbi_convert_iphone_png_to_rgb)",
+      "NSKeyedUnarchiver string decoding behavior",
+      "Rust log crate behavior (log file destination)",
+      "touchHLE GitHub issues for similar rendering problems"
     ]
   },
   "code_areas_investigated": {
     "gles": {
-      "files_checked": ["src/gles/gles1_on_gl2.rs", "src/frameworks/opengles/gles_guest.rs"],
-      "functions_analyzed": ["TexImage2D", "glDrawArrays", "glDrawElements", "glClear"],
-      "discrepancies_found": []
+      "files_checked": ["src/gles/gles1_on_gl2.rs", "src/frameworks/opengles/gles_guest.rs", "src/frameworks/opengles/eagl.rs"],
+      "functions_analyzed": ["TexImage2D", "glDrawArrays", "glDrawElements", "glClear", "glScissor", "glLoadMatrixf", "glMatrixMode", "glOrthox", "glOrthof", "glGetIntegerv", "glGetFloatv", "glGetBooleanv", "glGetPointerv", "glVertexPointer", "glEnable", "glDisable", "EnableClientState", "DisableClientState", "glViewport", "glClearColor", "glGenTextures", "glGenBuffers", "renderbufferStorage:fromDrawable:"],
+      "discrepancies_found": [
+        "FIXME at eagl.rs:228 - renderbuffer uses window dimensions instead of layer bounds (CRITICAL)"
+      ],
+      "fixes_implemented": [
+        "renderbufferStorage: use layer bounds via msg![env; drawable bounds] instead of window.size_unrotated_scalehacked()"
+      ],
+      "diagnostics_added": ["[DIAG-E1-MATRIX]", "[DIAG-E2-MATRIX-MODE]", "[DIAG-E3-ORTHOX]", "[DIAG-ERR1-ORTHOF]", "[DIAG-H2-VIEWPORT]", "[DIAG-ERR-VPTR]", "[DIAG-H1-GLCALL]", "[DIAG-H1-QUERY]", "[DIAG-H2-CAP]", "[DIAG-EAGL-DIM]", "ENABLE_VERTEX_SAMPLING flag"]
+    },
+    "core_animation": {
+      "files_checked": ["src/frameworks/core_animation/ca_layer.rs", "src/frameworks/core_animation/ca_eagl_layer.rs"],
+      "functions_analyzed": ["bounds", "find_fullscreen_eagl_layer"],
+      "discrepancies_found": [],
+      "diagnostics_added": ["[DIAG-H1-LAYER]", "[DIAG-C1] fullscreen layer property logging", "[DIAG-C2] fullscreen check pass/fail logging"]
     },
     "foundation": {
-      "files_checked": ["src/frameworks/foundation/ns_keyed_unarchiver.rs", "src/frameworks/foundation/ns_data.rs"],
-      "functions_analyzed": ["decodeBytesForKey", "initWithContentsOfFile"],
-      "discrepancies_found": []
+      "files_checked": ["src/frameworks/foundation/ns_keyed_unarchiver.rs", "src/frameworks/foundation/ns_data.rs", "src/frameworks/foundation/ns_bundle.rs", "src/frameworks/foundation/ns_scanner.rs", "src/frameworks/foundation/ns_dictionary.rs"],
+      "functions_analyzed": ["decodeBytesForKey", "initWithContentsOfFile", "resourcePath", "pathForResource:ofType:", "scanUpToString:intoString:", "scanString:intoString:", "scanInt:", "scanCharactersFromSet:intoString:", "scanLocation", "setScanLocation:", "scanFloat:", "scanDouble:", "description", "copyWithZone:", "mutableCopyWithZone:"],
+      "discrepancies_found": [
+        "Game does NOT use NSBundle for PNG loading - different mechanism",
+        "NSScanner missing scanLocation getter (IMPLEMENTED - untested)",
+        "NSScanner missing setScanLocation: setter (IMPLEMENTED - untested)",
+        "NSScanner missing scanDouble: (IMPLEMENTED - untested)",
+        "_touchHLE_NSMutableDictionary_non_retaining methods had todo!() panics (FIXED but not called)"
+      ],
+      "diagnostics_added": ["[DIAG-PATH] for path-like decoded strings", "[DIAG-BUNDLE] for bundle resourcePath", "[DIAG-C1] for .def hex dump", "[DIAG-C2] for .def ASCII preview", "[DIAG-C1-SCAN-UPTO]", "[DIAG-C2-SCAN-STR]", "[DIAG-C3-SCAN-INT]", "[DIAG-C4-SCAN-CHARS]", "[DIAG-SCAN-LOC]", "[DIAG-SCANDOUBLE]", "[DIAG-DICT-DESC]", "[DIAG-DICT-COPY]", "[DIAG-DICT-MUTCOPY]"]
+    },
+    "core_foundation": {
+      "files_checked": ["src/frameworks/core_foundation/cf_dictionary.rs"],
+      "functions_analyzed": ["CFDictionaryCreateMutable", "_touchHLE_CFDictionary_copyDescription"],
+      "discrepancies_found": [
+        "copyDescription callback had todo!() - violates Apple 'never returns NULL'",
+        "capacity assertion was overly strict - Apple says capacity is just a hint"
+      ],
+      "fixes_implemented": [
+        "copyDescription: returns placeholder CFString instead of panic",
+        "capacity: removed assertion, logs hint value instead"
+      ],
+      "diagnostics_added": ["[DIAG-H1-COPYDESC]", "[DIAG-H2-CAPACITY]"]
+    },
+    "core_graphics": {
+      "files_checked": ["src/frameworks/core_graphics/cg_context.rs"],
+      "functions_analyzed": ["CGContextClipToRect"],
+      "discrepancies_found": [
+        "ClipToRect had todo!() for non-trivial clips - blocks standard iOS clipping"
+      ],
+      "fixes_implemented": [
+        "ClipToRect: logs warning instead of panic, continues without clipping"
+      ],
+      "diagnostics_added": ["[DIAG-H3-CLIP]"]
     },
     "uikit": {
-      "files_checked": ["src/frameworks/uikit/ui_image.rs"],
-      "functions_analyzed": ["initWithContentsOfFile"],
-      "discrepancies_found": []
+      "files_checked": ["src/frameworks/uikit/ui_image.rs", "src/frameworks/uikit/ui_view.rs", "src/frameworks/uikit/ui_screen.rs", "src/frameworks/uikit/ui_device.rs"],
+      "functions_analyzed": ["initWithContentsOfFile", "frame", "bounds", "applicationFrame", "orientation"],
+      "discrepancies_found": [],
+      "diagnostics_added": ["[DIAG-C3]", "[DIAG-H3-VIEW]", "[DIAG-E1]", "[DIAG-E2]", "[DIAG-E3]", "[DIAG-ERR-FRAME]", "[DIAG-ERR-ORIENT]"]
     },
     "libc": {
-      "files_checked": ["src/libc/stdio.rs", "src/libc/posix_io.rs"],
-      "functions_analyzed": ["fopen", "fread"],
-      "discrepancies_found": ["fread diagnostic never executed due to build failures"],
-      "planned_investigation": "C99 compliance verification for fread return value"
+      "files_checked": ["src/libc/stdio.rs", "src/libc/posix_io.rs", "src/libc/dirent.rs", "src/libc/posix_io/stat.rs", "src/libc/mmap.rs"],
+      "functions_analyzed": ["fopen", "fread", "opendir", "readdir", "closedir", "stat", "fstat", "mmap"],
+      "discrepancies_found": [
+        "Game does NOT use fopen/fread for PNG loading - 0 calls in log",
+        "dirent d_type was always 0 instead of DT_DIR(4) or DT_REG(8) - FIX IMPLEMENTED",
+        "stat() st_ino always 0 instead of unique per file",
+        "mmap had no visibility into what files were being mapped - LOGGING IMPLEMENTED",
+        "mmap offset assertion was overly strict - POSIX allows non-zero offset"
+      ],
+      "fixes_implemented": [
+        "d_type fix: Added DT_DIR/DT_REG constants, DIR stores path, readdir computes d_type",
+        "mmap offset: removed assertion, logs offset and uses lseek"
+      ],
+      "diagnostics_added": ["[DIAG-FREAD]", "[DIAG-C1] opendir", "[DIAG-C2] readdir", "[DIAG-C3] closedir", "[DIAG-MMAP]", "[DIAG-MMAP-OFFSET]"]
     },
     "image": {
       "files_checked": ["src/image.rs"],
@@ -136,60 +943,126 @@
       "discrepancies_found": ["stb_image CgBI mode enabled but edge cases unknown"]
     },
     "filesystem": {
-      "files_checked": [],
-      "functions_analyzed": [],
+      "files_checked": ["src/fs.rs"],
+      "functions_analyzed": ["lookup_node_inner"],
+      "discrepancies_found": ["HashMap::get() is case-sensitive; iOS HFS+ is case-insensitive"],
+      "fix_implemented": "Case-insensitive fallback with eq_ignore_ascii_case() - implemented, build succeeded, but effect unknown (no logs)",
+      "diagnostics_added": ["[DIAG-CASE] for case-insensitive fallback usage"]
+    },
+    "environment": {
+      "files_checked": ["src/environment.rs"],
+      "functions_analyzed": ["panic handler"],
       "discrepancies_found": [],
-      "planned_investigation": "Path resolution in src/fs/ - how touchHLE resolves bundle-relative paths"
+      "diagnostics_added": ["[DIAG-H2-STACK]"]
+    },
+    "logging": {
+      "files_checked": ["touchHLE_log.txt"],
+      "functions_analyzed": ["log! macro"],
+      "discrepancies_found": ["RESOLVED: log! writes to touchHLE_log.txt file, NOT stdout/stderr"]
     }
   },
   "successful_patterns": [
     "Opening debate with consensus proposal accelerates agreement",
     "Identifying unique contributions from each pipeline clarifies value",
-    "Citing specific documentation (e.g., C99 7.21.8.1) strengthens proposals",
+    "Citing specific documentation (e.g., C99 7.21.8.1, Apple NSScanner, POSIX dirent) strengthens proposals",
     "Proposing hybrid approaches (code + error) enables faster consensus",
-    "Filtering diagnostic logging (only large/short reads) reduces noise"
+    "Filtering diagnostic logging (only large/short reads) reduces noise",
+    "Proposing actual code fixes alongside diagnostics provides actionable solutions",
+    "Observation-first strategy prevents build churn - proved correct in multiple sessions",
+    "Context analysis during planning phase can reveal critical insights before testing",
+    "Checking existing log files for diagnostics before assuming they don't work",
+    "Framing hypotheses as complementary rather than competing increases acceptance",
+    "Explicit concessions to opponent's evidence strengthens credibility",
+    "Implementing MISSING methods (not just logging) addresses root cause directly",
+    "Prioritizing hypotheses (H1 before H2 before H3) focuses effort",
+    "De-prioritizing hypotheses based on documentation analysis (e.g., locale matches default)",
+    "Proposing NOVEL investigation directions (e.g., dirent never examined) wins acceptance",
+    "First-to-implement-fix strategy advances from diagnosis to solution",
+    "Verification-first strategy: test existing fixes before adding more code",
+    "Fast consensus by accepting crash-first priority when crash blocks all investigation",
+    "Documentation-grounded API violation identification (todo!() vs 'never returns NULL')",
+    "Phased consensus proposals (verify first, fix if needed) gain acceptance easily",
+    "Using FIXME comments as definitive evidence of bugs accelerates acceptance",
+    "Combining code evidence (FIXME) with documentation (Apple spec) creates strongest case"
   ],
   "unsuccessful_patterns": [
     "Diagnostic changes caused build failure - need pre-build syntax check",
     "Manual investigation (.def extraction) was planned but not executed",
     "Multiple changes in single session increases failure risk",
-    "Repeated hypotheses without resolution wastes effort across sessions"
+    "Repeated hypotheses without resolution wastes effort across sessions",
+    "FOURTEEN consecutive build failures indicate systemic infrastructure issue",
+    "Assuming diagnostics visible in stdout without checking log file",
+    "Proposing hypotheses already refuted by available evidence",
+    "Adding 4+ logging statements in one session increases failure risk",
+    "Cumulative code changes across sessions without verification",
+    "Targeting code paths that are NOT on the critical execution path (CFDictionary methods)",
+    "All diagnostic logging returning '(None captured)' - infrastructure gap persists"
   ],
   "recommendations": {
     "investigate_next": [
-      "Extract and analyze .def files from IPA OFFLINE (don't wait for build)",
-      "Pre-validate all Rust changes with 'cargo check' before full build",
-      "Focus on fread() diagnostic - highest priority untested hypothesis",
-      "Investigate src/fs/ path resolution logic (case sensitivity, bundle paths)"
+      "CRITICAL: Test H2 (renderbuffer dimension FIXME fix) - most likely root cause",
+      "Verify builds succeed before adding any changes",
+      "If H2 works, investigate why layer bounds might still be incorrect (UIView→CALayer bounds propagation)",
+      "Check touchHLE GitHub issues for similar EAGLContext/renderbuffer bugs",
+      "Focus on confirmed execution paths - renderbufferStorage is definitely called"
     ],
     "documentation_to_consult": [
-      "Apple Technical Note TN2313 (CgBI PNG specification) - full review",
-      "C99 Standard sections 7.21.8.1-7.21.8.2 (fread/fwrite complete)",
-      "touchHLE upstream issues (search for rendering/texture problems)",
-      "iOS 3.0 SDK documentation for asset loading patterns"
+      "CAEAGLLayer initialization in touchHLE (where does it get bounds?)",
+      "UIView/CALayer bounds propagation during view hierarchy setup",
+      "touchHLE GitHub issues: 'black screen', 'renderbuffer', 'truncated'",
+      "Apple iOS 3.0 era EAGLContext usage patterns"
     ],
     "avoid": [
-      "Adding multiple diagnostic changes in one session",
-      "Skipping pre-compilation check (cargo check)",
-      "Repeating same hypothesis without new approach",
-      "Waiting for builds to investigate .def files (do it offline)"
+      "Adding more diagnostic logging until builds reliably succeed",
+      "Investigating CFDictionary methods further (confirmed not called)",
+      "Threading/scheduling investigations (not relevant to geometric truncation)",
+      "Multiple code changes without verification"
     ]
   },
   "key_insights": {
-    "primary_hypothesis": "fread() may return incorrect value (bytes vs elements) causing .def manifest parsing to fail, preventing PNG file paths from being extracted correctly",
+    "primary_blocker": "BUILD FAILURES - 15th consecutive multi-agent build failure",
+    "highest_confidence_fix": "H2 - Renderbuffer dimension FIXME at eagl.rs:228 (explicit code acknowledgment + Apple documentation)",
+    "critical_discovery": "FIXME comment explicitly states code is wrong - most definitive evidence of bug in any session",
+    "black_pixel_regression": "50.55% (baseline, no change from prior session due to build failure)",
+    "hypothesis_status": {
+      "confirmed": 0,
+      "refuted": 0,
+      "inconclusive": 3
+    },
+    "confirmed_api_gaps": [
+      "NSScanner.scanLocation (getter) - IMPLEMENTED, untested",
+      "NSScanner.setScanLocation: (setter) - IMPLEMENTED, untested",
+      "NSScanner.scanDouble: - IMPLEMENTED, untested",
+      "dirent d_type - FIX IMPLEMENTED (returns 4 for dir, 8 for file)",
+      "mmap logging - IMPLEMENTED (categorizes by size)",
+      "CFDictionary copyDescription - FIX IMPLEMENTED (returns placeholder)",
+      "CFDictionary capacity - FIX IMPLEMENTED (logs hint instead of crash)",
+      "CGContextClipToRect - FIX IMPLEMENTED (logs instead of crash)",
+      "mmap offset - FIX IMPLEMENTED (logs and uses lseek)",
+      "_touchHLE_NSMutableDictionary_non_retaining description - FIX IMPLEMENTED (not called)",
+      "_touchHLE_NSMutableDictionary_non_retaining copyWithZone - FIX IMPLEMENTED (not called)",
+      "_touchHLE_NSMutableDictionary_non_retaining mutableCopyWithZone - FIX IMPLEMENTED (not called)",
+      "renderbufferStorage dimensions - FIX IMPLEMENTED (use layer bounds, not window)"
+    ],
     "supporting_evidence": [
       ".def files (150-260 bytes) load via NSData successfully",
-      ".png files (200KB+) do NOT load via NSData",
-      "Game likely uses C stdlib (fopen/fread) for asset loading",
-      "Gap exists in diagnostic chain between fopen and image decode"
+      ".png files (200KB+) are NEVER loaded - not via NSData, not via fopen, not via NSBundle",
+      "Max vertex Y coordinate = 320.0 (should be 480) - from prior sessions",
+      "Zero fopen/fread calls for .png in touchHLE_log.txt",
+      "Zero pathForResource calls for .png files",
+      "Zero calls to CFDictionary description/copyWithZone/mutableCopyWithZone",
+      "dirent d_type was always 0 per code inspection - NOW FIXED",
+      "UIView.frame = 320x480 (correct - per Error pipeline)",
+      "FIXME comment at eagl.rs:228 explicitly says dimensions are wrong"
     ],
-    "blocking_factor": "Infrastructure - three consecutive build failures have prevented any code vs. documentation comparison from executing",
-    "recommended_mitigation": "Pre-validate changes with cargo check; consider minimal single-change approach"
+    "recommended_mitigation": "Get a successful build, then test H2 (renderbuffer FIXME fix). This is the highest-confidence fix based on explicit code acknowledgment."
   },
   "session_count": {
-    "total": 2,
+    "total": 15,
     "successful": 0,
-    "failed_build": 2,
+    "partial_success": 1,
+    "failed_build": 13,
+    "failed_test": 1,
     "inconclusive": 0
   }
 }

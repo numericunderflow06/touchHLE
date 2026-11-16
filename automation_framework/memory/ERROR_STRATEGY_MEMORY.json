@@ -1,7 +1,91 @@
 {
   "description": "Tracks effectiveness of error-focused debugging strategies",
-  "last_updated": "2026-01-14T13:30:00",
+  "last_updated": "2026-01-21T13:00:00",
   "error_strategies_tried": [
+    {
+      "session": "multiagent_2026-01-21_12-08-34",
+      "approach": "Three runtime hypotheses: H1 (splash vs gameplay scene transitions), H2 (vertex data memory source classification), H3 (projection state correlation). Conceded to Code's FIXME-based approach in debate. Contributed [DIAG-EAGL-DIM] before-fix verification and [DIAG-E2] validation logging to consensus.",
+      "diagnostics_added": ["DIAG-E1", "DIAG-E2"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (14th session with build/infrastructure issues). All 3 error hypotheses remain INCONCLUSIVE. Error pipeline correctly conceded to Code's FIXME approach given documented evidence. Random NSDate suggestion dismissed as irrelevant. Key contribution: [DIAG-EAGL-DIM] refinement to validate assumptions before fix."
+    },
+    {
+      "session": "multiagent_2026-01-21_11-17-26",
+      "approach": "Verification-first strategy with three hypotheses: H1 (fix verified via existing [DIAG-E1-VERTEX]), H2 (conditional menu vs gameplay rendering), H3 (capture timing). Accepted Code pipeline's CFDictionary fixes as Phase 2 backup.",
+      "diagnostics_added": [],
+      "result": "failure",
+      "notes": "REGRESSION detected: 50.55% black pixels (was 42.22%). Verification-first was correct approach but revealed: (1) Y=480 in logs doesn't guarantee rendering works, (2) Log interpretation over-estimated success, (3) Infrastructure gap persists - all [DIAG-*] show '(None captured)'. Capture timing (H3) REFUTED as cause. Consensus in 2 turns - Error accepted Code's phased approach."
+    },
+    {
+      "session": "multiagent_2026-01-21_10-19-09",
+      "approach": "GL query function instrumentation with [DIAG-H1-QUERY] for glGetIntegerv, glGetFloatv, glGetBooleanv, glGetPointerv at function entry. GLES1-on-GL2 capability instrumentation with [DIAG-H2-CAP] for Enable/Disable/ClientState functions plus pre-panic WARNING logging.",
+      "diagnostics_added": ["DIAG-H1-QUERY", "DIAG-H2-CAP"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (13th consecutive). Error pipeline correctly prioritized GL query functions as likely crash point based on evidence: crash after glGetString(GL_EXTENSIONS), zero [DIAG-H1-GLCALL] entries means crash before those 9 functions. Accepted Code's consensus proposal quickly in Turn 2. Pre-panic WARNING logging added to Disable() panic path for strategic crash capture."
+    },
+    {
+      "session": "multiagent_2026-01-21_09-32-22",
+      "approach": "Crash diagnosis with GL function tracing: [DIAG-H1-GLCALL] for 9 GL functions (glEnable, glDisable, glViewport, glClear, glClearColor, glMatrixMode, glGenTextures, glGenBuffers, glTexImage2D) and [DIAG-H2-STACK] for panic handler SP monitoring",
+      "diagnostics_added": ["DIAG-H1-GLCALL", "DIAG-H2-STACK"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (12th in multi-agent pipeline). CRITICAL INSIGHT: Error pipeline identified problem may be CRASH during GL init (after glGetString), not just screen truncation. Prior crash evidence: PC=0x00108dcc, SP=0xfffffd88. Error advocate accepted consensus in turn 2 after crash-first priority was incorporated. This session's key contribution: problem reframing from truncation to potential crash."
+    },
+    {
+      "session": "multiagent_2026-01-20_21-13-09",
+      "approach": "Three novel diagnostic targets: [DIAG-ERR-FRAME] for UIView.frame (distinct from bounds), [DIAG-ERR-ORIENT] for UIDevice.orientation, [DIAG-ERR-VPTR] for glVertexPointer configuration",
+      "diagnostics_added": ["DIAG-ERR-FRAME", "DIAG-ERR-ORIENT", "DIAG-ERR-VPTR"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (11th in multi-agent pipeline). All three hypotheses target never-logged APIs. Error advocate accepted Code's d_type fix as Phase 1A (PRIMARY) and contributed diagnostic logging as Phase 1B. Consensus in 2 turns. Key insight: frame is distinct from bounds in iOS - includes transform calculations."
+    },
+    {
+      "session": "multiagent_2026-01-20_12-58-40",
+      "approach": "Dimension-source tracing: [DIAG-E1] for UIView.bounds (GL-related views), [DIAG-E3] for UIScreen.applicationFrame",
+      "diagnostics_added": ["DIAG-E1", "DIAG-E3"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (10th in multi-agent pipeline). Key contribution: dimension-source tracing hypothesis based on evidence that game doesn't use GL projection helpers. Accepted Code pipeline's dirent d_type hypothesis as complementary. Consensus in 2 turns. Fallback plan added: investigate CALayer.bounds if Phase 1 fails."
+    },
+    {
+      "session": "multiagent_2026-01-20_12-26-52",
+      "approach": "Minimal-first matrix logging: [DIAG-ERR1-ORTHOF] for glOrthof projection parameters to check if top=320 instead of 480",
+      "diagnostics_added": ["DIAG-ERR1-ORTHOF"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (9th in multi-agent pipeline). Key contribution: enhanced Phase 1B with glOrthox/glOrthof logging in addition to glLoadMatrixf. Accepted code pipeline's scanDouble: as complementary fix. Consensus reached in 2 turns. All 3 hypotheses remain INCONCLUSIVE due to build failure."
+    },
+    {
+      "session": "multiagent_2026-01-20_11-59-06",
+      "approach": "Dimension-source tracing: [DIAG-H1-LAYER] for CALayer bounds, [DIAG-H2-VIEWPORT] for glGetIntegerv(GL_VIEWPORT), [DIAG-H3-VIEW] for UIView frame queries",
+      "diagnostics_added": ["DIAG-H1-LAYER", "DIAG-H2-VIEWPORT", "DIAG-H3-VIEW"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (8th in multi-agent pipeline). Key contribution: dimension-source diagnostics accepted as Phase 2 fallback in consensus. Hypotheses trace iOS rendering stack systematically: UIView frame → CALayer bounds → GL viewport query → vertex generation. Accepted Code advocate's NSScanner fix as complementary approach."
+    },
+    {
+      "session": "multiagent_2026-01-20_11-26-20",
+      "approach": "Projection matrix analysis: [DIAG-E1-MATRIX] for glLoadMatrixf values, [DIAG-E2-MATRIX-MODE] for matrix mode tracking, [DIAG-E3-ORTHOX] for fixed-point ortho",
+      "diagnostics_added": ["DIAG-E1-MATRIX", "DIAG-E2-MATRIX-MODE", "DIAG-E3-ORTHOX"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED (7th in multi-agent pipeline). Key contribution: Phase 1A (HIGH PRIORITY) in consensus - matrix logging designated as primary diagnostic. Hypothesis: m[5]≈0.00625 would confirm 320-pixel projection space. Prior evidence (48K+ vertex logs showing Y=320 cap) grounded this approach."
+    },
+    {
+      "session": "multiagent_2026-01-15_10-24-16",
+      "approach": "Parallel vertex validation: [DIAG-E1-VERTEX] for Y coordinate sampling, [DIAG-E2-SCISSOR] for scissor state, deferred mmap based on evidence",
+      "diagnostics_added": ["DIAG-E1-VERTEX", "DIAG-E2-SCISSOR"],
+      "result": "not_executed",
+      "notes": "BUILD FAILED prevented test execution. Key contribution: promoted vertex sampling from backup to parallel execution in consensus. Conceded mmap hypothesis based on zero fopen evidence. INFRASTRUCTURE DISCOVERY: touchHLE_log.txt contains 15K+ DIAG entries - logging works, crash_monitor.sh needs to read log file."
+    },
+    {
+      "session": "multiagent_2026-01-14_21-20-46",
+      "approach": "Observation-first consensus: execute 9 existing DIAG-* prefixes with ZERO code changes, analyze using combined decision matrix",
+      "diagnostics_added": [],
+      "result": "infrastructure_failure",
+      "notes": "BREAKTHROUGH: First successful build in 5 sessions. NEW PROBLEM: Zero diagnostic output captured despite 9 prefixes implemented. All hypotheses INCONCLUSIVE - capture infrastructure gap discovered. Consensus reached in 2 turns."
+    },
+    {
+      "session": "multiagent_2026-01-14_20-42-29",
+      "approach": "Observation-first with existing diagnostics: zero code changes, execute DIAG-E1/E2/E3/FREAD/C2/C3, then apply targeted fix based on evidence",
+      "diagnostics_added": [],
+      "result": "not_executed",
+      "notes": "5th consecutive build failure prevented test execution. Observation-first principle accepted in debate. Code-focused fix (case-insensitive lookup) applied but build failed. All existing diagnostics remain untested."
+    },
     {
       "session": "multiagent_2026-01-14_12-32-51",
       "approach": "Phased observation-first diagnostics: Phase 1 zero-change capture, Phase 2 conditional fread logging, Phase 3 conditional draw call logging",
@@ -22,21 +106,91 @@
     "DIAG-H2": "Track missing keys during NSCoder unarchiving",
     "DIAG-H3": "Track file loading via NSBundle/NSData",
     "DIAG-DEV": "Track UIDevice/UIScreen queries",
-    "DIAG-E1": "Track all fopen calls with success/failure (implemented)",
-    "DIAG-E2": "Track TexImage2D calls with dimensions, format, pixels_null, glGetError (implemented)",
-    "DIAG-E3": "Track draw calls (DrawArrays, DrawElements) and frame summary (upgraded from log_dbg!)",
-    "DIAG-C2": "Track Image::from_bytes() success/failure with stbi_failure_reason (implemented)",
-    "DIAG-C3": "Track UIImage initWithContentsOfFile success/failure (implemented)",
-    "DIAG-FREAD": "Track fread() calls for large reads and short reads (conditional Phase 2)"
+    "DIAG-E1": "Track vertex buffer memory regions (CODE/STACK/HEAP/MMAP) in glVertexPointer (session 12-08-34)",
+    "DIAG-E2": "Track per-frame summary: draw calls, max Y coordinate, texture bind count (session 12-08-34)",
+    "DIAG-E3": "Track UIScreen.applicationFrame queries (session 12-58-40)",
+    "DIAG-C1": "Track opendir() calls - directory path and entry count (code pipeline)",
+    "DIAG-C2": "Track readdir() calls - entry name and d_type value (code pipeline)",
+    "DIAG-C3": "Track closedir() calls (code pipeline)",
+    "DIAG-FREAD": "Track fread() calls for large reads and short reads (ZERO calls observed)",
+    "DIAG-CASE": "Track case-insensitive path fallback",
+    "DIAG-PATH": "Track decoded path-like strings from NSKeyedUnarchiver",
+    "DIAG-BUNDLE": "Track mainBundle resourcePath queries",
+    "DIAG-E1-VERTEX": "Sample vertex Y coordinates from glDrawArrays",
+    "DIAG-E2-SCISSOR": "Log scissor state changes (glScissor, glEnable/Disable)",
+    "DIAG-START": "RECOMMENDED: Add initialization marker to verify log capture works",
+    "DIAG-E1-MATRIX": "Log glLoadMatrixf values: m[0], m[5], m[10], m[12], m[13], m[14]",
+    "DIAG-E2-MATRIX-MODE": "Log glMatrixMode changes (GL_MODELVIEW/GL_PROJECTION/GL_TEXTURE)",
+    "DIAG-E3-ORTHOX": "Log glOrthox fixed-point orthographic projection parameters",
+    "DIAG-H1-LAYER": "Log CALayer bounds queries to detect wrong dimensions",
+    "DIAG-H2-VIEWPORT": "Log glGetIntegerv(GL_VIEWPORT) calls and returned values",
+    "DIAG-H3-VIEW": "Log UIView frame for GL-related views (filtered for EAGL/GL classes)",
+    "DIAG-SCAN-LOC": "Log NSScanner scanLocation/setScanLocation calls (code pipeline)",
+    "DIAG-SCANDOUBLE": "Log NSScanner scanDouble: method calls and parsed values",
+    "DIAG-ERR1-ORTHOF": "Log glOrthof orthographic projection parameters: left, right, bottom, top, near, far",
+    "DIAG-ERR-FRAME": "Log UIView.frame queries with 320 dimension or GL-related views",
+    "DIAG-ERR-ORIENT": "Log UIDevice.orientation queries with human-readable names",
+    "DIAG-ERR-VPTR": "Log glVertexPointer configuration: size, type, stride, pointer",
+    "DIAG-H1-GLCALL": "Log GL function entry: glEnable, glDisable, glViewport, glClear, glClearColor, glMatrixMode, glGenTextures, glGenBuffers, glTexImage2D",
+    "DIAG-H2-STACK": "Log stack pointer in panic handler with stack range and remaining bytes",
+    "DIAG-MMAP": "Log mmap() calls with fd, length, and size category (code pipeline)",
+    "DIAG-H1-QUERY": "Log GL query function entry: glGetIntegerv, glGetFloatv, glGetBooleanv, glGetPointerv with pname in hex",
+    "DIAG-H2-CAP": "Log GL capability handling: Enable, Disable, EnableClientState, DisableClientState with cap/array in hex, plus pre-panic WARNING",
+    "DIAG-H1-COPYDESC": "Log CFDictionary copyDescription callback calls (code pipeline)",
+    "DIAG-H2-CAPACITY": "Log CFDictionaryCreateMutable with non-zero capacity hints (code pipeline)",
+    "DIAG-H3-CLIP": "Log CGContextClipToRect for non-trivial clipping (code pipeline)",
+    "DIAG-MMAP-OFFSET": "Log mmap with non-zero offset (code pipeline)",
+    "DIAG-DICT-DESC": "Log _touchHLE_NSMutableDictionary_non_retaining description calls (code pipeline, session 11-17-26)",
+    "DIAG-DICT-COPY": "Log _touchHLE_NSMutableDictionary_non_retaining copyWithZone: calls (code pipeline, session 11-17-26)",
+    "DIAG-DICT-MUTCOPY": "Log _touchHLE_NSMutableDictionary_non_retaining mutableCopyWithZone: calls (code pipeline, session 11-17-26)",
+    "DIAG-H1-SCENE": "Track per-frame statistics: draw calls, unique textures (proposed session 12-08-34, transformed to DIAG-E2)",
+    "DIAG-H2-VSRC": "Track vertex buffer memory source regions (proposed session 12-08-34, transformed to DIAG-E1)",
+    "DIAG-H3-PROJ": "Track projection setup correlation with draw calls (proposed session 12-08-34, deprioritized)",
+    "DIAG-EAGL-DIM": "Compare layer bounds vs window size during renderbuffer creation (session 12-08-34)"
   },
   "runtime_patterns_observed": [
     "decodeBytesForKey never called (0 times)",
     "Only UI keys missing during unarchiving (9 total)",
     ".Image.def files loaded but .png textures NOT loaded via NSData",
-    "UIScreen reports 320x480, UIDevice reports iOS 3.0"
+    "UIScreen reports 320x480, UIDevice reports iOS 3.0",
+    "ZERO fopen() calls - game uses Foundation APIs exclusively",
+    "ZERO fread() calls - confirms Foundation-only file I/O",
+    "16-17 draw calls per frame with count=4 (2D quads)",
+    "All glGetError checks pass - no GL errors",
+    "15 Image::from_bytes() decodes succeed",
+    "RESOLVED: 15K+ diagnostic entries in touchHLE_log.txt - infrastructure WORKS, just need to read correct file",
+    "48K+ DIAG-E1-VERTEX entries show max Y coordinate = 320.0 (not 480)",
+    "glViewport(0, 0, 320, 480) confirmed correct",
+    "No glOrthof/glFrustumf calls - game uses direct matrix loading",
+    "ZERO glMatrixMode/glLoadMatrixf/glOrthox calls logged - game doesn't use GL projection helpers",
+    "REGRESSION: Black pixels increased from 42.22% to 50.55% (session 11-17-26)",
+    "Y=480 in context logs doesn't guarantee rendering works - actual test showed 50.55% black",
+    "355 draw calls cap at Y=320, only 27 reach Y=480 (from session 12-08-34 context analysis)"
   ],
-  "crash_patterns": [],
-  "error_handling_gaps": [],
+  "crash_patterns": [
+    {
+      "session": "multiagent_2026-01-21_09-32-22",
+      "description": "POTENTIAL crash during GL init (identified from prior logs, not this session's test)",
+      "evidence": {
+        "last_successful_call": "glGetString(7939) - GL_EXTENSIONS",
+        "crash_pc": "0x00108dcc",
+        "crash_lr": "0x000b2de8",
+        "crash_sp": "0xfffffd88",
+        "stack_trace": "6 entries, early termination"
+      },
+      "hypotheses": [
+        "H1: Unimplemented GL function called after context init - HIGHEST PRIORITY",
+        "H2: Unhandled GL capability in Enable/Disable - HIGH PRIORITY",
+        "H3: Memory allocation failure - LOW PRIORITY (stack overflow ruled out)"
+      ],
+      "status": "NOT_VALIDATED - build failures prevented validation"
+    }
+  ],
+  "error_handling_gaps": [
+    "crash_monitor.sh reads stdout/stderr but log! writes to touchHLE_log.txt",
+    "DISCOVERED: touchHLE_log.txt is the correct source for DIAG output",
+    "15 sessions of [DIAG-*] logging never captured in test output"
+  ],
   "successful_patterns": [
     "Using [DIAG-*] prefixes for easy log filtering",
     "Counting function calls to detect missing functionality",
@@ -44,45 +198,120 @@
     "Focusing on unique contributions during debate",
     "Observation-first principle: run existing diagnostics before adding more",
     "Conditional phasing: add diagnostics only when prior phase indicates need",
-    "Upgrading log_dbg! to log! for capture output visibility"
+    "Upgrading log_dbg! to log! for capture output visibility",
+    "Citing prior evidence from MEMORY.md to ground arguments",
+    "Accepting consensus quickly when pipelines converge",
+    "Conceding weak hypotheses with evidence (mmap unlikely given zero fopen)",
+    "Proposing parallel execution instead of sequential backup",
+    "Quantitative evidence (48K+ entries, specific values) is highly persuasive",
+    "Designating proposals as HIGH PRIORITY to establish consensus hierarchy",
+    "Systematic dimension-source tracing (view → layer → GL) covers rendering stack",
+    "Framing approaches as complementary rather than competing",
+    "Enhancing proposals rather than rejecting them (adding glOrthox to matrix logging)",
+    "Minimal-first diagnostic approach to avoid accumulating untested code",
+    "Providing fallback plans (CALayer if Phase 1 fails) adds value to consensus",
+    "Distinguishing UIView.frame from UIView.bounds as distinct iOS APIs",
+    "Problem reframing: identifying when issue type has changed (crash vs truncation)",
+    "Adding pre-panic WARNING logging to capture exact crash trigger",
+    "Prioritizing GL query functions based on typical post-glGetString call sequence",
+    "Verification-first approach reveals when assumptions are wrong (session 11-17-26)",
+    "Conceding to documented evidence (FIXME comment) when higher confidence than runtime observation",
+    "Contributing refinements (DIAG-EAGL-DIM before fix) rather than competing approaches",
+    "Framing diagnostics as validation phase after code fixes"
   ],
   "unsuccessful_patterns": [
     "Comprehensive logging proposals rejected as too noisy",
-    "Adding diagnostics when build is unstable (4 consecutive failures)"
+    "Adding diagnostics when build is unstable",
+    "Arguing to defer low-risk fixes until after diagnostic analysis",
+    "Assuming log! output is captured by crash_monitor.sh stdout/stderr (read file instead)",
+    "Investigating C stdlib file I/O (game doesn't use it)",
+    "Accumulating untested diagnostics across sessions (15 sessions with infrastructure gaps)",
+    "Focusing only on diagnostics without proposing code fixes",
+    "Over-interpreting log snippets as evidence of fix (Y=480 doesn't mean rendering works)"
   ],
   "recommendations": {
+    "immediate_priority": [
+      "CRITICAL: Fix diagnostic capture infrastructure - 15 sessions with blocked output",
+      "Update crash_monitor.sh to read touchHLE_log.txt and extract [DIAG-*] entries",
+      "Investigate regression: why did black pixels increase 42.22% → 50.55%?",
+      "Test renderbuffer FIXME fix once build succeeds (highest confidence fix to date)"
+    ],
     "add_logging_to": [
-      "CGImageRef creation (if E1/E2/E3 show normal behavior)",
-      "mmap() calls (if fopen shows no PNG access)",
-      "Bundle path resolution functions"
+      "Frame type classification - [DIAG-FRAME-TYPE] for menu/loading/gameplay",
+      "Total geometry per frame - [DIAG-VERTEX-TOTAL] at frame end",
+      "Game state transitions - [DIAG-GAME-STATE] during touch injection",
+      "CAEAGLLayer composition - specific logging for GL layer rendering"
     ],
     "error_patterns_to_check": [
-      "GL_INVALID_OPERATION errors after TexImage2D",
-      "Texture binding failures",
-      "Missing asset loading",
-      "fopen returning NULL for expected files",
-      "Short fread() results (fewer bytes than requested)"
+      "[DIAG-E1-VERTEX] showing mixed Y coordinates (some 480, some 320)",
+      "[DIAG-DICT-*] showing any CFDictionary method calls",
+      "Regression correlation with CFDictionary changes",
+      "Draw call count variance between menu and gameplay",
+      "[DIAG-EAGL-DIM] showing layer_bounds != window dimensions"
     ],
     "avoid": [
-      "Adding more diagnostics before build is stable",
-      "Comprehensive GL state logging (already verified)",
-      "Threading investigation (pattern is stable, not intermittent)"
+      "C stdlib file I/O investigation (game uses Foundation APIs)",
+      "mmap investigation (evidence rules it out)",
+      "GL projection helper investigation (game doesn't use them)",
+      "Adding more diagnostics before fixing capture infrastructure",
+      "Assuming crash_monitor.sh captures log! output automatically",
+      "Over-interpreting log snippets without actual test verification"
     ]
   },
-  "pending_diagnostics": {
-    "description": "Diagnostics implemented but not yet tested due to build failure",
-    "session": "multiagent_2026-01-14_12-32-51",
-    "ready_to_test": ["DIAG-E1", "DIAG-E2", "DIAG-E3", "DIAG-C2", "DIAG-C3", "DIAG-FREAD"],
-    "recommendation": "Fix build failure and re-run capture test with zero changes"
+  "infrastructure_issues": {
+    "description": "Log capture mechanism mismatch - PERSISTS",
+    "problem": "crash_monitor.sh reads stdout/stderr but log! writes to touchHLE_log.txt",
+    "resolution_discovered": "touchHLE_log.txt contains 15K+ [DIAG-*] entries - logging WORKS",
+    "action_needed": "Update crash_monitor.sh to read log file OR read touchHLE_log.txt directly",
+    "status": "UNRESOLVED - 15 sessions affected",
+    "sessions_affected": 15
   },
   "build_failure_streak": {
-    "count": 4,
-    "sessions": [
-      "research_2026-01-10_12-35-40",
-      "research_2026-01-10_13-43-50",
-      "multiagent_2026-01-11_21-35-37",
-      "multiagent_2026-01-14_12-32-51"
+    "count": 1,
+    "sessions": ["multiagent_2026-01-21_12-08-34"],
+    "note": "Build failed this session after successful build in 11-17-26. Renderbuffer FIXME fix remains highest-confidence hypothesis for next successful build."
+  },
+  "debate_effectiveness": {
+    "consensus_reached_count": 14,
+    "average_turns": 2,
+    "key_error_contributions": [
+      "E2 (TexImage2D logging) - session 2026-01-11",
+      "DIAG-E3 upgrade to log! - session 2026-01-14",
+      "Observation-first principle adoption",
+      "Vertex sampling promoted to parallel execution - session 2026-01-15",
+      "DIAG-E1-MATRIX designated Phase 1A (HIGH PRIORITY) - session 2026-01-20 (first)",
+      "Dimension-source diagnostics [DIAG-H1/H2/H3] as Phase 2 fallback - session 2026-01-20 (second)",
+      "Enhanced Phase 1B with glOrthox logging - session 2026-01-20 (third)",
+      "UIView.bounds + applicationFrame diagnostics [DIAG-E1/E3] - session 2026-01-20 (fourth)",
+      "UIView.frame/UIDevice.orientation/glVertexPointer diagnostics - session 2026-01-20 (fifth)",
+      "Problem reframing (crash vs truncation) + GL tracing [DIAG-H1-GLCALL] - session 2026-01-21 (first)",
+      "GL query instrumentation [DIAG-H1-QUERY] + capability handling [DIAG-H2-CAP] - session 2026-01-21 (second)",
+      "Verification-first strategy (accepted by both pipelines) - session 2026-01-21 (third)",
+      "[DIAG-EAGL-DIM] before-fix verification + [DIAG-E2] validation phase - session 2026-01-21 (fourth)"
     ],
-    "recommendation": "Prioritize build stability over adding more diagnostics"
+    "successful_concessions": [
+      "mmap hypothesis unlikely (zero fopen evidence)",
+      "Scissor deprioritized (static analysis showed none)",
+      "CFDictionary dismissed (would cause crashes, not coordinate truncation)",
+      "Random suggestions (blocks, ui_touch, ns_date) dismissed as irrelevant",
+      "NSScanner fix acceptable as quick test before dimension diagnostics",
+      "scanDouble: is documented API gap worth implementing",
+      "dirent d_type hypothesis accepted as complementary to dimension tracing",
+      "d_type fix accepted as Phase 1A PRIMARY with error diagnostics as Phase 1B",
+      "Crash-first priority accepted by both pipelines - session 2026-01-21 (first)",
+      "Memory hypothesis (H3) self-deprioritized based on stack overflow evidence",
+      "Mach semaphore random suggestion dismissed as LOW relevance (session 11-17-26)",
+      "FIXME-based approach accepted over runtime observation (session 12-08-34) - documented evidence was higher confidence"
+    ]
+  },
+  "verification_hypothesis": {
+    "description": "Session 11-17-26 verification-first hypothesis",
+    "evidence": [
+      "Context analysis showed Y=480.0 in [DIAG-E1-VERTEX] logs",
+      "Interpreted as 'fix is working'",
+      "Actual test showed 50.55% black pixels (regression)"
+    ],
+    "outcome": "REFUTED - Log interpretation was misleading",
+    "lesson_learned": "Always run actual test to verify; don't trust log snippets alone"
   }
 }

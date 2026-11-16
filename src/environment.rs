@@ -864,6 +864,21 @@ impl Environment {
         // the emulator will crash anyway, maybe this is okay.
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| self.run_inner(true)));
         if let Err(e) = res {
+            // [DIAG-H2-STACK] Error-focused diagnostic: log stack pointer for overflow detection
+            let sp = self.cpu.regs()[cpu::Cpu::SP];
+            let stack_range = self.threads[self.current_thread].stack.clone();
+            if let Some(ref range) = stack_range {
+                let stack_low = *range.start();
+                let stack_high = *range.end();
+                let remaining = if sp >= stack_low { sp - stack_low } else { 0 };
+                echo!("[DIAG-H2-STACK] PANIC: SP={:#x}, stack_range=[{:#x}..{:#x}], remaining={} bytes",
+                      sp, stack_low, stack_high, remaining);
+                if remaining < 0x1000 {
+                    echo!("[DIAG-H2-STACK] WARNING: Stack nearly exhausted! Only {} bytes remaining", remaining);
+                }
+            } else {
+                echo!("[DIAG-H2-STACK] PANIC: SP={:#x}, stack_range=None", sp);
+            }
             echo!("Register state immediately after panic:");
             self.cpu.dump_regs();
             self.stack_trace();

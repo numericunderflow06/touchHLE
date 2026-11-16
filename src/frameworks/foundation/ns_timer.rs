@@ -66,7 +66,7 @@ pub const CLASSES: ClassExports = objc_classes! {
     });
     let new = env.objc.alloc_object(this, host_object, &mut env.mem);
 
-    log_dbg!(
+    log!(
         "New {} timer {:?}, interval {}s, target [{:?} {}], user info {:?}",
         if repeats { "repeating" } else { "single-use" },
         new,
@@ -239,7 +239,7 @@ pub(super) fn handle_timer(env: &mut Environment, timer: id) -> Option<Instant> 
         .borrow_mut::<NSTimerHostObject>(timer)
         .is_running_callback = true;
 
-    log_dbg!(
+    log!(
         "Timer {:?} fired, sending {:?} message to {:?}",
         timer,
         selector.as_str(&env.mem),

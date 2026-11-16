@@ -1103,6 +1103,15 @@ fn glClear(env: &mut Environment, mask: GLbitfield) {
             log!("[DIAG-E2] Frame {} complete: {} draw calls, max_x={:.1}, max_y={:.1}, textures={}",
                  frame - 1, total_draws, max_x, max_y, tex_count);
         }
+        // Dump modelview matrix every 200 frames to track camera position
+        if frame % 200 == 0 {
+            with_ctx_and_mem(env, |gles, _mem| {
+                let mut mv = [0.0f32; 16];
+                unsafe { gles.GetFloatv(0x0BA6, mv.as_mut_ptr()) }; // GL_MODELVIEW_MATRIX
+                log!("[DIAG-CAM-MV] Frame {} modelview: tx={:.1} ty={:.1} tz={:.1}",
+                     frame, mv[12], mv[13], mv[14]);
+            });
+        }
     }
     // GL_COLOR_BUFFER_BIT = 0x4000, GL_DEPTH_BUFFER_BIT = 0x100, GL_STENCIL_BUFFER_BIT = 0x400
     log_dbg!("glClear(mask={:#x}) color={} depth={} stencil={}",
@@ -1164,6 +1173,7 @@ fn glMatrixMode(env: &mut Environment, mode: GLenum) {
     });
 }
 fn glLoadIdentity(env: &mut Environment) {
+    log!("[DIAG-CAM] glLoadIdentity()");
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.LoadIdentity() };
     });
@@ -1194,8 +1204,10 @@ fn glLoadMatrixx(env: &mut Environment, m: ConstPtr<GLfixed>) {
 }
 fn glMultMatrixf(env: &mut Environment, m: ConstPtr<GLfloat>) {
     with_ctx_and_mem(env, |gles, mem| {
-        let m = mem.ptr_at(m, 16);
-        unsafe { gles.MultMatrixf(m) };
+        let m_ptr = mem.ptr_at(m, 16);
+        let matrix: [f32; 16] = unsafe { std::ptr::read(m_ptr as *const [f32; 16]) };
+        log!("[DIAG-CAM] glMultMatrixf: tx={:.4} ty={:.4} tz={:.4}", matrix[12], matrix[13], matrix[14]);
+        unsafe { gles.MultMatrixf(m_ptr) };
     });
 }
 fn glMultMatrixx(env: &mut Environment, m: ConstPtr<GLfixed>) {
@@ -1205,11 +1217,13 @@ fn glMultMatrixx(env: &mut Environment, m: ConstPtr<GLfixed>) {
     });
 }
 fn glPushMatrix(env: &mut Environment) {
+    log_dbg!("[DIAG-CAM] glPushMatrix");
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.PushMatrix() };
     });
 }
 fn glPopMatrix(env: &mut Environment) {
+    log_dbg!("[DIAG-CAM] glPopMatrix");
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.PopMatrix() };
     });
@@ -1328,6 +1342,15 @@ fn glFrustumx(
 }
 fn glRotatef(env: &mut Environment, angle: GLfloat, x: GLfloat, y: GLfloat, z: GLfloat) {
     log!("[DIAG-ROT] glRotatef(angle={}, x={}, y={}, z={})", angle, x, y, z);
+    // For landscape apps: skip the 90-degree Z-axis rotation that Cocos2D
+    // applies for landscape orientation. Our framebuffer is already landscape,
+    // so this rotation would double-rotate the content.
+    if env.options.initial_orientation != crate::window::DeviceOrientation::Portrait {
+        if (angle - 90.0).abs() < 0.01 && z > 0.99 && x.abs() < 0.01 && y.abs() < 0.01 {
+            log!("[DIAG-ROT] Skipping landscape rotation (already landscape)");
+            return;
+        }
+    }
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Rotatef(angle, x, y, z) };
     });
@@ -1338,6 +1361,7 @@ fn glRotatex(env: &mut Environment, angle: GLfixed, x: GLfixed, y: GLfixed, z: G
     });
 }
 fn glScalef(env: &mut Environment, x: GLfloat, y: GLfloat, z: GLfloat) {
+    log!("[DIAG-CAM] glScalef(x={}, y={}, z={})", x, y, z);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Scalef(x, y, z) };
     });
@@ -1348,11 +1372,16 @@ fn glScalex(env: &mut Environment, x: GLfixed, y: GLfixed, z: GLfixed) {
     });
 }
 fn glTranslatef(env: &mut Environment, x: GLfloat, y: GLfloat, z: GLfloat) {
+    log!("[DIAG-CAM] glTranslatef(x={}, y={}, z={})", x, y, z);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Translatef(x, y, z) };
     });
 }
 fn glTranslatex(env: &mut Environment, x: GLfixed, y: GLfixed, z: GLfixed) {
+    let xf = x as f32 / 65536.0;
+    let yf = y as f32 / 65536.0;
+    let zf = z as f32 / 65536.0;
+    log!("[DIAG-CAM] glTranslatex(x={}, y={}, z={})", xf, yf, zf);
     with_ctx_and_mem(env, |gles, _mem| {
         unsafe { gles.Translatex(x, y, z) };
     });

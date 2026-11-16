@@ -13,7 +13,7 @@ use crate::dyld::{ConstantExports, HostConstant};
 use crate::environment::ThreadId;
 use crate::frameworks::audio_toolbox::audio_queue::{handle_audio_queue, AudioQueueRef};
 use crate::frameworks::audio_toolbox::audio_unit::{render_audio_unit, AudioUnit};
-use crate::frameworks::core_animation::ca_transaction;
+use crate::frameworks::core_animation::{ca_display_link, ca_transaction};
 use crate::frameworks::core_foundation::cf_run_loop::{
     kCFRunLoopCommonModes, kCFRunLoopDefaultMode, CFRunLoopRef,
 };
@@ -53,6 +53,9 @@ struct NSRunLoopHostObject {
     /// Strong references to `NSTimer*` in no particular order. Timers are owned
     /// by the run loop. The timer must remove itself when invalidated.
     timers: Vec<id>,
+    /// Strong references to `CADisplayLink*` in no particular order.
+    /// Display links fire their callback once per run loop iteration (at ~60fps).
+    display_links: Vec<id>,
 }
 impl HostObject for NSRunLoopHostObject {}
 
@@ -161,6 +164,25 @@ pub fn remove_audio_queue(env: &mut Environment, run_loop: id, queue: AudioQueue
     queues.remove(queue_idx);
 }
 
+/// For use by CADisplayLink: add a display link to the run loop.
+pub fn add_display_link(env: &mut Environment, run_loop: id, display_link: id) {
+    retain(env, display_link);
+    let host_object = env.objc.borrow_mut::<NSRunLoopHostObject>(run_loop);
+    host_object.display_links.push(display_link);
+}
+
+/// For use by CADisplayLink: remove a display link from the run loop.
+pub fn remove_display_link(env: &mut Environment, run_loop: id, display_link: id) {
+    let links = &mut env
+        .objc
+        .borrow_mut::<NSRunLoopHostObject>(run_loop)
+        .display_links;
+    if let Some(idx) = links.iter().position(|&item| item == display_link) {
+        links.remove(idx);
+        release(env, display_link);
+    }
+}
+
 /// For use by NSTimer so it can remove itself once it's invalidated.
 pub(super) fn remove_timer(env: &mut Environment, run_loop: id, timer: id) {
     log_dbg!("Removing timer {:?} from run loop {:?}", timer, run_loop,);
@@ -212,6 +234,7 @@ pub fn run_run_loop(
     // Temporary vectors used to track things without needing a reference to the
     // environment or to lock the object. Re-used each iteration for efficiency.
     let mut timers_tmp = Vec::new();
+    let mut display_links_tmp = Vec::new();
     let mut audio_queues_tmp = Vec::new();
     let mut audio_units_tmp = Vec::new();
 
@@ -259,6 +282,17 @@ pub fn run_run_loop(
             let next_due = ns_timer::handle_timer(env, timer);
             limit_sleep_time(&mut sleep_until, next_due);
             release(env, timer);
+        }
+
+        // Fire CADisplayLink callbacks
+        assert!(display_links_tmp.is_empty());
+        display_links_tmp.extend_from_slice(
+            &env.objc
+                .borrow::<NSRunLoopHostObject>(run_loop)
+                .display_links,
+        );
+        for display_link in display_links_tmp.drain(..) {
+            ca_display_link::handle_display_link(env, display_link);
         }
 
         // TODO: We currently don't properly handle if an audio queue or audio
@@ -343,6 +377,7 @@ fn run_loop_for_thread(env: &mut Environment, this: Class, thread_id: ThreadId) 
             audio_units: Vec::new(),
             audio_queues: Vec::new(),
             timers: Vec::new(),
+            display_links: Vec::new(),
         });
         // TODO: is it OK to allocate static object for all threads,
         // not only main one?

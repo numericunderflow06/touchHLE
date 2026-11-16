@@ -162,6 +162,21 @@ pub const CLASSES: ClassExports = objc_classes! {
     };
     let size = bytes.len().try_into().unwrap();
     log!("[DIAG-H3] NSData initWithContentsOfFile: SUCCESS path='{}' size={} bytes", path, size);
+
+    // [DIAG-DEF] Code-focused diagnostic: log .def file contents for format analysis
+    // .def files are small manifests (~150-260 bytes) that contain texture path references
+    if path.ends_with(".def") {
+        let preview: String = bytes.iter().take(64)
+            .map(|b| format!("{:02x}", b))
+            .collect::<Vec<_>>()
+            .join(" ");
+        log!("[DIAG-C1] .def file loaded: {} ({} bytes), first 64 bytes hex: {}", path, size, preview);
+        // Also try to interpret as ASCII for readability
+        let ascii_preview: String = bytes.iter().take(64)
+            .map(|&b| if b >= 0x20 && b < 0x7f { b as char } else { '.' })
+            .collect();
+        log!("[DIAG-C2] .def file ASCII preview: {}", ascii_preview);
+    }
     let alloc = env.mem.alloc(size);
     let slice = env.mem.bytes_at_mut(alloc.cast(), size);
     slice.copy_from_slice(&bytes);
