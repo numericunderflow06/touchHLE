@@ -22,6 +22,7 @@ import time
 from pathlib import Path
 
 from harness import checks, game, nav, save
+from harness.client import ControlError
 
 from .common import run_scenario
 
@@ -34,6 +35,10 @@ COMMAND_PANEL = (19, 14)
 COMMANDS = {"forward": ((59, 71), 0), "charge": ((193, 71), 2)}
 # Icons on the upgrade screen, both tabs.
 UPGRADE_ITEMS = [(x, y) for y in (111, 204) for x in (246, 310, 374, 438)]
+# Upgrade levels the run starts with. The game's own limit is 10; buying a
+# level doubles in price each time (hero items reach 256000 gold).
+TROOP_LEVEL = 8
+HERO_LEVEL = 6
 
 
 def stage_info(index, version):
@@ -72,7 +77,7 @@ def buy_upgrades(s, levels=3):
 
     start = gold()
     purchases = 0
-    for tab, item_levels in (("btnUpgradeTypeTroop", levels), ("btnUpgradeTypeHero", max(1, levels - 1))):
+    for tab, item_levels in (("btnUpgradeTypeTroop", levels), ("btnUpgradeTypeHero", levels)):
         tx, ty = nav.named_button(c, "UpgradeLayer", tab)
         kind = c.read(layer, "SelectedType", "i32")
         c.tap(tx, ty)
@@ -101,7 +106,7 @@ def buy_upgrades(s, levels=3):
 
 def soldier_buttons(control):
     """Screen positions of the troop buttons, from the game's own array."""
-    layer = nav.find_object(control, "MainGameLayer")
+    layer = nav.scene_object(control, "MainGameLayer")
     base = int(layer, 16) + nav.ivar_offset(control, layer, "btnSoldierButton")
     pointers = []
     for i in range(7):  # the game has seven troop types
@@ -178,7 +183,7 @@ def play(s, limit_seconds):
     with outcome one of "won", "lost", "timeout" or another screen's name."""
     c = s.control
     logic = nav.find_object(c, "MainGameLogic")
-    layer = nav.find_object(c, "MainGameLayer")
+    layer = nav.scene_object(c, "MainGameLayer")
     buttons = soldier_buttons(c) or [(173, 290)]
     s.notes["soldier_buttons"] = buttons
     limit = -c.read(layer, "lastScreenBLPosX", "i32")
@@ -210,26 +215,39 @@ def play(s, limit_seconds):
             c.wait_ms(200)
             continue
         now = time.time()
-        charging = c.read(layer, "curCommandType", "i32") == COMMANDS["charge"][1]
-        if now - last_order > (20 if charging else 4):
-            last_order = now
-            orders["given"] += 1
-            orders["confirmed"] += bool(order(c, layer, "charge"))
-            continue
-        if now - last_follow > 4:
-            last_follow = now
-            follow(c, layer, limit)
-            continue
-        x, y = buttons[turn % len(buttons)]
-        turn += 1
-        c.tap(x, y)
-        c.wait_ms(150)
-        if now - last_log > 10:
-            last_log = now
-            state = nav.battle_state(c, logic)
-            state["t"] = round(now - start)
-            state["camera_x"] = c.read(layer, "gameNode.position_", "point")[0]
-            timeline.append(state)
+        try:
+            charging = c.read(layer, "curCommandType", "i32") == COMMANDS["charge"][1]
+            if now - last_order > (20 if charging else 4):
+                last_order = now
+                orders["given"] += 1
+                orders["confirmed"] += bool(order(c, layer, "charge"))
+                continue
+            if now - last_follow > 4:
+                last_follow = now
+                follow(c, layer, limit)
+                continue
+            x, y = buttons[turn % len(buttons)]
+            turn += 1
+            c.tap(x, y)
+            c.wait_ms(150)
+            if now - last_log > 10:
+                last_log = now
+                state = nav.battle_state(c, logic)
+                state["t"] = round(now - start)
+                state["camera_x"] = c.read(layer, "gameNode.position_", "point")[0]
+                timeline.append(state)
+        except ControlError:
+            # The battle layer went away under us: the stage ended while an
+            # action was in progress, or the game rebuilt the layer (it does
+            # after a tutorial). Go round again and look at the screen.
+            c.tilt_clear()
+            c.wait_ms(300)
+            if game.current_scene(c)["screen"] == "battle":
+                try:
+                    layer = nav.scene_object(c, "MainGameLayer")
+                    buttons = soldier_buttons(c) or buttons
+                except (ControlError, nav.NavError):
+                    pass
     s.notes["orders"] = orders
     return "timeout", timeline
 
@@ -244,7 +262,7 @@ def body(s, index, info, limit_seconds):
         return
     available = nav.stage_buttons(c, stage_count=40)
     s.check(f"stage {index} is on the map", index in available, sorted(available))
-    buy_upgrades(s)
+    buy_upgrades(s, levels=1)
     nav.map_to_battle(c, index)
     if not s.check_screen("battle", timeout=60):
         return
@@ -267,7 +285,7 @@ def body(s, index, info, limit_seconds):
     s.check_fps("battle frame rate")
 
     # Scroll across the field and back; look at the far end.
-    layer = nav.find_object(c, "MainGameLayer")
+    layer = nav.scene_object(c, "MainGameLayer")
     limit = -c.read(layer, "lastScreenBLPosX", "i32")
     c.tilt(1, 0)
     waited = 0
@@ -303,8 +321,9 @@ def body(s, index, info, limit_seconds):
 def run(index="1", difficulty="0", money="300000", limit_seconds="420", version="1.1"):
     index, difficulty = int(index), int(difficulty)
     info = stage_info(index, version)
+    upgrades = {i: TROOP_LEVEL for i in range(8)} | {i: HERO_LEVEL for i in range(14, 24)}
     plist = save.make_save(unlock="all", money=int(money), difficulty=difficulty, version=version,
-                           extra={f"UnlockItem_{i}": True for i in range(40)})
+                           upgrades=upgrades, extra={f"UnlockItem_{i}": True for i in range(40)})
     result = run_scenario(f"stage{index:02d}", lambda s: body(s, index, info, float(limit_seconds)),
                           ipa=version, save_plist=plist)
     result["stage"] = {"index": index, "id": info["id"], "title": info["title"], "win": info["win"]}

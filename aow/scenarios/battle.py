@@ -47,7 +47,7 @@ def body(s):
     _, start = s.check_picture("battle_start", reference="battle_1-1_start", min_similarity=0.75)
     s.check_fps("battle frame rate")
 
-    layer = nav.find_object(c, "MainGameLayer")
+    layer = nav.scene_object(c, "MainGameLayer")
     s.check("camera starts at the left end", camera_x(c, layer) == 0, camera_x(c, layer))
 
     # A vertical tilt must not scroll.

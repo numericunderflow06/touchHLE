@@ -34,7 +34,7 @@ def armv7_slice(data):
     raise SystemExit("no armv7 slice")
 
 
-def symbols(macho):
+def symbols(macho, code_only=True):
     magic, _cpu, _sub, _type, ncmds, _size, _flags = struct.unpack("<7I", macho[:28])
     if magic != MH_MAGIC:
         raise SystemExit("not a 32-bit little-endian Mach-O")
@@ -47,8 +47,10 @@ def symbols(macho):
             for i in range(nsyms):
                 strx, n_type, n_sect, _desc, value = struct.unpack(
                     "<IBBHI", macho[symoff + i * 12:symoff + i * 12 + 12])
-                if n_type & N_STAB or (n_type & N_TYPE) != N_SECT or n_sect != 1:
-                    continue  # debugging entries, undefined symbols, non-code
+                if n_type & N_STAB or (n_type & N_TYPE) != N_SECT:
+                    continue  # debugging entries, undefined symbols
+                if code_only and n_sect != 1:
+                    continue
                 end = strings.find(b"\0", strx)
                 name = strings[strx:end].decode("utf-8", "replace")
                 if name:

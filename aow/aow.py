@@ -292,6 +292,57 @@ def cmd_try(args):
     return 0 if result["ok"] else 1
 
 
+def cmd_play(args):
+    """Open a window for a person to play in, apart from all automated runs."""
+    import os
+    import shutil
+
+    from harness import save
+    from harness.session import BUNDLE_ID, DEFAULT_EXE, IPAS, _file_id, _free_port, _link_dir
+
+    play_dir = RUNS / (f"manual_play_v{args.ipa}" + (f"_{args.name}" if args.name else ""))
+    prefs = play_dir / "touchHLE_sandbox" / BUNDLE_ID / "Library" / "Preferences"
+    if args.reset and (play_dir / "touchHLE_sandbox").exists():
+        shutil.rmtree(play_dir / "touchHLE_sandbox")
+    play_dir.mkdir(parents=True, exist_ok=True)
+    _link_dir(REPO / "touchHLE_dylibs", play_dir / "touchHLE_dylibs")
+    _link_dir(REPO / "touchHLE_fonts", play_dir / "touchHLE_fonts")
+    shutil.copy(REPO / "touchHLE_default_options.txt", play_dir / "touchHLE_default_options.txt")
+    (play_dir / "touchHLE_options.txt").write_text("# intentionally empty" + chr(10))
+    new_save = not (prefs / f"{BUNDLE_ID}.plist").exists()
+    if new_save and not args.fresh:
+        prefs.mkdir(parents=True, exist_ok=True)
+        (prefs / f"{BUNDLE_ID}.plist").write_bytes(save.make_save(
+            unlock="all", money=args.gold, version=args.ipa,
+            extra={f"UnlockItem_{i}": True for i in range(40)}))
+    exe_id = _file_id(DEFAULT_EXE)
+    run_exe = RUNS / "bin" / f"touchHLE_play_{exe_id}.exe"
+    run_exe.parent.mkdir(parents=True, exist_ok=True)
+    if not run_exe.exists():
+        shutil.copy(DEFAULT_EXE, run_exe)
+    port = _free_port()
+    command = [str(run_exe), str(IPAS[args.ipa]), f"--control=127.0.0.1:{port}",
+               f"--scale-hack={args.scale}"]
+    env = dict(os.environ)
+    if args.mute:
+        env["ALSOFT_DRIVERS"] = "null"
+    proc = subprocess.Popen(command, cwd=play_dir, stdin=subprocess.DEVNULL,
+                            stdout=open(play_dir / "stdout.txt", "wb"),
+                            stderr=open(play_dir / "stderr.txt", "wb"), env=env,
+                            creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
+    (play_dir / "session.json").write_text(json.dumps({
+        "label": "manual_play", "pid": proc.pid, "port": port, "args": command,
+        "ipa": str(IPAS[args.ipa]), "exe": str(run_exe), "exe_id": exe_id}, indent=1))
+    out({"ok": True, "pid": proc.pid, "dir": str(play_dir), "port": port,
+         "save": "written: all stages and items unlocked" if new_save and not args.fresh
+                 else ("fresh game" if new_save else "continuing your earlier save"),
+         "controls": {
+             "touch": "left mouse button (click, or drag to draw commands)",
+             "scroll the battlefield": "hold the left / right arrow keys",
+             "quit": "close the window"}})
+    return 0
+
+
 def cmd_run(args):
     import importlib
 
@@ -417,6 +468,16 @@ def main():
     p.add_argument("--grep")
     p.add_argument("--tail", type=int, default=40)
     p.set_defaults(func=cmd_log)
+
+    p = sub.add_parser("play", help="open a window for a person to play in (own save, not part of any run)")
+    p.add_argument("--ipa", default="1.1", help="1.1 or 2.0")
+    p.add_argument("--name", default="", help="use a separate save folder with this name")
+    p.add_argument("--gold", type=int, default=1000000)
+    p.add_argument("--scale", type=int, default=2, help="window scale (1 = 480x320)")
+    p.add_argument("--mute", action="store_true")
+    p.add_argument("--fresh", action="store_true", help="start with no save instead of everything unlocked")
+    p.add_argument("--reset", action="store_true", help="discard the existing manual-play save first")
+    p.set_defaults(func=cmd_play)
 
     p = sub.add_parser("run", help="run a scenario from aow/scenarios")
     p.add_argument("scenario")

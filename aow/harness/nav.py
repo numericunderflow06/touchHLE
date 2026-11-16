@@ -54,10 +54,29 @@ def wait_settled(control, timeout=6.0, gap=0.15):
 
 
 def find_object(control, class_name):
+    """Pointer of the live object of this class: the one in the running scene
+    if there is one, otherwise any live instance (for non-node objects such
+    as MainGameLogic)."""
+    try:
+        return scene_object(control, class_name, depth=6)
+    except NavError:
+        pass
     found = control.find(class_name, limit=5)["objects"]
     if not found:
         raise NavError(f"no live {class_name}")
     return found[0]["ptr"]
+
+
+def scene_object(control, class_name, depth=4):
+    """Pointer of the node of this class in the running scene.
+
+    Unlike `find_object` this never returns an object from a scene that has
+    already been replaced but not yet freed.
+    """
+    for node, _, _ in game.walk(control.nodes(depth=depth, max_nodes=600)):
+        if node.get("class") == class_name:
+            return node["ptr"]
+    raise NavError(f"no {class_name} in the running scene")
 
 
 def ivar_offset(control, ptr, name):
