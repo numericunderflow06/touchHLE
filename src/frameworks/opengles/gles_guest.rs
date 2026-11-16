@@ -1348,6 +1348,18 @@ fn glGenerateMipmapOES(env: &mut Environment, target: GLenum) {
     with_ctx_and_mem(env, |gles, _mem| unsafe { gles.GenerateMipmapOES(target) })
 }
 
+/// `EXT_discard_framebuffer` (iOS 4.0+). This tells the driver that the
+/// contents of some framebuffer attachments are no longer needed, so they
+/// become undefined. It is purely a performance hint for tile-based GPUs;
+/// leaving the contents intact is a conforming implementation.
+fn glDiscardFramebufferEXT(
+    _env: &mut Environment,
+    _target: GLenum,
+    _num_attachments: GLsizei,
+    _attachments: ConstPtr<GLenum>,
+) {
+}
+
 fn glGetBufferParameteriv(
     env: &mut Environment,
     target: GLenum,
@@ -1631,6 +1643,7 @@ pub const FUNCTIONS: FunctionExports = &[
     export_c_func!(glDeleteFramebuffersOES(_, _)),
     export_c_func!(glDeleteRenderbuffersOES(_, _)),
     export_c_func!(glGenerateMipmapOES(_)),
+    export_c_func!(glDiscardFramebufferEXT(_, _, _)),
     export_c_func!(glGetBufferParameteriv(_, _, _)),
     export_c_func!(glMapBufferOES(_, _)),
     export_c_func!(glUnmapBufferOES(_)),
