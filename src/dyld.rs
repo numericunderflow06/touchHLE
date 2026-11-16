@@ -628,6 +628,25 @@ impl Dyld {
         }
     }
 
+    /// Index, among the linked host functions, of the function that
+    /// [Self::get_svc_handler] just returned for `svc`.
+    pub fn linked_function_index(&self, svc: u32) -> u32 {
+        match svc {
+            // It was linked just now, so it is the newest one.
+            Self::SVC_LAZY_LINK | Self::SVC_LAZY_LINK_RET_FLAG => {
+                self.linked_host_functions.len() as u32 - 1
+            }
+            _ => (svc & !Self::SVC_LAZY_LINK_RET_FLAG) - Self::SVC_LINKED_FUNCTIONS_BASE,
+        }
+    }
+
+    /// Symbol name of a linked host function, by index.
+    pub fn linked_function_name(&self, index: u32) -> &'static str {
+        self.linked_host_functions
+            .get(index as usize)
+            .map_or("?", |&(symbol, _)| symbol)
+    }
+
     /// Return a host function that can be called to handle an SVC instruction
     /// encountered during CPU emulation. If `None` is returned, the execution
     /// needs to resume at `svc_pc`.

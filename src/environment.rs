@@ -1637,7 +1637,18 @@ impl Environment {
                             svc_pc,
                             svc,
                         ) {
-                            f.call_from_guest(self);
+                            if crate::control::profile::enabled() {
+                                let thread = self.current_thread;
+                                let index = self.dyld.linked_function_index(svc);
+                                crate::control::profile::enter(
+                                    thread,
+                                    crate::control::profile::Key::Function(index),
+                                );
+                                f.call_from_guest(self);
+                                crate::control::profile::exit(thread, /* to_guest: */ true);
+                            } else {
+                                f.call_from_guest(self);
+                            }
                             if let Some(len) = self.options.zero_stack_after_guest_to_host_call {
                                 log_once!("Applying zeroing of stack after guest to host call.");
                                 let start = self.cpu.regs()[cpu::Cpu::SP] - len;
@@ -1676,9 +1687,28 @@ impl Environment {
                 .remaining_ticks
                 .is_none_or(|remaining_ticks| remaining_ticks > 0)
             {
+                let profiling = crate::control::profile::enabled();
+                if profiling {
+                    crate::control::profile::guest_starts(self.current_thread);
+                }
                 let state = self
                     .cpu
                     .run_or_step(&mut self.mem, self.remaining_ticks.as_mut());
+                if profiling {
+                    // Where the stretch ended: the caller of the host function
+                    // that ended it, or wherever the time slice ran out.
+                    let (register, host_call_follows) = match state {
+                        cpu::CpuState::Svc(dyld::Dyld::SVC_RETURN_TO_HOST) => {
+                            (cpu::Cpu::LR, false)
+                        }
+                        cpu::CpuState::Svc(_) => (cpu::Cpu::LR, true),
+                        _ => (cpu::Cpu::PC, false),
+                    };
+                    crate::control::profile::guest_stopped(
+                        self.cpu.regs()[register],
+                        host_call_follows,
+                    );
+                }
 
                 match self.handle_cpu_state(state) {
                     ThreadNextAction::Continue => {
@@ -1706,6 +1736,10 @@ impl Environment {
             self.current_thread,
             thread_block
         );
+        let profiling = crate::control::profile::enabled();
+        if profiling {
+            crate::control::profile::suspending(self.current_thread);
+        }
         unsafe {
             self.threads[self.current_thread].blocked_by = thread_block;
             let yielder = self.yielder.as_ref().unwrap();
@@ -1732,6 +1766,9 @@ impl Environment {
             }
         }
         assert!(!self.threads[self.current_thread].is_blocked());
+        if profiling {
+            crate::control::profile::resumed();
+        }
     }
 
     /// Find the next thread to execute, and set it up to be switched to.

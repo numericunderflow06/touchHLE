@@ -373,13 +373,13 @@ fn is_cacheable(env: &Environment, receiver: id, orig_class: Class, is_super: bo
 }
 
 /// Call a method implementation that was looked up for the current message.
-/// `_class` is the class it was found on.
+/// `class` is the class it was found on.
 #[inline(always)]
 fn call_method(
     env: &mut Environment,
     receiver: id,
     selector: SEL,
-    _class: Class,
+    class: Class,
     imp: CachedIMP,
     message_type_info: Option<(std::any::TypeId, &'static str)>,
     tolerate_type_mismatch: bool,
@@ -413,11 +413,26 @@ Type mismatch when sending message {} to {:?}!
                     }
                 }
             }
-            host_imp.call_from_guest(env)
+            if crate::control::profile::enabled() {
+                let thread = env.current_thread;
+                crate::control::profile::enter(
+                    thread,
+                    crate::control::profile::Key::Method(class.to_bits(), selector),
+                );
+                host_imp.call_from_guest(env);
+                crate::control::profile::exit(thread, /* to_guest: */ false);
+            } else {
+                host_imp.call_from_guest(env)
+            }
         }
         // We can't create a new stack frame, because that would
         // interfere with pass-through of stack arguments.
-        CachedIMP::Guest(guest_imp) => guest_imp.call_without_pushing_stack_frame(env),
+        CachedIMP::Guest(guest_imp) => {
+            if crate::control::profile::enabled() {
+                crate::control::profile::guest_message(class.to_bits(), selector);
+            }
+            guest_imp.call_without_pushing_stack_frame(env)
+        }
     }
 }
 

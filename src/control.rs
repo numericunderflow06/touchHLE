@@ -44,6 +44,7 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 mod json;
+pub mod profile;
 
 /// Number of frames presented to the window so far.
 static FRAME_COUNT: AtomicU64 = AtomicU64::new(0);
@@ -218,6 +219,7 @@ pub struct Control {
     started: Instant,
     fps_mark: (Instant, u64),
     fps: f32,
+    profile_start_frame: u64,
 }
 
 impl Control {
@@ -241,6 +243,7 @@ impl Control {
             started: now,
             fps_mark: (now, frame_count()),
             fps: 0.0,
+            profile_start_frame: 0,
         })
     }
 
@@ -604,6 +607,20 @@ impl Control {
                 }
                 Ok(Some(json!({ "watching": self.watch.values().collect::<Vec<_>>() })))
             }
+            "profile" => match get_str(request, "action")? {
+                "start" => {
+                    profile::start();
+                    self.profile_start_frame = frame_count();
+                    Ok(Some(json!({})))
+                }
+                "stop" => {
+                    let top = opt_u32(request, "top", 40)? as usize;
+                    let profile = profile::stop().ok_or("profiling was not started")?;
+                    let frames = frame_count() - self.profile_start_frame;
+                    Ok(Some(profile_json(env, profile, frames, top)))
+                }
+                _ => Err("action must be start or stop".to_string()),
+            },
             "quit" => {
                 echo!("Control client requested quit, exiting.");
                 self.send(&ok(id.clone(), json!({})));
@@ -754,6 +771,76 @@ impl Control {
             }
         }
     }
+}
+
+fn profile_json(env: &Environment, profile: profile::Profile, frames: u64, top: usize) -> Value {
+    fn ms(time: Duration) -> f64 {
+        (time.as_secs_f64() * 100_000.0).round() / 100.0
+    }
+    let class_name = |class: u32| -> String {
+        env.objc
+            .try_get_class_name(Ptr::from_bits(class))
+            .unwrap_or("?")
+            .to_string()
+    };
+
+    let mut host = profile.host;
+    host.sort_by_key(|&(_, stat)| std::cmp::Reverse(stat.time));
+    let host: Vec<Value> = host
+        .into_iter()
+        .take(top)
+        .map(|(key, stat)| {
+            let name = match key {
+                profile::Key::Function(index) => env.dyld.linked_function_name(index).to_string(),
+                profile::Key::Method(class, selector) => {
+                    format!("[{} {}]", class_name(class), selector.as_str(&env.mem))
+                }
+            };
+            json!({ "name": name, "calls": stat.calls, "ms": ms(stat.time) })
+        })
+        .collect();
+
+    let mut guest = profile.guest;
+    guest.sort_by_key(|&(_, stat)| std::cmp::Reverse(stat.time));
+    let guest: Vec<Value> = guest
+        .into_iter()
+        .take(top * 10)
+        .map(|(address, stat)| {
+            json!({ "addr": hex(address), "stretches": stat.calls, "ms": ms(stat.time) })
+        })
+        .collect();
+
+    let mut messages = profile.guest_messages;
+    messages.sort_by_key(|&(_, calls)| std::cmp::Reverse(calls));
+    let messages: Vec<Value> = messages
+        .into_iter()
+        .take(top)
+        .map(|((class, selector), calls)| {
+            json!({
+                "name": format!("[{} {}]", class_name(class), selector.as_str(&env.mem)),
+                "calls": calls,
+            })
+        })
+        .collect();
+
+    json!({
+        "wall_ms": ms(profile.wall),
+        "frames": frames,
+        "guest_ms": ms(profile.guest_total),
+        "host_ms": ms(profile.host_total),
+        // Host code outside any profiled call. The main thread is inside the
+        // run loop, so there this is the run loop's own work.
+        "run_loop_ms": ms(profile.run_loop),
+        "other_threads_outside_ms": ms(profile.outside_other_threads),
+        // Scheduling, and sleeping while no thread has work.
+        "between_threads_ms": ms(profile.between_threads),
+        // What the profiler itself cost.
+        "transitions": profile.transitions,
+        "ns_per_transition": profile.cost_per_transition.as_nanos() as u64,
+        "host": host,
+        "guest": guest,
+        "guest_messages": messages,
+    })
 }
 
 fn ok(id: Value, result: Value) -> Value {
@@ -1270,6 +1357,20 @@ fn query_call(env: &mut Environment, request: &Value) -> Result<Value, String> {
         .get("returns")
         .and_then(Value::as_str)
         .unwrap_or("id");
+    // As a micro-benchmark of message dispatch, the message can be sent many
+    // times; the time per send is reported.
+    let repeat = opt_u32(request, "repeat", 0)?;
+    if repeat > 0 {
+        if matches!(returns, "point" | "size") {
+            return Err("repeat is not supported for struct returns".to_string());
+        }
+        let begin = Instant::now();
+        for _ in 0..repeat {
+            let _: u32 = msg_send_no_type_checking(env, (receiver, sel));
+        }
+        let nanos = begin.elapsed().as_nanos() as f64 / repeat as f64;
+        return Ok(json!({ "repeat": repeat, "ns_per_send": (nanos * 10.0).round() / 10.0 }));
+    }
     Ok(json!({ "value": match returns {
         "void" => {
             let () = msg_send_no_type_checking(env, (receiver, sel));
