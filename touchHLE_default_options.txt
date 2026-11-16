@@ -243,3 +243,7 @@ com.ea.nfshp.bv: --force-composition
 com.ea.nfshp.inc: --force-composition
 com.ea.nfshp.ipad.bv: --force-composition
 com.ea.nfshp.ipad.inc: --force-composition
+
+# Avatar of War: The Dark Lord
+# The game is landscape-only but does not say so in its Info.plist.
+cde.AvatarOfWarTDL: --landscape-left
