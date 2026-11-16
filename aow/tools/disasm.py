@@ -76,6 +76,8 @@ class Image:
 
 
 def main():
+    # Strings read from the binary can hold bytes the console cannot show.
+    sys.stdout.reconfigure(errors="replace")
     query = sys.argv[1]
     version = sys.argv[2] if len(sys.argv) > 2 else "1.1"
     image = Image(version)
