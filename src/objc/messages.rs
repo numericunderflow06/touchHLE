@@ -158,6 +158,10 @@ fn maybe_initialize_class(env: &mut Environment, receiver: id) {
 
 /// The core implementation of `objc_msgSend`, the main function of Objective-C.
 ///
+/// The result of each lookup is remembered in a cache, as the real runtime
+/// does, because walking the superclass chain is expensive and apps send
+/// thousands of messages per frame.
+///
 /// Note that while only two parameters (usually receiver and selector) are
 /// defined by the wrappers over this function, a call to an `objc_msgSend`
 /// variant may have additional arguments to be forwarded (or rather, left
@@ -197,6 +201,22 @@ fn objc_msgSend_inner(
 
     let orig_class = super2.unwrap_or_else(|| ObjC::read_isa(receiver, &env.mem));
     assert!(orig_class != nil);
+
+    let cache_key = method_cache_key(orig_class, selector, super2.is_some());
+    if let Some(&MethodCacheEntry { imp, class }) = env.objc.method_cache.get(&cache_key) {
+        // (An entry only exists if `+initialize` has nothing left to do for
+        // any receiver that can lead to it, see `is_cacheable`.)
+        return call_method(
+            env,
+            receiver,
+            selector,
+            class,
+            imp,
+            message_type_info,
+            tolerate_type_mismatch,
+        );
+    }
+
     if !skip_initialize {
         maybe_initialize_class(env, receiver);
     }
@@ -249,42 +269,24 @@ fn objc_msgSend_inner(
 
             if let Some(imp) = methods.get(&selector) {
                 log_dbg!("Found method on: {}", name);
-                match imp {
-                    IMP::Host(host_imp) => {
-                        // TODO: do type checks when calling GuestIMPs too.
-                        // That requires using Objective-C type strings,
-                        // rather than Rust types, and should probably
-                        // warn rather than panicking,
-                        // because apps might rely on type punning.
-                        if let Some((sent_type_id, sent_type_desc)) = message_type_info {
-                            let (expected_type_id, expected_type_desc) = host_imp.type_info();
-                            if sent_type_id != expected_type_id {
-                                let msg = format!(
-                                    "\
-Type mismatch when sending message {} to {:?}!
-- Message has type: {:?} / {}
-- Method expects type: {:?} / {}",
-                                    selector.as_str(&env.mem),
-                                    receiver,
-                                    sent_type_id,
-                                    sent_type_desc,
-                                    expected_type_id,
-                                    expected_type_desc
-                                );
-                                if tolerate_type_mismatch {
-                                    log!("Warning: {}", msg);
-                                } else {
-                                    panic!("{}", msg);
-                                }
-                            }
-                        }
-                        host_imp.call_from_guest(env)
-                    }
-                    // We can't create a new stack frame, because that would
-                    // interfere with pass-through of stack arguments.
-                    IMP::Guest(guest_imp) => guest_imp.call_without_pushing_stack_frame(env),
+                let imp = match *imp {
+                    IMP::Host(host_imp) => CachedIMP::Host(host_imp),
+                    IMP::Guest(guest_imp) => CachedIMP::Guest(guest_imp),
+                };
+                if is_cacheable(env, receiver, orig_class, super2.is_some()) {
+                    env.objc
+                        .method_cache
+                        .insert(cache_key, MethodCacheEntry { imp, class });
                 }
-                return;
+                return call_method(
+                    env,
+                    receiver,
+                    selector,
+                    class,
+                    imp,
+                    message_type_info,
+                    tolerate_type_mismatch,
+                );
             } else {
                 class = superclass;
             }
@@ -319,6 +321,103 @@ Type mismatch when sending message {} to {:?}!
                 "Item {class:?} in superclass chain of object {receiver:?}'s class {orig_class:?} has an unexpected host object type."
             );
         }
+    }
+}
+
+/// A method implementation, as remembered by the method cache.
+#[derive(Clone, Copy)]
+pub(super) enum CachedIMP {
+    Host(&'static dyn super::HostIMP),
+    Guest(super::methods::GuestIMP),
+}
+
+/// What a method lookup found: the implementation, and the class it is
+/// defined on. Stored in `ObjC::method_cache` under [method_cache_key].
+#[derive(Clone, Copy)]
+pub(super) struct MethodCacheEntry {
+    imp: CachedIMP,
+    class: Class,
+}
+
+/// Key for a lookup of `selector` starting at `class`, or, for a message to
+/// `super`, at the superclass of `class`.
+#[inline(always)]
+fn method_cache_key(class: Class, selector: SEL, is_super: bool) -> u64 {
+    // Class objects are aligned, so the lowest bit is free.
+    (((class.to_bits() | is_super as u32) as u64) << 32) | selector.to_bits() as u64
+}
+
+/// Whether a lookup that started at `orig_class` for `receiver` may be cached.
+///
+/// A cached lookup skips [maybe_initialize_class], so there must be nothing
+/// for it to do, now and for any future receiver that produces the same key:
+///
+/// - If `orig_class` is an ordinary class, the receiver is an instance, and
+///   instances never trigger `+initialize`.
+/// - If it is a metaclass, the receiver of a normal message is the one class
+///   it belongs to; once that is initialized it stays so. A message to
+///   `super` could come from any subclass, so those are never cached.
+fn is_cacheable(env: &Environment, receiver: id, orig_class: Class, is_super: bool) -> bool {
+    let class_of = |object: id| {
+        env.objc
+            .get_host_object(object)
+            .and_then(|host_object| host_object.as_any().downcast_ref::<super::ClassHostObject>())
+    };
+    match class_of(orig_class) {
+        None => false,
+        Some(class) if !class.is_metaclass => true,
+        Some(_) if is_super => false,
+        Some(_) => class_of(receiver)
+            .is_some_and(|class| class.is_initialized == InitializationStatus::Initialized),
+    }
+}
+
+/// Call a method implementation that was looked up for the current message.
+/// `_class` is the class it was found on.
+#[inline(always)]
+fn call_method(
+    env: &mut Environment,
+    receiver: id,
+    selector: SEL,
+    _class: Class,
+    imp: CachedIMP,
+    message_type_info: Option<(std::any::TypeId, &'static str)>,
+    tolerate_type_mismatch: bool,
+) {
+    match imp {
+        CachedIMP::Host(host_imp) => {
+            // TODO: do type checks when calling GuestIMPs too.
+            // That requires using Objective-C type strings,
+            // rather than Rust types, and should probably
+            // warn rather than panicking,
+            // because apps might rely on type punning.
+            if let Some((sent_type_id, sent_type_desc)) = message_type_info {
+                let (expected_type_id, expected_type_desc) = host_imp.type_info();
+                if sent_type_id != expected_type_id {
+                    let msg = format!(
+                        "\
+Type mismatch when sending message {} to {:?}!
+- Message has type: {:?} / {}
+- Method expects type: {:?} / {}",
+                        selector.as_str(&env.mem),
+                        receiver,
+                        sent_type_id,
+                        sent_type_desc,
+                        expected_type_id,
+                        expected_type_desc
+                    );
+                    if tolerate_type_mismatch {
+                        log!("Warning: {}", msg);
+                    } else {
+                        panic!("{}", msg);
+                    }
+                }
+            }
+            host_imp.call_from_guest(env)
+        }
+        // We can't create a new stack frame, because that would
+        // interfere with pass-through of stack arguments.
+        CachedIMP::Guest(guest_imp) => guest_imp.call_without_pushing_stack_frame(env),
     }
 }
 

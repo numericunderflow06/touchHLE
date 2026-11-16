@@ -268,6 +268,12 @@ impl super::ObjC {
     /// Get a reference to a host object and downcast it. Panics if there is
     /// no such object, or if downcasting fails.
     pub fn borrow_mut<T: AnyHostObject + 'static>(&mut self, object: id) -> &mut T {
+        // Whoever gets mutable access to a class may be about to change its
+        // methods (or its readiness to receive messages), so cached method
+        // lookups can't be trusted any more. This is rare once an app is up.
+        if std::any::TypeId::of::<T>() == std::any::TypeId::of::<super::ClassHostObject>() {
+            self.method_cache.clear();
+        }
         // Rust's borrow checker struggles with loops like this which descend
         // through a data structure with a mutable borrow. The unsafe code is
         // used to bypass the borrow checker.

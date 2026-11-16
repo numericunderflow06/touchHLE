@@ -63,6 +63,51 @@ use synchronization::{objc_sync_enter, objc_sync_exit};
 /// [fossil type]: https://en.wiktionary.org/wiki/fossil_word
 pub type NSZonePtr = crate::mem::MutVoidPtr;
 
+/// Hasher for maps keyed by guest pointers (or pairs of them). These maps are
+/// consulted several times per message send, where the standard library's
+/// default hasher (chosen to resist malicious keys, which is of no use here)
+/// would dominate the cost.
+#[derive(Default, Clone, Copy)]
+pub struct PointerHasher(u64);
+impl PointerHasher {
+    #[inline(always)]
+    fn mix(&mut self, value: u64) {
+        // Multiplicative hashing, then fold the well-mixed high half into the
+        // low half: guest pointers are aligned, and a multiplication alone
+        // would leave their low zero bits in place, which is where a hash
+        // table looks first.
+        let product = (self.0 ^ value).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+        self.0 = product ^ (product >> 32);
+    }
+}
+impl std::hash::Hasher for PointerHasher {
+    #[inline(always)]
+    fn finish(&self) -> u64 {
+        self.0
+    }
+    fn write(&mut self, bytes: &[u8]) {
+        for chunk in bytes.chunks(8) {
+            let mut word = [0u8; 8];
+            word[..chunk.len()].copy_from_slice(chunk);
+            self.mix(u64::from_le_bytes(word));
+        }
+    }
+    #[inline(always)]
+    fn write_u32(&mut self, value: u32) {
+        self.mix(value as u64);
+    }
+    #[inline(always)]
+    fn write_u64(&mut self, value: u64) {
+        self.mix(value);
+    }
+    #[inline(always)]
+    fn write_usize(&mut self, value: usize) {
+        self.mix(value as u64);
+    }
+}
+/// A [HashMap] using [PointerHasher].
+pub type PointerMap<K, V> = HashMap<K, V, std::hash::BuildHasherDefault<PointerHasher>>;
+
 /// Main type holding Objective-C runtime state.
 pub struct ObjC {
     /// Known selectors (interned method name strings).
@@ -71,7 +116,11 @@ pub struct ObjC {
     /// Mapping of known (guest) object pointers to their host objects.
     ///
     /// If an object isn't in this map, we will consider it not to exist.
-    objects: HashMap<id, HostObjectEntry>,
+    objects: PointerMap<id, HostObjectEntry>,
+
+    /// Results of method lookups, like the method caches of the real runtime.
+    /// See [messages::MethodCacheEntry].
+    method_cache: PointerMap<u64, messages::MethodCacheEntry>,
 
     /// Known classes.
     ///
@@ -94,7 +143,8 @@ impl ObjC {
     pub fn new() -> ObjC {
         ObjC {
             selectors: HashMap::new(),
-            objects: HashMap::new(),
+            objects: PointerMap::default(),
+            method_cache: PointerMap::default(),
             classes: HashMap::new(),
             sync_mutexes: HashMap::new(),
             initializer_threads: HashMap::new(),
