@@ -221,6 +221,55 @@ pub const CLASSES: ClassExports = objc_classes! {
                ofType:(id)extension { // NSString*
     msg![env; this pathForResource:name ofType:extension inDirectory:nil]
 }
+- (Class)classNamed:(id)name { // NSString*
+    // Apps mostly use this to find out whether an optional framework's
+    // class is available, so a missing class is an expected outcome.
+    let name = ns_string::to_rust_string(env, name);
+    match env.objc.class_if_implemented(&name, &mut env.mem) {
+        Some(class) => class,
+        None => {
+            log!("[(NSBundle*){:?} classNamed:{:?}]: no such class, returning nil", this, name);
+            nil
+        }
+    }
+}
+
+- (id)pathsForResourcesOfType:(id)extension // NSString*
+                  inDirectory:(id)subpath { // NSString*
+    // TODO: localized resources (.lproj directories) are not searched.
+    let mut directory: id = msg![env; this resourcePath];
+    if subpath != nil {
+        directory = msg![env; directory stringByAppendingPathComponent:subpath];
+    }
+    let directory_string = ns_string::to_rust_string(env, directory).to_string();
+    // An empty or nil extension means all files.
+    let suffix = if extension == nil {
+        None
+    } else {
+        let extension = ns_string::to_rust_string(env, extension);
+        (!extension.is_empty()).then(|| format!(".{extension}"))
+    };
+
+    let mut names: Vec<String> = match env.fs.enumerate(crate::fs::GuestPath::new(&directory_string)) {
+        Ok(names) => names
+            .filter(|name| suffix.as_ref().is_none_or(|suffix| name.ends_with(suffix.as_str())))
+            .map(str::to_string)
+            .collect(),
+        Err(()) => Vec::new(),
+    };
+    // The order is unspecified on the real OS, but a stable order makes runs
+    // reproducible.
+    names.sort();
+
+    let paths: id = msg_class![env; NSMutableArray new];
+    for name in names {
+        let name: id = ns_string::from_rust_string(env, name);
+        let path: id = msg![env; directory stringByAppendingPathComponent:name];
+        () = msg![env; paths addObject:path];
+        release(env, name);
+    }
+    autorelease(env, paths)
+}
 - (id)URLForResource:(id)name // NSString*
        withExtension:(id)extension // NSString *
         subdirectory:(id)subpath { // NSString *
