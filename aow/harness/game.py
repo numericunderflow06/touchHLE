@@ -59,13 +59,24 @@ def current_scene(control):
     "transition": bool, "root": class of the running scene}.
     """
     try:
-        root = control.nodes(depth=3, max_nodes=400)
+        # Deep enough to see overlays such as the pause menu, which the game
+        # nests inside the battle layer's HUD.
+        root = control.nodes(depth=5, max_nodes=2500)
     except ControlError as e:
         return {"screen": None, "layers": [], "transition": False, "root": None, "error": str(e)}
     layers = []
-    for node, depth, _ in walk(root):
-        if node.get("class", "").endswith("Layer") and node.get("visible", True):
+
+    def collect(node, visible):
+        # A layer is showing only if it and everything above it is visible.
+        if not isinstance(node, dict):
+            return
+        visible = visible and node.get("visible", True)
+        if visible and node.get("class", "").endswith("Layer"):
             layers.append(node["class"])
+        for child in node.get("children", []):
+            collect(child, visible)
+
+    collect(root, True)
     known = [SCREENS[c] for c in layers if c in SCREENS]
     root_class = root.get("class", "")
     # Overlays (pause, shop, ...) are added on top of the screen they cover,
