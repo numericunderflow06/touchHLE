@@ -27,3 +27,7 @@ android/build
 # Default developer dump file
 
 DUMP.txt
+
+# Automation harness: one directory per run
+/runs
+__pycache__/
