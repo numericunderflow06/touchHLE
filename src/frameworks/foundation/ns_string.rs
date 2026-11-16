@@ -284,7 +284,9 @@ pub fn with_format(env: &mut Environment, format: id, args: VaList) -> String {
         Cow::Owned(string) => {
             // TODO: Support UTF-16 printf directly
             log!(
-                "Warning: invalid UTF-8 sequence replaced with U+FFFD in UTF-16 string formatting"
+                "Warning: invalid UTF-8 sequence replaced with U+FFFD in UTF-16 string formatting (format {:?} gave {:?})",
+                format_string,
+                string
             );
             string
         }
