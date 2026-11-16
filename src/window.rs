@@ -244,6 +244,9 @@ pub struct Window {
     virtual_cursor_last: Option<(f32, f32, bool, bool)>,
     virtual_cursor_last_unsticky: Option<(f32, f32, Instant)>,
     virtual_accelerometer_last: Option<(f32, f32, bool)>,
+    /// Which arrow keys are held (left, right, up, down). They simulate
+    /// tilting the device fully in that direction.
+    arrow_keys_held: [bool; 4],
     /// Acceleration forced by the control interface, in device axes.
     control_accel: Option<(f32, f32, f32)>,
     /// Tilt forced by the control interface, in the same on-screen space as
@@ -404,6 +407,7 @@ impl Window {
             virtual_cursor_last: None,
             virtual_cursor_last_unsticky: None,
             virtual_accelerometer_last: None,
+            arrow_keys_held: [false; 4],
             control_accel: None,
             control_tilt: None,
             on_main_stack: true,
@@ -824,6 +828,20 @@ impl Window {
                         _ => unreachable!(),
                     }
                 }
+                // Arrow keys simulate tilting the device (see
+                // [Self::get_acceleration]).
+                E::KeyDown {
+                    keycode: Some(keycode),
+                    ..
+                }
+                | E::KeyUp {
+                    keycode: Some(keycode),
+                    ..
+                } if Self::arrow_key_index(keycode).is_some() => {
+                    let held = matches!(event, E::KeyDown { .. });
+                    self.arrow_keys_held[Self::arrow_key_index(keycode).unwrap()] = held;
+                    continue;
+                }
                 E::KeyDown {
                     keycode: Some(sdl2::keyboard::Keycode::F12),
                     ..
@@ -932,13 +950,24 @@ impl Window {
 
         if self.accelerometer.is_none() {
             log!(
-                "You can {}hold right click and move the cursor to simulate the accelerometer.",
+                "You can {}hold right click and move the cursor, or hold the arrow keys, to simulate the accelerometer.",
                 if options.analog_stick_tilt_controls {
                     "also "
                 } else {
                     ""
                 }
             );
+        }
+    }
+
+    fn arrow_key_index(keycode: sdl2::keyboard::Keycode) -> Option<usize> {
+        use sdl2::keyboard::Keycode;
+        match keycode {
+            Keycode::Left => Some(0),
+            Keycode::Right => Some(1),
+            Keycode::Up => Some(2),
+            Keycode::Down => Some(3),
+            _ => None,
         }
     }
 
@@ -949,7 +978,16 @@ impl Window {
             return accel;
         }
 
+        let [left, right, up, down] = self.arrow_keys_held;
+        let arrow_keys_tilt = (left != right || up != down).then(|| {
+            (
+                right as i32 as f32 - left as i32 as f32,
+                down as i32 as f32 - up as i32 as f32,
+            )
+        });
+
         if self.control_tilt.is_none()
+            && arrow_keys_tilt.is_none()
             && (self.controllers.is_empty() || !options.analog_stick_tilt_controls)
         {
             if let Some(ref accelerometer) = self.accelerometer {
@@ -970,6 +1008,8 @@ impl Window {
         }
 
         let (x, y) = if let Some(tilt) = self.control_tilt {
+            tilt
+        } else if let Some(tilt) = arrow_keys_tilt {
             tilt
         } else if self
             .virtual_accelerometer_last
