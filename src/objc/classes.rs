@@ -1004,6 +1004,81 @@ impl ObjC {
         let host_object = self.get_host_object(class).unwrap();
         matches!(host_object.as_any().downcast_ref(), Some(FakeClass { .. }))
     }
+
+    /// Get a class by name if the app or touchHLE has an implementation of
+    /// it, otherwise [None]. Unlike [Self::get_known_class] this never
+    /// panics, so it suits APIs apps use to probe whether a class exists.
+    pub fn class_if_implemented(&mut self, name: &str, mem: &mut Mem) -> Option<Class> {
+        match self.classes.get(name).copied() {
+            Some(class) if self.is_unimplemented_class(class) => None,
+            Some(class) => Some(class),
+            None if Self::find_template(name).is_some() => Some(self.get_known_class(name, mem)),
+            None => None,
+        }
+    }
+
+    /// For [crate::control]: get a class by name without linking it or
+    /// panicking if it doesn't exist.
+    pub fn class_if_known(&self, name: &str, mem: &Mem) -> Option<Class> {
+        self.get_class(name, /* is_metaclass: */ false, mem)
+    }
+
+    /// For [crate::control]: whether an object is itself a class or metaclass
+    /// (real, unimplemented or fake) rather than an instance.
+    pub fn is_class_object(&self, object: id) -> bool {
+        let Some(host_object) = self.get_host_object(object) else {
+            return false;
+        };
+        let any = host_object.as_any();
+        any.is::<ClassHostObject>() || any.is::<UnimplementedClass>() || any.is::<FakeClass>()
+    }
+
+    /// For [crate::control]: names of a class and all its superclasses, most
+    /// derived first. Stops at classes without an implementation.
+    pub fn class_chain_names(&self, class: Class) -> Vec<String> {
+        let mut names = Vec::new();
+        let mut class = class;
+        while class != nil {
+            let Some(host_object) = self.get_host_object(class) else {
+                break;
+            };
+            let Some(ClassHostObject {
+                name, superclass, ..
+            }) = host_object.as_any().downcast_ref()
+            else {
+                if let Some(name) = self.try_get_class_name(class) {
+                    names.push(name.to_string());
+                }
+                break;
+            };
+            names.push(name.clone());
+            class = *superclass;
+        }
+        names
+    }
+
+    /// For [crate::control]: names and offsets of the instance variables of a
+    /// class, including inherited ones.
+    pub fn class_ivar_offsets(&self, class: Class, mem: &Mem) -> Vec<(String, GuestUSize)> {
+        let mut result = Vec::new();
+        let mut class = class;
+        while class != nil {
+            let Some(host_object) = self.get_host_object(class) else {
+                break;
+            };
+            let Some(ClassHostObject {
+                ivars, superclass, ..
+            }) = host_object.as_any().downcast_ref()
+            else {
+                break;
+            };
+            for (name, (offset_ptr, _align)) in ivars {
+                result.push((name.clone(), mem.read(*offset_ptr)));
+            }
+            class = *superclass;
+        }
+        result
+    }
 }
 
 pub(super) fn objc_getClass(env: &mut Environment, name: ConstPtr<u8>) -> id {

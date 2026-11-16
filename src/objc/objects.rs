@@ -239,6 +239,12 @@ impl super::ObjC {
         self.objects.get(&object).map(|entry| &*entry.host_object)
     }
 
+    /// For [crate::control]: iterate over every known object (instances,
+    /// classes and metaclasses alike).
+    pub fn all_objects(&self) -> impl Iterator<Item = id> + '_ {
+        self.objects.keys().copied()
+    }
+
     /// Get a reference to a host object and downcast it. Panics if there is
     /// no such object, or if downcasting fails.
     pub fn borrow<T: AnyHostObject + 'static>(&self, object: id) -> &T {

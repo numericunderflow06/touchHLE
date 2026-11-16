@@ -129,6 +129,8 @@ pub enum FingerId {
     ButtonToTouch(crate::options::Button),
     StickToTouch,
     DpadToTouch,
+    /// A touch injected through the control interface ([crate::control]).
+    Control(u32),
 }
 pub type Coords = (f32, f32);
 
@@ -242,6 +244,11 @@ pub struct Window {
     virtual_cursor_last: Option<(f32, f32, bool, bool)>,
     virtual_cursor_last_unsticky: Option<(f32, f32, Instant)>,
     virtual_accelerometer_last: Option<(f32, f32, bool)>,
+    /// Acceleration forced by the control interface, in device axes.
+    control_accel: Option<(f32, f32, f32)>,
+    /// Tilt forced by the control interface, in the same on-screen space as
+    /// the mouse-driven virtual accelerometer.
+    control_tilt: Option<(f32, f32)>,
     /// Whether or not we are on the "main" environment stack (rather than
     /// a coroutine stack). Checked in various functions to make sure that
     /// certain SDL functions (that call JNI functions) are on the main
@@ -397,6 +404,8 @@ impl Window {
             virtual_cursor_last: None,
             virtual_cursor_last_unsticky: None,
             virtual_accelerometer_last: None,
+            control_accel: None,
+            control_tilt: None,
             on_main_stack: true,
         };
 
@@ -936,7 +945,13 @@ impl Window {
     /// Get the real or simulated accelerometer output.
     /// See also [crate::frameworks::uikit::ui_accelerometer].
     pub fn get_acceleration(&self, options: &Options) -> (f32, f32, f32) {
-        if self.controllers.is_empty() || !options.analog_stick_tilt_controls {
+        if let Some(accel) = self.control_accel {
+            return accel;
+        }
+
+        if self.control_tilt.is_none()
+            && (self.controllers.is_empty() || !options.analog_stick_tilt_controls)
+        {
             if let Some(ref accelerometer) = self.accelerometer {
                 let data = accelerometer.get_data().unwrap();
                 let sdl2::sensor::SensorData::Accel(data) = data else {
@@ -954,7 +969,9 @@ impl Window {
             }
         }
 
-        let (x, y) = if self
+        let (x, y) = if let Some(tilt) = self.control_tilt {
+            tilt
+        } else if self
             .virtual_accelerometer_last
             .is_some_and(|(_x, _y, right_click_hold)| right_click_hold)
         {
@@ -1267,6 +1284,53 @@ impl Window {
     /// presented.
     pub fn swap_window(&self) {
         self.window.gl_swap_window();
+        crate::control::frame_presented();
+    }
+
+    /// For [crate::control]: size in points of the app's picture as it
+    /// appears on screen, i.e. the size of a screenshot at scale 1.
+    pub fn screen_size_points(&self) -> (u32, u32) {
+        size_for_orientation(
+            self.device_family,
+            self.device_orientation,
+            NonZeroU32::new(1).unwrap(),
+        )
+    }
+
+    /// For [crate::control]: convert a point on the screen as the user sees it
+    /// (in points, origin at the top-left, current orientation) to the
+    /// co-ordinates touch events use, which are in the app's unrotated space.
+    pub fn control_point_to_touch_coords(&self, (in_x, in_y): (f32, f32)) -> Coords {
+        let (width, height) = self.screen_size_points();
+        // normalize to unit square centred on origin
+        let x = in_x / width as f32 - 0.5;
+        let y = in_y / height as f32 - 0.5;
+        // rotate
+        let matrix = self.rotation_matrix().inverse().unwrap();
+        let [x, y] = matrix.transform([x, y]);
+        // back to points
+        let (out_w, out_h) = self.size_unrotated_unscaled();
+        (
+            ((x + 0.5) * out_w as f32).round(),
+            ((y + 0.5) * out_h as f32).round(),
+        )
+    }
+
+    /// For [crate::control]: queue an event as if it came from the host OS.
+    pub fn control_push_event(&mut self, event: Event) {
+        self.event_queue.push_back(event);
+    }
+
+    /// For [crate::control]: force the accelerometer reading (device axes,
+    /// units of g), or stop forcing it.
+    pub fn control_set_accel(&mut self, accel: Option<(f32, f32, f32)>) {
+        self.control_accel = accel;
+    }
+
+    /// For [crate::control]: force a simulated tilt (each axis in [-1, 1], as
+    /// for the mouse-driven virtual accelerometer), or stop forcing it.
+    pub fn control_set_tilt(&mut self, tilt: Option<(f32, f32)>) {
+        self.control_tilt = tilt;
     }
 
     /// Consider the emulated device to be rotated to a particular orientation.

@@ -191,6 +191,10 @@ fn objc_msgSend_inner(
         return;
     }
 
+    if env.control.as_ref().is_some_and(|control| control.is_watching()) {
+        crate::control::on_message(env, receiver, selector);
+    }
+
     let orig_class = super2.unwrap_or_else(|| ObjC::read_isa(receiver, &env.mem));
     assert!(orig_class != nil);
     if !skip_initialize {

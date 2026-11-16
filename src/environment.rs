@@ -117,6 +117,8 @@ pub struct Environment {
     pub mutex_state: NullableBox<mutex::MutexState>,
     pub options: NullableBox<options::Options>,
     gdb_server: Option<Box<gdb::GdbServer>>,
+    /// State of the control interface, if it is enabled.
+    pub control: Option<Box<crate::control::Control>>,
     pub env_vars: HashMap<Vec<u8>, MutPtr<u8>>,
     /// Set to [true] when created using [Environment::new_without_app].
     pub dump_file: Option<std::fs::File>,
@@ -681,6 +683,7 @@ impl Environment {
             framework_state: Default::default(),
             options: NullableBox::new(options),
             gdb_server: None,
+            control: None,
             env_vars: Default::default(),
             dump_file: None,
             is_app_picker: false,
@@ -715,6 +718,16 @@ impl Environment {
                 .map_err(|e| format!("Could not accept connection: {e}"))?;
             echo!("Debugger client connected on {}.", client_addr);
             env.gdb_server = Some(Box::new(gdb::GdbServer::new(client)));
+        }
+
+        if let Some(addr) = env.options.control_addr {
+            if env.window.is_none() {
+                return Err(
+                    "The control interface needs a window (it can't be used with --headless)."
+                        .to_string(),
+                );
+            }
+            env.control = Some(Box::new(crate::control::Control::new(addr)?));
         }
 
         if env.options.dumping_options.linking_info {
@@ -813,6 +826,7 @@ impl Environment {
             framework_state: Default::default(),
             options: NullableBox::new(options),
             gdb_server: None,
+            control: None,
             env_vars: Default::default(),
             dump_file: None,
             is_app_picker: true,
@@ -872,6 +886,7 @@ impl Environment {
             mutex_state: NullableBox::null(),
             options: NullableBox::null(),
             gdb_server: None,
+            control: None,
             env_vars: HashMap::new(),
             dump_file: None,
             is_app_picker: true,

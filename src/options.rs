@@ -62,6 +62,8 @@ pub struct Options {
     pub dumping_file: PathBuf,
     pub ignore_gl_errors: bool,
     pub zero_stack_after_guest_to_host_call: Option<u32>,
+    /// Address for the control interface ([crate::control]) to listen on.
+    pub control_addr: Option<SocketAddr>,
 }
 
 impl Default for Options {
@@ -95,6 +97,7 @@ impl Default for Options {
             dumping_file: crate::paths::user_data_base_path().join("DUMP.txt"),
             ignore_gl_errors: false,
             zero_stack_after_guest_to_host_call: None,
+            control_addr: None,
         }
     }
 }
@@ -256,6 +259,15 @@ impl Options {
             self.zero_stack_after_guest_to_host_call = Some(value.parse().map_err(|_| {
                 "Invalid value for --zero-stack-after-guest-to-host-call=".to_string()
             })?);
+        } else if let Some(address) = arg.strip_prefix("--control=") {
+            let addr = address
+                .to_socket_addrs()
+                .map_err(|e| format!("Could not resolve control interface listen address: {e}"))?
+                .next()
+                .ok_or_else(|| "Invalid control interface listen address".to_string())?;
+            self.control_addr = Some(addr);
+            // Automation can't dismiss a dialog box.
+            self.popup_errors = false;
         } else {
             return Ok(false);
         };

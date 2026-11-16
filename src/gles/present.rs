@@ -106,4 +106,7 @@ pub unsafe fn present_frame(
         gles.VertexPointer(2, gles11::FLOAT, 0, vertices.as_ptr() as *const GLvoid);
         gles.DrawArrays(gles11::TRIANGLES, 0, 6);
     }
+
+    // The frame is now complete: this is what the user is about to see.
+    crate::control::capture_if_requested(gles, viewport);
 }

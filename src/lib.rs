@@ -30,6 +30,7 @@ mod log;
 mod abi;
 mod audio;
 mod bundle;
+mod control;
 mod cpu;
 mod debug;
 mod dyld;

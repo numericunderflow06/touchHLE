@@ -98,6 +98,11 @@ pub struct State {
     ui_responder: ui_responder::State,
 }
 
+/// For [crate::control]: every `UIWindow` that currently exists.
+pub fn all_windows(env: &Environment) -> Vec<crate::objc::id> {
+    env.framework_state.uikit.ui_view.ui_window.windows.clone()
+}
+
 /// For use by `NSRunLoop`: handles any events that have queued up.
 ///
 /// Returns the next time this function must be called, if any, e.g. the next
@@ -105,6 +110,10 @@ pub struct State {
 pub fn handle_events(env: &mut Environment) -> Option<Instant> {
     use crate::window::Event;
     use crate::window::TextInputEvent;
+
+    // Commands from the control interface are handled first, so that any
+    // input they inject is delivered in this same iteration.
+    crate::control::service(env);
 
     // NSRunLoop will never call this function in headless mode.
     while let Some(event) = env.window_mut().pop_event() {

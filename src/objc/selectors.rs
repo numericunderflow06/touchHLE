@@ -67,6 +67,10 @@ impl SEL {
     pub fn is_null(self) -> bool {
         self.0.is_null()
     }
+    /// The selector's guest pointer, usable as a cheap identity for it.
+    pub fn to_bits(self) -> u32 {
+        self.0.to_bits()
+    }
 }
 
 unsafe impl SafeRead for SEL {}
