@@ -126,6 +126,12 @@ pub const CLASSES: ClassExports = objc_classes! {
     env.objc.dealloc_object(this, &mut env.mem)
 }
 
+- (())finishDecoding {
+    // Tells the unarchiver (and its delegate) that the caller is done. All
+    // clean-up happens in dealloc, so there is nothing to do here.
+    // TODO: unarchiverWillFinish:/unarchiverDidFinish: delegate messages.
+}
+
 // TODO: implement calls to delegate methods
 // weak/non-retaining
 - (())setDelegate:(id)delegate { // id<NSKeyedUnarchiverDelegate>
