@@ -6,6 +6,7 @@
 //! `NSData` and `NSMutableData`.
 
 use super::ns_string::to_rust_string;
+use super::{ns_error, ns_string};
 use super::{NSRange, NSUInteger};
 use crate::frameworks::foundation::ns_keyed_unarchiver::decode_current_data;
 use crate::fs::GuestPath;
@@ -69,6 +70,14 @@ pub const CLASSES: ClassExports = objc_classes! {
 + (id)dataWithContentsOfFile:(id)path {
     let new: id = msg![env; this alloc];
     let new: id = msg![env; new initWithContentsOfFile:path];
+    autorelease(env, new)
+}
+
++ (id)dataWithContentsOfFile:(id)path // NSString*
+                     options:(NSUInteger)options
+                       error:(MutPtr<id>)error { // NSError**
+    let new: id = msg![env; this alloc];
+    let new: id = msg![env; new initWithContentsOfFile:path options:options error:error];
     autorelease(env, new)
 }
 
@@ -161,6 +170,23 @@ pub const CLASSES: ClassExports = objc_classes! {
     host_object.bytes = alloc;
     host_object.length = size;
     this
+}
+
+- (id)initWithContentsOfFile:(id)path // NSString*
+                     options:(NSUInteger)_options
+                       error:(MutPtr<id>)error { // NSError**
+    // The options only choose how the file is read (mapped, uncached), which
+    // makes no observable difference here.
+    let res: id = msg![env; this initWithContentsOfFile:path];
+    if res == nil && !error.is_null() {
+        // NSFileReadNoSuchFileError. TODO: distinguish other failures.
+        let domain: id = ns_string::get_static_str(env, ns_error::NSCocoaErrorDomain);
+        let ns_error: id = msg_class![env; NSError errorWithDomain:domain
+                                                              code:260i32
+                                                          userInfo:nil];
+        env.mem.write(error, ns_error);
+    }
+    res
 }
 
 - (id)initWithContentsOfMappedFile:(id)path {
