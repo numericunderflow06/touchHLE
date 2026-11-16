@@ -32,11 +32,11 @@ Only one game instance is "current" at a time (`runs/current.txt`); every comman
 | `tilt X Y` / `tilt --clear` | Simulate tilting the device; X and Y are -1..1 in screen space. |
 | `accel X Y Z` / `accel --clear` | Force raw accelerometer values (device axes, in g). |
 | `wait --frames N` / `wait --ms N` | Let the game run. |
-| `scene` | Which screen is showing (from the live Cocos2D scene tree). |
+| `scene` | Which screen is showing (from the live Cocos2D scene tree). With a system dialog up, the screen is `dialog` and its text and buttons are listed. |
 | `wait-scene NAME [--timeout S]` | Block until that screen is showing and no transition is running. |
-| `buttons` | Visible tappable nodes with their centre points. |
+| `buttons` | Visible tappable nodes with their centre points; the dialog's buttons while a system dialog is up. |
 | `nodes [--flat] [--depth N] [--ptr P]` | The Cocos2D scene tree; `--flat` adds on-screen rectangles. |
-| `views` | The UIKit view hierarchy. |
+| `views` | The UIKit view hierarchy, with each view's place on screen and the text of labels and buttons. |
 | `find CLASS` | Live objects of a class (or its subclasses). |
 | `describe PTR` | Class chain and instance variable names of an object. |
 | `read PTR IVAR TYPE` | Read an instance variable; `IVAR` may be a dotted path such as `gameNode.position_`. |
@@ -58,8 +58,9 @@ The game acts on a tap only after the tapped button's press animation, so the ef
 | `run smoke` | 12 s | Boots to the main menu; picture is 480x320, upright, no black bands, animating, at least 30 FPS; the menu reacts to touch. |
 | `run battle` | 55 s | New game to stage 1-1; tilt scrolls the battlefield over its full range and the HUD stays put. |
 | `run stage N [difficulty] [gold] [limit] [version]` | 3-7 min | Stage N (campaign order) from a written save: buys upgrades, recruits, orders charges, follows the troops, and reports win or loss as the game itself records it. |
-| `run sweep [version] [parallel] [stages]` | about an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. |
+| `run sweep [version] [parallel] [stages]` | about half an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. A stage that ends in one of the game's own crashes (`harness/known.py`) is played again and the crash is listed, not counted against the emulator. |
 | `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
+| `run dialogs [version]` | 80 s | Every system dialog the game shows (quit a battle, quit the map, delete a save): opened, read, declined, opened again and confirmed. |
 | `run perf [stage] [version]` | 70 s | A crowded battle left to fight: frame rate against the number of units, a profile, and the cost of a bare message send. |
 | `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen; crashes and black pictures are findings; writes a map of the screens. |
 

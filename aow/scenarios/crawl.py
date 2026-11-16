@@ -67,6 +67,8 @@ def explore(path, version, label):
             "layers": scene["layers"],
             "root": scene["root"],
             "buttons": [b["center"] for b in buttons],
+            "dialog": scene.get("dialog") and {"texts": scene["dialog"]["texts"],
+                                               "buttons": [b["title"] for b in scene["dialog"]["buttons"]]},
             "shot": str(shot),
             "black": info["black"],
             "bands": info["bands"],
@@ -85,7 +87,7 @@ def explore(path, version, label):
 
 
 def same_screen(a, b):
-    if a["layers"] != b["layers"] or a["root"] != b["root"]:
+    if a["layers"] != b["layers"] or a["root"] != b["root"] or a.get("dialog") != b.get("dialog"):
         return False
     if a["screen"] == "battle":
         return True  # the battlefield never looks the same twice
@@ -162,7 +164,8 @@ def run(depth="3", parallel="3", version="1.1"):
         "ok": not findings,
         "version": version,
         "screens": [{"id": s["id"], "screen": s["screen"], "layers": s["layers"], "path": s["path"],
-                     "buttons": s["buttons"], "shot": s["shot"], "fps": s.get("fps")} for s in screens],
+                     "buttons": s["buttons"], "dialog": s.get("dialog"), "shot": s["shot"],
+                     "fps": s.get("fps")} for s in screens],
         "edges": edges,
         "findings": findings,
         "explorations": counter[0],

@@ -52,11 +52,47 @@ def walk(node, depth=0, parent=None):
         yield from walk(child, depth + 1, node)
 
 
+def dialog(control):
+    """The system dialog on top of the game, if there is one.
+
+    The game's own interface is all Cocos2D; the only UIKit buttons it ever
+    shows belong to alerts ("Do you want to quit?"). Returns None, or
+    {"texts": [title, message], "buttons": [{"title", "center", "ptr"}]} with
+    `center` ready to tap. While a dialog is up, nothing under it reacts.
+    """
+    try:
+        windows = control.views(depth=8)
+    except ControlError:
+        return None
+    texts, buttons = [], []
+
+    def visit(view, visible, in_button):
+        if not isinstance(view, dict):
+            return
+        visible = visible and not view.get("hidden")
+        if not visible:
+            return
+        if "title" in view:
+            buttons.append({"title": view["title"], "center": view["screen"], "ptr": view["ptr"],
+                            "enabled": view.get("enabled", True)})
+            in_button = True
+        elif view.get("text") and not in_button:  # a button's label repeats its title
+            texts.append(view["text"])
+        for child in view.get("children", []):
+            visit(child, visible, in_button)
+
+    for window in windows:
+        visit(window, True, False)
+    return {"texts": texts, "buttons": buttons} if buttons else None
+
+
 def current_scene(control):
     """Which screen is showing.
 
     Returns {"screen": short name or None, "layers": [class names],
-    "transition": bool, "root": class of the running scene}.
+    "transition": bool, "root": class of the running scene, "dialog": the
+    system dialog covering the screen or None}. With a dialog up, `screen` is
+    "dialog": whatever is under it cannot be reached until it is answered.
     """
     try:
         # Deep enough to see overlays such as the pause menu, which the game
@@ -79,14 +115,16 @@ def current_scene(control):
     collect(root, True)
     known = [SCREENS[c] for c in layers if c in SCREENS]
     root_class = root.get("class", "")
+    shown = dialog(control)
     # Overlays (pause, shop, ...) are added on top of the screen they cover,
     # so the last known layer is the one the player is looking at.
     return {
-        "screen": known[-1] if known else None,
+        "screen": "dialog" if shown else (known[-1] if known else None),
         "screens": known,
         "layers": layers,
         "transition": "Transition" in root_class,
         "root": root_class,
+        "dialog": shown,
     }
 
 
@@ -157,7 +195,12 @@ def is_kind(entry, base):
 
 
 def buttons(control, screen_height=None):
-    """Visible menu items with their centre points, ready to tap."""
+    """Visible menu items with their centre points, ready to tap. While a
+    system dialog is showing, these are the dialog's buttons."""
+    shown = dialog(control)
+    if shown:
+        return [{"class": "UIButton", "ptr": b["ptr"], "center": b["center"], "string": b["title"],
+                 "enabled": b["enabled"]} for b in shown["buttons"]]
     root = control.nodes(depth=10, max_nodes=3000)
     if screen_height is None:
         screen_height = control.ping()["screen"][1]

@@ -33,7 +33,7 @@ def parse_range(text, count):
     return stages
 
 
-def run_stage(index, version, difficulty, money, limit):
+def run_stage_once(index, version, difficulty, money, limit):
     command = [sys.executable, str(REPO / "aow" / "aow.py"), "run", "stage", str(index),
                str(difficulty), str(money), str(limit), version]
     proc = subprocess.run(command, cwd=REPO, capture_output=True, text=True)
@@ -42,6 +42,20 @@ def run_stage(index, version, difficulty, money, limit):
     except ValueError:
         return {"ok": False, "scenario": f"stage{index:02d}", "error": "no result",
                 "stderr": proc.stderr[-800:], "failed": ["harness"], "checks": []}
+
+
+def run_stage(index, version, difficulty, money, limit, attempts=3):
+    """Play a stage. A run that ends in one of the game's own crashes (see
+    harness/known.py) says nothing about the emulator, so the stage is played
+    again; those runs are listed in the result."""
+    game_bug_runs = []
+    for _ in range(attempts):
+        result = run_stage_once(index, version, difficulty, money, limit)
+        if not result.get("known_game_bug"):
+            break
+        game_bug_runs.append({"id": result["known_game_bug"]["id"], "run_dir": result.get("run_dir")})
+    result["game_bug_runs"] = game_bug_runs
+    return result
 
 
 def run(version="1.1", parallel="3", stages="", difficulty="0", money="300000", limit="420"):
@@ -62,6 +76,8 @@ def run(version="1.1", parallel="3", stages="", difficulty="0", money="300000", 
             "failed": result.get("failed", []),
             "crash": result.get("crash"),
             "known_game_bug": (result.get("known_game_bug") or {}).get("id"),
+            # Earlier attempts at this stage that ended in the game's own crash.
+            "game_bug_runs": result.get("game_bug_runs", []),
             "error": (result.get("error") or "")[:300] or None,
             "run_dir": result.get("run_dir"),
         })
@@ -70,6 +86,7 @@ def run(version="1.1", parallel="3", stages="", difficulty="0", money="300000", 
         "version": version,
         "passed": sum(1 for row in rows if row["ok"]),
         "total": len(rows),
+        "game_bug_crashes": sum(len(row["game_bug_runs"]) for row in rows),
         "stages": rows,
     }
     stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
