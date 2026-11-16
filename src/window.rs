@@ -1356,6 +1356,18 @@ impl Window {
         )
     }
 
+    /// For [crate::control]: the inverse of
+    /// [Self::control_point_to_touch_coords]: where a point in the app's
+    /// unrotated space appears on the screen as the user sees it.
+    pub fn touch_coords_to_control_point(&self, (in_x, in_y): Coords) -> (f32, f32) {
+        let (in_w, in_h) = self.size_unrotated_unscaled();
+        let x = in_x / in_w as f32 - 0.5;
+        let y = in_y / in_h as f32 - 0.5;
+        let [x, y] = self.rotation_matrix().transform([x, y]);
+        let (width, height) = self.screen_size_points();
+        ((x + 0.5) * width as f32, (y + 0.5) * height as f32)
+    }
+
     /// For [crate::control]: queue an event as if it came from the host OS.
     pub fn control_push_event(&mut self, event: Event) {
         self.event_queue.push_back(event);

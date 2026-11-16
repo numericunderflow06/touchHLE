@@ -1280,7 +1280,7 @@ fn query_nodes(env: &mut Environment, request: &Value) -> Result<Value, String> 
 }
 
 /// Describe a UIKit view and its subviews.
-fn view_json(env: &mut Environment, view: id, depth: u32, budget: &mut u32) -> Value {
+fn view_json(env: &mut Environment, view: id, window: id, depth: u32, budget: &mut u32) -> Value {
     if view == nil || env.objc.get_host_object(view).is_none() {
         return Value::Null;
     }
@@ -1296,6 +1296,42 @@ fn view_json(env: &mut Environment, view: id, depth: u32, budget: &mut u32) -> V
     if hidden {
         map.insert("hidden".to_string(), json!(true));
     }
+    // Where the middle of the view is on the screen as the user sees it, in
+    // the co-ordinates `tap` takes. Views can be rotated (an alert in a
+    // landscape app is), so this is not simply a sum of frame origins.
+    let bounds: CGRect = crate::objc::msg![env; view bounds];
+    let middle = CGPoint {
+        x: bounds.origin.x + bounds.size.width / 2.0,
+        y: bounds.origin.y + bounds.size.height / 2.0,
+    };
+    let in_window: CGPoint = if view == window {
+        middle
+    } else {
+        crate::objc::msg![env; view convertPoint:middle toView:window]
+    };
+    let (x, y) = env
+        .window()
+        .touch_coords_to_control_point((in_window.x, in_window.y));
+    map.insert("screen".to_string(), json!([x.round(), y.round()]));
+    // What a label says and what a button is called.
+    let classes = env.objc.class_chain_names(ObjC::read_isa(view, &env.mem));
+    let is_a = |name: &str| classes.iter().any(|class| class == name);
+    if is_a("UILabel") || is_a("UITextField") {
+        let text: id = crate::objc::msg![env; view text];
+        if let Some(text) = string_value(env, text) {
+            map.insert("text".to_string(), json!(text));
+        }
+    }
+    if is_a("UIButton") {
+        let title: id = crate::objc::msg![env; view currentTitle];
+        if let Some(title) = string_value(env, title) {
+            map.insert("title".to_string(), json!(title));
+        }
+    }
+    if is_a("UIControl") {
+        let enabled: bool = crate::objc::msg![env; view isEnabled];
+        map.insert("enabled".to_string(), json!(enabled));
+    }
     let subviews: id = crate::objc::msg![env; view subviews];
     let subviews = array_elements(env, subviews);
     if !subviews.is_empty() {
@@ -1308,7 +1344,7 @@ fn view_json(env: &mut Environment, view: id, depth: u32, budget: &mut u32) -> V
                     break;
                 }
                 *budget -= 1;
-                list.push(view_json(env, subview, depth - 1, budget));
+                list.push(view_json(env, subview, window, depth - 1, budget));
             }
             map.insert("children".to_string(), Value::Array(list));
         }
@@ -1323,7 +1359,7 @@ fn query_views(env: &mut Environment, request: &Value) -> Result<Value, String> 
     let windows = crate::frameworks::uikit::all_windows(env);
     let mut list = Vec::new();
     for window in windows {
-        list.push(view_json(env, window, depth, &mut budget));
+        list.push(view_json(env, window, window, depth, &mut budget));
     }
     Ok(json!({ "windows": list, "truncated": budget == 0 }))
 }
