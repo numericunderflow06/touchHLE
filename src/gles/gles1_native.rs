@@ -50,8 +50,18 @@ impl GLESContext for GLES1NativeContext {
         unsafe {
             window.make_gl_context_current(&self.gl_ctx);
         }
-        gles11::load_with(|s| window.gl_get_proc_address(s));
-        self.is_loaded = true;
+        // The function pointers are loaded once per context rather than on
+        // every switch. Looking up a few hundred of them costs milliseconds
+        // with some drivers (wglGetProcAddress takes a driver lock each
+        // time), and a frame usually switches contexts twice: to our own
+        // context to present, and back to the app's. Reloading is not
+        // needed: all our contexts are created for the same window, and
+        // contexts that share a pixel format share function addresses (WGL
+        // documents this; elsewhere the addresses are plain library symbols).
+        if !self.is_loaded {
+            gles11::load_with(|s| window.gl_get_proc_address(s));
+            self.is_loaded = true;
+        }
         Box::new(GLES1Native {
             _gl_lifetime: PhantomData,
         })
@@ -69,8 +79,11 @@ impl GLESContext for GLES1NativeContext {
         }
 
         make_current_fn(&self.gl_ctx);
-        gles11::load_with(loader_fn);
-        self.is_loaded = true;
+        // (See make_current.)
+        if !self.is_loaded {
+            gles11::load_with(loader_fn);
+            self.is_loaded = true;
+        }
         Box::new(GLES1Native {
             _gl_lifetime: PhantomData,
         })
