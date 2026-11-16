@@ -1,0 +1,795 @@
+{
+ "source": "Avatar_Of_War_The_Dark_Lord_v2.0.ipa",
+ "stage_count": 32,
+ "chapters": 12,
+ "stages": [
+  {
+   "index": 1,
+   "chapter": 1,
+   "round": 1,
+   "id": "1-1",
+   "title": "The Dark is Rising 1",
+   "briefing": "1000 years ago, the Undead army disappeared with the defeat of the Dark Lord. However, the undead reappeared at the outside of the Capital Castle. People believed that It is a sign of the Dark Lord's return...<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 3,
+   "wave_enemies": {
+    "skeleton": 17
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50
+   }
+  },
+  {
+   "index": 2,
+   "chapter": 1,
+   "round": 2,
+   "id": "1-2",
+   "title": "The Dark is Rising 2",
+   "briefing": "Skeleton warriors keep attacking the Castle. The Hero must lead the warriors to defend the Castle.<BR><BR>Objectives:<BR>Defend the base in 3:00",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 48,
+    "skeleton archer": 25
+   },
+   "ai_enemy_weights": {
+    "skeleton": 80,
+    "skeleton archer": 20
+   }
+  },
+  {
+   "index": 3,
+   "chapter": 1,
+   "round": 3,
+   "id": "1-3",
+   "title": "The Dark is Rising 3",
+   "briefing": "The last wave of undeads approached. Undead mages appeared with this wave. They are very powerful, can attack the soldiers in range. Hero must defeat them to keep the Castle in safety.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 44,
+    "skeleton archer": 11,
+    "undead mage": 8
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 35,
+    "undead mage": 15
+   }
+  },
+  {
+   "index": 4,
+   "chapter": 2,
+   "round": 1,
+   "id": "2-1",
+   "title": "The Expedition 1",
+   "briefing": "Someone reported that some undeads were spotted at the Hopeless Swamps, so the King sent the Hero to find out the evidence of the Dark Lord's return. However, the Hero was ambushed by the undeads.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 18,
+    "skeleton archer": 46
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 25
+   }
+  },
+  {
+   "index": 5,
+   "chapter": 2,
+   "round": 2,
+   "id": "2-2",
+   "title": "The Expedition 2",
+   "briefing": "The second wave of the undeads approached. The Hero must defeat them to breakthrough the ambush.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 34,
+    "undead mage": 13,
+    "skeleton archer": 13
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 25,
+    "undead mage": 25
+   }
+  },
+  {
+   "index": 6,
+   "chapter": 2,
+   "round": 3,
+   "id": "2-3",
+   "title": "The Expedition 3",
+   "briefing": "The Dark Knight appeared and charged to the Hero. He must hold the defensive line and fight them back.<BR><BR>Objectives:<BR>Defend the base in 3:00",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 31,
+    "skeleton archer": 27,
+    "undead mage": 20,
+    "dark knight": 22
+   },
+   "ai_enemy_weights": {
+    "skeleton": 40,
+    "skeleton archer": 30,
+    "undead mage": 20,
+    "dark knight": 10
+   }
+  },
+  {
+   "index": 7,
+   "chapter": 3,
+   "round": 1,
+   "id": "3-1",
+   "title": "The Dark Forest 1",
+   "briefing": "When the Hero enter the Dark Forest, a Tree suddenly fell down and blocked the road. At this moment, the undeads appeared and attack Hero.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 40,
+    "skeleton archer": 24,
+    "undead mage": 12
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 50,
+    "undead mage": 50
+   }
+  },
+  {
+   "index": 8,
+   "chapter": 3,
+   "round": 2,
+   "id": "3-2",
+   "title": "The Dark Forest 2",
+   "briefing": "The Dark Knight performed Flank attack to attack Hero. If Hero cannot defeat them, he will be surrounded by the Undeads.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "dark knight": 17,
+    "skeleton": 20,
+    "skeleton archer": 10,
+    "undead mage": 5
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 25,
+    "undead mage": 25,
+    "dark knight": 25
+   }
+  },
+  {
+   "index": 9,
+   "chapter": 3,
+   "round": 3,
+   "id": "3-3",
+   "title": "The Dark Forest 3",
+   "briefing": "Undead warlord led the undead troops to attack Hero. He can command the undead soldiers to perform special attack. Hero must defeat him to pass through the Dark Forest.<BR><BR>Objectives:<BR>Destroy the undead base.",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 30,
+    "skeleton archer": 20,
+    "undead mage": 20,
+    "dark knight": 30
+   }
+  },
+  {
+   "index": 10,
+   "chapter": 4,
+   "round": 1,
+   "id": "4-1",
+   "title": "The Hopeless Swamps 1",
+   "briefing": "A Dark Castle was found in the Hopeless Swamp. There are some giant golems guarding the castle.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 40,
+    "skeleton archer": 5,
+    "golem": 15,
+    "dark knight": 8,
+    "undead mage": 10
+   },
+   "ai_enemy_weights": {
+    "skeleton": 30,
+    "skeleton archer": 20,
+    "undead mage": 20,
+    "golem": 5,
+    "dark knight": 20
+   }
+  },
+  {
+   "index": 11,
+   "chapter": 4,
+   "round": 2,
+   "id": "4-2",
+   "title": "The Hopeless Swamps 2",
+   "briefing": "The numbers of Golems were more than expected. The Golems must be defeated in order to destroy the Dark Castle.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "golem": 68
+   },
+   "ai_enemy_weights": {
+    "skeleton": 30,
+    "skeleton archer": 30,
+    "undead mage": 30,
+    "golem": 10,
+    "dark knight": 30
+   }
+  },
+  {
+   "index": 12,
+   "chapter": 4,
+   "round": 3,
+   "id": "4-3",
+   "title": "The Hopeless Swamps 3",
+   "briefing": "The Undead Warlord appeared in the Dark Castle and told Hero the Dark Lord was attacking the Capital Castle. Hero must defeat the Warlord as soon as possible.<BR><BR>Objectives:<BR>Destroy the Dark Castle",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 20,
+    "skeleton archer": 20,
+    "undead mage": 20,
+    "golem": 10,
+    "dark knight": 20,
+    "banshee": 10
+   }
+  },
+  {
+   "index": 13,
+   "chapter": 5,
+   "round": 1,
+   "id": "5-1",
+   "title": "The Conspiracy 1",
+   "briefing": "The Hero led his troops back to the Capital Castle immediately. However, the Dark Lord had already set a trap for the Hero.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 3,
+    "dark knight": 59
+   },
+   "ai_enemy_weights": {
+    "skeleton": 30,
+    "skeleton archer": 30,
+    "undead mage": 30,
+    "golem": 20,
+    "dark knight": 30,
+    "banshee": 10
+   }
+  },
+  {
+   "index": 14,
+   "chapter": 5,
+   "round": 2,
+   "id": "5-2",
+   "title": "The Conspiracy 2",
+   "briefing": "The skeleton dragons attacked Hero from the sky. Archers must be ready to shoot them down.<BR><BR>Objectives:<BR>Defend the base in 3:00",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton dragon": 16
+   },
+   "ai_enemy_weights": {
+    "skeleton": 10,
+    "skeleton archer": 20,
+    "undead mage": 20,
+    "golem": 10,
+    "dark knight": 20,
+    "banshee": 10,
+    "skeleton dragon": 10
+   }
+  },
+  {
+   "index": 15,
+   "chapter": 5,
+   "round": 3,
+   "id": "5-3",
+   "title": "The Conspiracy 3",
+   "briefing": "The Undead warlord are leading the Dark Knight to chase for the Hero. There is running out of time. Hero must defeat the warlord as soon as possible.<BR><BR>Objectives:<BR>Destroy the undead base",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "dark knight": 80,
+    "skeleton dragon": 20
+   }
+  },
+  {
+   "index": 16,
+   "chapter": 6,
+   "round": 1,
+   "id": "6-1",
+   "title": "Dragon in the Dark Night 1",
+   "briefing": "Hero's troop were assassinated one by one by Banshee. Hero must find out the enemies and prevent them from the assassination.<BR><BR>Objectives:<BR>Defeat all enemies",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 5,
+   "wave_enemies": {
+    "skeleton": 15,
+    "skeleton archer": 15,
+    "undead mage": 15,
+    "golem": 15,
+    "dark knight": 29,
+    "banshee": 25,
+    "skeleton dragon": 2
+   },
+   "ai_enemy_weights": {
+    "undead mage": 30,
+    "golem": 30,
+    "dark knight": 40,
+    "banshee": 20,
+    "skeleton dragon": 30
+   }
+  },
+  {
+   "index": 17,
+   "chapter": 6,
+   "round": 2,
+   "id": "6-2",
+   "title": "Dragon in the Dark Night 2",
+   "briefing": "The Undead warlord become much stronger than before and leading the Banshee to attack Hero.<BR><BR>Objectives:<BR>Destroy the undead base",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "undead mage": 15,
+    "golem": 15,
+    "dark knight": 35,
+    "banshee": 20,
+    "skeleton dragon": 15
+   }
+  },
+  {
+   "index": 18,
+   "chapter": 6,
+   "round": 3,
+   "id": "6-3",
+   "title": "Dragon in the Dark Night 3",
+   "briefing": "A giant undead dragon was awaiting for the Hero and his troops...<BR><BR>Objectives:<BR>Defeat the Undead Dragon",
+   "win": "kill the boss",
+   "win_type": 4,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": 1,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 254,
+    "skeleton dragon": 9
+   },
+   "ai_enemy_weights": {
+    "skeleton dragon": 100
+   }
+  },
+  {
+   "index": 19,
+   "chapter": 7,
+   "round": 1,
+   "id": "7-1",
+   "title": "The Last Stand 1",
+   "briefing": "The Dark Lord commanded all the undead armies to capture the Capital Castle. Finally, the Hero arrived on time. Could he defend the Castle?<BR><BR>Objectives:<BR>Destroy the undead base",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "undead mage": 20,
+    "golem": 30,
+    "dark knight": 30,
+    "banshee": 20
+   }
+  },
+  {
+   "index": 20,
+   "chapter": 7,
+   "round": 2,
+   "id": "7-2",
+   "title": "The Last Stand 2",
+   "briefing": "The Dark Lord summoned the Undead Dragon to the Castle...<BR><BR>Objectives:<BR>Defeat the Undead Dragon",
+   "win": "kill the boss",
+   "win_type": 4,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": 1,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 32,
+    "skeleton archer": 32,
+    "undead mage": 32,
+    "golem": 31,
+    "dark knight": 31,
+    "banshee": 32,
+    "skeleton dragon": 9
+   },
+   "ai_enemy_weights": {
+    "undead mage": 20,
+    "golem": 30,
+    "dark knight": 20,
+    "banshee": 30
+   }
+  },
+  {
+   "index": 21,
+   "chapter": 7,
+   "round": 3,
+   "id": "7-3",
+   "title": "The Last Stand 3",
+   "briefing": "The Dark Lord launched a final attack to the Castle. Hero must win this battle. Otherwise, the Kingdom will fall. People will suffer from Terrors and Chaos again.<BR><BR>Objectives:<BR>Destroy the Dark Lord's Castle",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Dark Lord",
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 31,
+    "skeleton archer": 34,
+    "skeleton dragon": 9,
+    "undead mage": 35,
+    "golem": 31,
+    "dark knight": 34,
+    "banshee": 35
+   },
+   "ai_enemy_weights": {
+    "skeleton": 10,
+    "skeleton archer": 10,
+    "undead mage": 20,
+    "golem": 15,
+    "dark knight": 30,
+    "banshee": 20,
+    "skeleton dragon": 15
+   }
+  },
+  {
+   "index": 22,
+   "chapter": 8,
+   "round": 1,
+   "id": "8-1",
+   "title": "Avatar of War",
+   "briefing": "The Hero defeated the Dark Lord's undead army, but he found that the Dark Lord is immortal and cannot to be killed. The only way to stop him is to find the legendary weapon \"Avatar of War\" to seal the Dark Lord.<BR><BR>Objectives:<BR>Stop the Avatar of War",
+   "win": "kill the boss",
+   "win_type": 4,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": 2,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {}
+  },
+  {
+   "index": 23,
+   "chapter": 9,
+   "round": 1,
+   "id": "9-1",
+   "title": "The Final Battle",
+   "briefing": "The Dark Lord must be sealed with the \"Avatar of War\", so the Hero brought this legendary weapon to the Dark Castle and give the Dark Lord a final blow.<BR><BR>Objectives:<BR>Destroy the Dark Lord's Castle with Avatar of War",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 2,
+   "timer_seconds": null,
+   "enemy_hero": "Dark Lord",
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 15,
+    "skeleton archer": 15,
+    "skeleton dragon": 9,
+    "undead mage": 15,
+    "dark knight": 120,
+    "golem": 105
+   },
+   "ai_enemy_weights": {
+    "undead mage": 10,
+    "golem": 20,
+    "dark knight": 40,
+    "banshee": 10,
+    "skeleton dragon": 20
+   }
+  },
+  {
+   "index": 24,
+   "chapter": 10,
+   "round": 1,
+   "id": "10-1",
+   "title": "The Abandoned Island 1",
+   "briefing": "Hero has arrived on the mysterious island following instructions on a map to search for the golden sword. However, he is under ruthless attack by the island residents upon his arrival.<BR><BR>Objectives:<BR>Take down all",
+   "win": "clear all waves",
+   "win_type": 1,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 3,
+   "wave_enemies": {
+    "skeleton": 17
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50
+   }
+  },
+  {
+   "index": 25,
+   "chapter": 10,
+   "round": 2,
+   "id": "10-2",
+   "title": "The Abandoned Island 2",
+   "briefing": "The island residents have sought relief troops equipped with blowguns to join in the fight against Hero, so he's now in a very dangerous situation.<BR><BR>Objectives:<BR>Defend for 3 minutes.",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 48,
+    "skeleton archer": 25
+   },
+   "ai_enemy_weights": {
+    "skeleton": 80,
+    "skeleton archer": 20
+   }
+  },
+  {
+   "index": 26,
+   "chapter": 10,
+   "round": 3,
+   "id": "10-3",
+   "title": "The Abandoned Island 3",
+   "briefing": "Chieftain appears and has labeled Hero an intruder, so he leads the Natives to attack Hero.<BR><BR>Objectives:<BR>Destroy the enemies' base.",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 35,
+    "undead mage": 15
+   }
+  },
+  {
+   "index": 27,
+   "chapter": 11,
+   "round": 1,
+   "id": "11-1",
+   "title": "The Chieftain 1",
+   "briefing": "After defeating Chieftain, Hero has discovered the Undead Army on the island too. Chieftain knows well that he can't beat Hero's army, so he has sought help from the Devil of the Dark.<BR><BR>Objectives:<BR>Defend for 3 minutes.",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 18,
+    "skeleton archer": 19,
+    "golem": 20,
+    "banshee": 16
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 25
+   }
+  },
+  {
+   "index": 28,
+   "chapter": 11,
+   "round": 2,
+   "id": "11-2",
+   "title": "The Chieftain 2",
+   "briefing": "Hero advances according to the instructions on the map yet has encountered joint forces of the Natives and the Undead Army. Hero is in great danger once again.<BR><BR>Objectives:<BR>Destroy the enemies' castle.",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 25,
+    "skeleton archer": 25,
+    "undead mage": 10,
+    "golem": 10,
+    "dark knight": 20,
+    "banshee": 10
+   }
+  },
+  {
+   "index": 29,
+   "chapter": 11,
+   "round": 3,
+   "id": "11-3",
+   "title": "The Chieftain 3",
+   "briefing": "Chieftain has gained much strength with the help of the Undead Army, so he is taking the lead to attack Hero.<BR><BR>Objectives:<BR>Destroy the enemies' base.",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 20,
+    "skeleton archer": 20,
+    "undead mage": 10,
+    "golem": 10,
+    "dark knight": 20,
+    "banshee": 10,
+    "skeleton dragon": 10
+   }
+  },
+  {
+   "index": 30,
+   "chapter": 12,
+   "round": 1,
+   "id": "12-1",
+   "title": "The Feathered Serpent 1",
+   "briefing": "Chieftain has realized that Hero is unbeatable even with the Undead Army's help, so he has an altar set up to summon to their god - Kukulkan using the golden sword. To stop the evil god from coming to Earth, Hero races against time to stop Chieftain. Yet he is fully prepared and has arranged for his clans and the Undead Army to fight Hero, so the ceremony can take place without any interruptions.<BR><BR>Objectives:<BR>Defend for 3 minutes.",
+   "win": "survive the timer",
+   "win_type": 2,
+   "lose_type": 1,
+   "timer_seconds": 180,
+   "enemy_hero": null,
+   "boss": null,
+   "waves": 1,
+   "wave_enemies": {
+    "skeleton": 18,
+    "skeleton archer": 19,
+    "golem": 20,
+    "banshee": 16
+   },
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 50,
+    "undead mage": 50
+   }
+  },
+  {
+   "index": 31,
+   "chapter": 12,
+   "round": 2,
+   "id": "12-2",
+   "title": "The Feathered Serpent 2",
+   "briefing": "The ceremony is coming to a close, Chieftain leads his clans fighting vigorously to deter Hero from disrupting it.<BR><BR>Objectives:<BR>Destroy the enemies' base.",
+   "win": "destroy the enemy castle",
+   "win_type": 3,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": "Undead Warlord",
+   "boss": null,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 20,
+    "skeleton archer": 20,
+    "undead mage": 10,
+    "golem": 10,
+    "dark knight": 20,
+    "banshee": 10,
+    "skeleton dragon": 10
+   }
+  },
+  {
+   "index": 32,
+   "chapter": 12,
+   "round": 3,
+   "id": "12-3",
+   "title": "The Feathered Serpent 3",
+   "briefing": "The summon was a success, so the natives' god, Kukulkan has arrived on Earth. Hero leads his troops to attack the evil god to protect the civilians from harm.<BR><BR>Objectives:<BR>Take down Kukulkan.",
+   "win": "kill the boss",
+   "win_type": 4,
+   "lose_type": 1,
+   "timer_seconds": null,
+   "enemy_hero": null,
+   "boss": 1,
+   "waves": null,
+   "wave_enemies": {},
+   "ai_enemy_weights": {
+    "skeleton": 50,
+    "skeleton archer": 50
+   }
+  }
+ ]
+}
