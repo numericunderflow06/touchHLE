@@ -97,7 +97,7 @@ class Session:
 
     @classmethod
     def start(cls, label="run", ipa="1.1", options=(), save_plist=None, exe=None, port=None,
-              make_current=True, connect_timeout=60.0, sound=None):
+              make_current=True, connect_timeout=60.0, sound=None, sandbox_from=None):
         if sound is None:
             sound = os.environ.get("AOW_SOUND") == "1"
         exe = Path(exe) if exe else DEFAULT_EXE
@@ -121,6 +121,9 @@ class Session:
         # described by session.json.
         (run_dir / "touchHLE_options.txt").write_text("# intentionally empty; see session.json\n")
 
+        if sandbox_from is not None:
+            # Continue with the save data another run left behind.
+            shutil.copytree(Path(sandbox_from) / "touchHLE_sandbox", run_dir / "touchHLE_sandbox")
         if save_plist is not None:
             prefs = run_dir / "touchHLE_sandbox" / BUNDLE_ID / "Library" / "Preferences"
             prefs.mkdir(parents=True)
@@ -178,6 +181,7 @@ class Session:
             "git_dirty": bool(_git("status", "--porcelain", "-uno")),
             "started": datetime.datetime.now().isoformat(timespec="seconds"),
             "save_preloaded": save_plist is not None,
+            "sandbox_from": str(sandbox_from) if sandbox_from else None,
         }
         (run_dir / "session.json").write_text(json.dumps(info, indent=2))
         if make_current:
@@ -239,6 +243,11 @@ class Session:
         path = self.dir / "shots" / f"{self._shot_index:04d}_{safe}.png"
         self.control().screenshot(path)
         return path
+
+    def save_path(self):
+        """The game's preferences file (its save data) for this run."""
+        return (self.dir / "touchHLE_sandbox" / BUNDLE_ID / "Library" / "Preferences"
+                / f"{BUNDLE_ID}.plist")
 
     def log_path(self):
         return self.dir / "touchHLE_log.txt"

@@ -20,13 +20,13 @@ FPS_FLOOR = 30.0
 
 
 class Scenario:
-    def __init__(self, name, ipa="1.1", options=(), save_plist=None):
+    def __init__(self, name, ipa="1.1", options=(), save_plist=None, sandbox_from=None):
         self.name = name
         self.checks = []
         self.shots = []
         self.notes = {}
         self.session = Session.start(label=name, ipa=ipa, options=list(options),
-                                     save_plist=save_plist)
+                                     save_plist=save_plist, sandbox_from=sandbox_from)
         self.control = self.session.control()
         self.started = time.time()
 

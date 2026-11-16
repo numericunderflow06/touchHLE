@@ -47,6 +47,21 @@ Only one game instance is "current" at a time (`runs/current.txt`); every comman
 
 Co-ordinates are screen points: pixel positions in a screenshot, origin at the top-left.
 
+The game acts on a tap only after the tapped button's press animation, so the effect arrives roughly half a second to a second later. Never follow a tap with a fixed short sleep; wait for the effect in the game's state (`wait-scene`, or poll `read`).
+
+## Scenarios
+
+| Scenario | Time | What it proves |
+|---|---|---|
+| `run smoke` | 12 s | Boots to the main menu; picture is 480x320, upright, no black bands, animating, at least 30 FPS; the menu reacts to touch. |
+| `run battle` | 55 s | New game to stage 1-1; tilt scrolls the battlefield over its full range and the HUD stays put. |
+| `run stage N [difficulty] [gold] [limit] [version]` | 3-7 min | Stage N (campaign order) from a written save: buys upgrades, recruits, orders charges, follows the troops, and reports win or loss as the game itself records it. |
+| `run sweep [version] [parallel] [stages]` | about an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. |
+| `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
+| `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen; crashes and black pictures are findings; writes a map of the screens. |
+
+A scenario's result is also saved as `result.json` in its run directory. A lost or timed-out stage is not automatically an emulator problem: the bot plays simply. Look at the run (screenshots, `notes.timeline`) before concluding.
+
 Screen names used by `scene` and `wait-scene` are listed in `harness/game.py` (`main_menu`, `profile`, `campaign_map`, `battle`, ...).
 
 ## Run directories
@@ -66,8 +81,11 @@ Each launch creates `runs/<timestamp>_<label>/` containing:
 - `harness/client.py` — control interface client.
 - `harness/session.py` — launching, run directories, log inspection.
 - `harness/game.py` — reading the game's screens from live state.
+- `harness/nav.py` — moving between screens and reading battle state.
+- `harness/save.py` — writing save data (any stages and items unlocked, any gold).
+- `harness/symbols.py` — names for guest code addresses (crash stacks, watched calls).
 - `harness/checks.py` — measurements on screenshots.
 - `harness/winshot.py` — capture a window from outside (fallback for builds without the control interface).
-- `game/` — data generated from the game package (`extract_game_data.py`).
+- `game/` — data generated from the game packages: stage tables (`extract_game_data.py`), symbol tables (`extract_symbols.py`), and reference screenshots in `game/screens/`.
 - `scenarios/` — scripted checks.
 - `tools/stage_hunks.py` — stage part of a file's changes for a commit.
