@@ -97,7 +97,9 @@ class Session:
 
     @classmethod
     def start(cls, label="run", ipa="1.1", options=(), save_plist=None, exe=None, port=None,
-              make_current=True, connect_timeout=60.0):
+              make_current=True, connect_timeout=60.0, sound=None):
+        if sound is None:
+            sound = os.environ.get("AOW_SOUND") == "1"
         exe = Path(exe) if exe else DEFAULT_EXE
         ipa_path = IPAS.get(ipa, Path(ipa))
         for needed in (exe, ipa_path):
@@ -128,14 +130,33 @@ class Session:
             else:
                 shutil.copy(save_plist, target)
 
+        # Run a private copy of the binary, named after its contents. A running
+        # game then never blocks the next build from replacing the binary, and
+        # the exact binary of every run stays available for comparison.
+        exe_id = _file_id(exe)
+        bin_dir = RUNS / "bin"
+        bin_dir.mkdir(parents=True, exist_ok=True)
+        run_exe = bin_dir / f"touchHLE_{exe_id}.exe"
+        if not run_exe.exists():
+            temporary = bin_dir / f"touchHLE_{exe_id}.{os.getpid()}.tmp"
+            shutil.copy(exe, temporary)
+            try:
+                os.replace(temporary, run_exe)
+            except OSError:
+                temporary.unlink(missing_ok=True)  # another run got there first
+
         port = port or _free_port()
-        args = [str(exe), str(ipa_path), f"--control=127.0.0.1:{port}", *options]
+        args = [str(run_exe), str(ipa_path), f"--control=127.0.0.1:{port}", *options]
         out = open(run_dir / "stdout.txt", "wb")
         err = open(run_dir / "stderr.txt", "wb")
         flags = 0
         if os.name == "nt":
             flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW
         env = dict(os.environ, RUST_BACKTRACE="1")
+        if not sound:
+            # OpenAL Soft's null output: the game still "plays" audio, but
+            # nothing reaches the speakers.
+            env["ALSOFT_DRIVERS"] = "null"
         proc = subprocess.Popen(
             args, cwd=run_dir, stdin=subprocess.DEVNULL, stdout=out, stderr=err,
             creationflags=flags, env=env, close_fds=True,
@@ -147,8 +168,9 @@ class Session:
             "pid": proc.pid,
             "port": port,
             "args": args,
-            "exe": str(exe),
-            "exe_id": _file_id(exe),
+            "exe": str(run_exe),
+            "exe_id": exe_id,
+            "sound": bool(sound),
             "ipa": str(ipa_path),
             "options": list(options),
             "git_head": _git("rev-parse", "HEAD"),

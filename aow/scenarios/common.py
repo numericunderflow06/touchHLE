@@ -114,6 +114,10 @@ class Scenario:
             result["guest_state"] = self.session.guest_state()
         if self.notes:
             result["notes"] = self.notes
+        # Keep the result with the run it describes.
+        import json
+        (self.session.dir / "result.json").write_text(json.dumps(result, indent=1, default=str),
+                                                      encoding="utf-8")
         return result
 
 

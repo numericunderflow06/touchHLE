@@ -25,7 +25,9 @@ SCREENS = {
     "ShopLayer": "shop",
     "UpgradeLayer": "upgrade",
     "MapOptionLayer": "map_options",
-    "CampaignResultLayer": "stage_won",
+    # Shown after a campaign stage, for a win ("CLEAR") and a loss ("FAIL")
+    # alike; MainGameLogic.isCampaignStageClear tells them apart.
+    "CampaignResultLayer": "stage_result",
     "GameOverLayer": "game_over",
     "ResultLayer": "conflict_result",
     "CampaignEndingLayer": "ending",

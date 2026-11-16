@@ -115,6 +115,23 @@ class Control:
     def touch(self, phase, x, y, finger=None):
         return self.command("touch", phase=phase, x=x, y=y, finger=finger)
 
+    def stroke(self, points, step=14.0, frames_per_step=1, finger=None):
+        """Draw a path through `points` with one finger: down at the first
+        point, moves about `step` points apart, up at the last."""
+        x, y = points[0]
+        self.touch("down", x, y, finger)
+        self.wait_frames(2)
+        for (x0, y0), (x1, y1) in zip(points, points[1:]):
+            length = ((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5
+            steps = max(1, round(length / step))
+            for i in range(1, steps + 1):
+                t = i / steps
+                self.touch("move", x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, finger)
+                self.wait_frames(frames_per_step)
+        self.wait_frames(2)
+        self.touch("up", *points[-1], finger)
+        return self.wait_frames(2)
+
     def wait_frames(self, frames):
         return self.command("wait", frames=frames, timeout=30.0 + frames * 0.2)
 
