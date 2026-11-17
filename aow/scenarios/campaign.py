@@ -3,6 +3,7 @@
     python aow/aow.py run campaign                  # v1.1, easy
     python aow/aow.py run campaign 2.0 0 6 420      # version, difficulty, tries per stage, seconds per try
     python aow/aow.py run campaign 2.0 0 6 420 12 rich
+    python aow/aow.py run campaign 2.0 0 6 420 12 rich 23   # the same, from stage 23 on
 
 The sweep runs every stage in its own emulator from a written save with a
 strong army. This is the game as a player meets it instead: no save data,
@@ -152,8 +153,8 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
         if not s.check_screen("campaign_map"):
             return
         nav.wait_ready(c)
-        s.check("the prepared save offers only the first stage",
-                sorted(nav.stage_buttons(c, stage_count=40)) == [1],
+        s.check("the prepared save offers the stages up to the one to play",
+                sorted(nav.stage_buttons(c, stage_count=40)) == list(range(1, min(state["next"], 23) + 1)),
                 sorted(nav.stage_buttons(c, stage_count=40)))
     elif state["sessions"] == 0:
         scene = nav.new_game_to_map(c)
@@ -188,7 +189,12 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
             rows.append({"stage": index, "id": info["id"], "win": info["win"], "tries": [], "farmed": 0})
         row = rows[index - 1]
         while len(row["tries"]) < attempts:
-            nav.wait_ready(c)
+            scene = nav.wait_ready(c)
+            if scene["screen"] == "main_menu":
+                # After the ending that follows 9-1 the game is back at its
+                # main menu; the campaign goes on from the save.
+                nav.load_game_to_map(c)
+                nav.wait_ready(c)
             # Version 2.0: a box announces the second map, and the stages
             # from 24 on are on that map.
             if nav.dismiss_map_popup(c):
@@ -251,14 +257,21 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
 
 
 def run(version="1.1", difficulty="0", attempts="6", limit_seconds="420", relaunches="12",
-        start="new"):
-    total = len(json.loads((GAME_DIR / f"stages_v{version}.json").read_text(encoding="utf-8"))["stages"])
-    state = {"rows": [], "next": 1, "sessions": 0, "rich": start == "rich"}
+        start="new", first_stage="1"):
+    stages = json.loads((GAME_DIR / f"stages_v{version}.json").read_text(encoding="utf-8"))["stages"]
+    total = len(stages)
+    first_stage = int(first_stage)
+    state = {"rows": [], "next": first_stage, "sessions": 0, "rich": start == "rich"}
+    # Stages before the first one to play count as won earlier.
+    for index in range(1, first_stage):
+        state["rows"].append({"stage": index, "id": stages[index - 1]["id"], "tries": [],
+                              "farmed": 0, "won": True, "not_played_here": True})
     sessions, crashes = [], []
     previous = None
     plist = None
     if state["rich"]:
-        plist = save.make_save(unlock=1, money=300000, difficulty=int(difficulty), version=version,
+        plist = save.make_save(unlock=first_stage, finished=first_stage - 1, money=300000,
+                               difficulty=int(difficulty), version=version,
                                upgrades={i: 10 for i in range(8)} | {i: 10 for i in range(14, 24)},
                                extra={f"UnlockItem_{i}": True for i in range(40)})
     while True:
