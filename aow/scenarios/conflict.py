@@ -157,6 +157,10 @@ def continue_dialog(s, name):
     titles = [b["title"] for b in shown["buttons"]]
     s.check(f"{name}: the answers are Cancel, New Game and Load Game",
             sorted(titles) == ["Cancel", "Load Game", "New Game"], titles)
+    # Three buttons are stacked, and the device puts Cancel at the bottom.
+    lowest = max(shown["buttons"], key=lambda b: b["center"][1])
+    s.check(f"{name}: Cancel is the bottom button", lowest["title"] == "Cancel",
+            [[b["title"], b["center"]] for b in shown["buttons"]])
     return shown
 
 
