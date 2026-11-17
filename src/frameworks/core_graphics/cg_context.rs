@@ -93,6 +93,17 @@ pub(super) enum CGContextSubclass {
 
 pub type CGContextRef = CFTypeRef;
 
+/// Core Graphics accepts a NULL context everywhere: the function logs
+/// "invalid context 0x0" and does nothing. Apps rely on this without knowing
+/// it, for example when a bitmap context could not be created (see
+/// `CGBitmapContextCreate`) and the result was used unchecked.
+fn is_null_context(context: CGContextRef, function: &str) -> bool {
+    if context.is_null() {
+        log!("{}: invalid context 0x0", function);
+    }
+    context.is_null()
+}
+
 pub fn CGContextRelease(env: &mut Environment, c: CGContextRef) {
     if !c.is_null() {
         CFRelease(env, c);
@@ -107,6 +118,9 @@ pub fn CGContextRetain(env: &mut Environment, c: CGContextRef) -> CGContextRef {
 }
 
 fn CGContextSetBlendMode(env: &mut Environment, context: CGContextRef, blend_mode: CGBlendMode) {
+    if is_null_context(context, "CGContextSetBlendMode") {
+        return;
+    }
     env.objc
         .borrow_mut::<CGContextHostObject>(context)
         .blend_mode = blend_mode;
@@ -135,6 +149,9 @@ pub fn CGContextSetRGBFillColor(
     blue: CGFloat,
     alpha: CGFloat,
 ) {
+    if is_null_context(context, "CGContextSetRGBFillColor") {
+        return;
+    }
     let color = (red, green, blue, alpha);
     env.objc
         .borrow_mut::<CGContextHostObject>(context)
@@ -147,6 +164,9 @@ fn CGContextSetGrayFillColor(
     gray: CGFloat,
     alpha: CGFloat,
 ) {
+    if is_null_context(context, "CGContextSetGrayFillColor") {
+        return;
+    }
     let color = (gray, gray, gray, alpha);
     env.objc
         .borrow_mut::<CGContextHostObject>(context)
@@ -201,14 +221,23 @@ fn CGContextSetShadowWithColor(
 }
 
 pub fn CGContextFillRect(env: &mut Environment, context: CGContextRef, rect: CGRect) {
+    if is_null_context(context, "CGContextFillRect") {
+        return;
+    }
     cg_bitmap_context::fill_rect(env, context, rect, /* clear: */ false);
 }
 
 pub fn CGContextClearRect(env: &mut Environment, context: CGContextRef, rect: CGRect) {
+    if is_null_context(context, "CGContextClearRect") {
+        return;
+    }
     cg_bitmap_context::fill_rect(env, context, rect, /* clear: */ true);
 }
 
 fn CGContextClipToRect(env: &mut Environment, context: CGContextRef, rect: CGRect) {
+    if is_null_context(context, "CGContextClipToRect") {
+        return;
+    }
     if rect.origin == CGPointZero
         && rect.size.height == CGBitmapContextGetHeight(env, context) as f32
         && rect.size.width == CGBitmapContextGetWidth(env, context) as f32
@@ -229,21 +258,33 @@ pub fn CGContextConcatCTM(
     context: CGContextRef,
     transform: CGAffineTransform,
 ) {
+    if is_null_context(context, "CGContextConcatCTM") {
+        return;
+    }
     log_dbg!("CGContextConcatCTM({:?})", transform);
     let host_obj = env.objc.borrow_mut::<CGContextHostObject>(context);
     host_obj.transform = transform.concat(host_obj.transform);
 }
 pub fn CGContextGetCTM(env: &mut Environment, context: CGContextRef) -> CGAffineTransform {
+    if is_null_context(context, "CGContextGetCTM") {
+        return CGAffineTransformIdentity;
+    }
     let res = env.objc.borrow::<CGContextHostObject>(context).transform;
     log_dbg!("CGContextGetCTM() => {:?}", res);
     res
 }
 pub fn CGContextRotateCTM(env: &mut Environment, context: CGContextRef, angle: CGFloat) {
+    if is_null_context(context, "CGContextRotateCTM") {
+        return;
+    }
     log_dbg!("CGContextRotateCTM({:?})", angle);
     let host_obj = env.objc.borrow_mut::<CGContextHostObject>(context);
     host_obj.transform = host_obj.transform.rotate(angle);
 }
 pub fn CGContextScaleCTM(env: &mut Environment, context: CGContextRef, x: CGFloat, y: CGFloat) {
+    if is_null_context(context, "CGContextScaleCTM") {
+        return;
+    }
     log_dbg!("CGContextScaleCTM({:?})", (x, y));
     let host_obj = env.objc.borrow_mut::<CGContextHostObject>(context);
     host_obj.transform = host_obj.transform.scale(x, y);
@@ -254,6 +295,9 @@ pub fn CGContextTranslateCTM(
     tx: CGFloat,
     ty: CGFloat,
 ) {
+    if is_null_context(context, "CGContextTranslateCTM") {
+        return;
+    }
     log_dbg!("CGContextTranslateCTM({:?})", (tx, ty));
     let host_obj = env.objc.borrow_mut::<CGContextHostObject>(context);
     host_obj.transform = host_obj.transform.translate(tx, ty);
@@ -265,10 +309,16 @@ pub fn CGContextDrawImage(
     rect: CGRect,
     image: CGImageRef,
 ) {
+    if is_null_context(context, "CGContextDrawImage") {
+        return;
+    }
     cg_bitmap_context::draw_image(env, context, rect, image);
 }
 
 fn CGContextSaveGState(env: &mut Environment, context: CGContextRef) {
+    if is_null_context(context, "CGContextSaveGState") {
+        return;
+    }
     let host_obj = env.objc.borrow_mut::<CGContextHostObject>(context);
     host_obj.state_stack.push((
         host_obj.rgb_fill_color,
@@ -281,6 +331,9 @@ fn CGContextSaveGState(env: &mut Environment, context: CGContextRef) {
 }
 
 fn CGContextRestoreGState(env: &mut Environment, context: CGContextRef) {
+    if is_null_context(context, "CGContextRestoreGState") {
+        return;
+    }
     // We need to release _old_ font, there are 2 cases:
     // - font hasn't been set between save/restore -> this release corresponds
     // the font retain from save
@@ -324,6 +377,9 @@ fn CGContextSetShouldSmoothFonts(_env: &mut Environment, context: CGContextRef, 
 }
 
 fn CGContextSetFont(env: &mut Environment, context: CGContextRef, font: CGFontRef) {
+    if is_null_context(context, "CGContextSetFont") {
+        return;
+    }
     CGFontRetain(env, font);
     let old_font = env.objc.borrow_mut::<CGContextHostObject>(context).font;
     CGFontRelease(env, old_font);
@@ -331,6 +387,9 @@ fn CGContextSetFont(env: &mut Environment, context: CGContextRef, font: CGFontRe
 }
 
 fn CGContextSetFontSize(env: &mut Environment, context: CGContextRef, size: CGFloat) {
+    if is_null_context(context, "CGContextSetFontSize") {
+        return;
+    }
     env.objc
         .borrow_mut::<CGContextHostObject>(context)
         .font_size = size;
@@ -349,6 +408,9 @@ fn CGContextSetTextMatrix(
     context: CGContextRef,
     transform: CGAffineTransform,
 ) {
+    if is_null_context(context, "CGContextSetTextMatrix") {
+        return;
+    }
     log_dbg!("CGContextSetTextMatrix({:?})", transform);
     env.objc
         .borrow_mut::<CGContextHostObject>(context)
@@ -363,6 +425,9 @@ fn CGContextShowGlyphsAtPoint(
     glyphs: ConstPtr<CGGlyph>,
     count: GuestUSize,
 ) {
+    if is_null_context(context, "CGContextShowGlyphsAtPoint") {
+        return;
+    }
     let mut glyph_ids = Vec::new();
     for i in 0..count {
         let glyph_id = env.mem.read(glyphs + i);
@@ -406,6 +471,9 @@ fn CGContextShowGlyphsAtPositions(
     positions: ConstPtr<CGPoint>,
     count: GuestUSize,
 ) {
+    if is_null_context(context, "CGContextShowGlyphsAtPositions") {
+        return;
+    }
     let text_transform = env
         .objc
         .borrow::<CGContextHostObject>(context)

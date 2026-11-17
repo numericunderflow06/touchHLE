@@ -11,7 +11,7 @@ use crate::frameworks::core_graphics::cg_bitmap_context::CGBitmapContextDrawer;
 use crate::frameworks::core_graphics::{CGFloat, CGPoint, CGRect, CGSize};
 use crate::frameworks::foundation::ns_string::to_rust_string;
 use crate::frameworks::foundation::NSInteger;
-use crate::objc::{autorelease, id, msg, objc_classes, ClassExports, HostObject};
+use crate::objc::{autorelease, id, msg, nil, objc_classes, ClassExports, HostObject};
 use crate::Environment;
 use std::collections::HashMap;
 use std::ops::Range;
@@ -343,6 +343,12 @@ pub fn draw_at_point(
     let (width, height) =
         font.calculate_text_size(host_object.size, text, width_and_line_break_mode);
 
+    // Without a context nothing is drawn, but the size is still reported.
+    if context == nil {
+        log!("Drawing text at a point without a graphics context, nothing is drawn.");
+        return CGSize { width, height };
+    }
+
     let mut drawer = CGBitmapContextDrawer::new(&env.objc, &mut env.mem, context);
     let fill_color = drawer.rgb_fill_color();
 
@@ -378,6 +384,12 @@ pub fn draw_in_rect(
     let context = UIGraphicsGetCurrentContext(env);
 
     let text_size = size_with_font(env, font, text, Some((rect.size, line_break_mode)));
+
+    // Without a context nothing is drawn, but the size is still reported.
+    if context == nil {
+        log!("Drawing text in a rectangle without a graphics context, nothing is drawn.");
+        return text_size;
+    }
 
     let host_object = env.objc.borrow::<UIFontHostObject>(font);
 

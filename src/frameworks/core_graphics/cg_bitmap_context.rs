@@ -24,7 +24,7 @@ use super::{CGFloat, CGPoint, CGRect};
 use crate::dyld::{export_c_func, FunctionExports};
 use crate::image::{gamma_decode, gamma_encode, Image};
 use crate::mem::{GuestUSize, Mem, MutVoidPtr, Ptr};
-use crate::objc::ObjC;
+use crate::objc::{nil, ObjC};
 use crate::Environment;
 
 #[derive(Copy, Clone)]
@@ -50,6 +50,25 @@ pub fn CGBitmapContextCreate(
     bitmap_info: u32,
 ) -> CGContextRef {
     assert!(bits_per_component == 8); // TODO: support other bit depths
+
+    // A context needs at least one pixel. Core Graphics refuses to make an
+    // empty one and returns NULL, which callers are expected to handle:
+    // Cocos2D, for example, asks for a 0-by-0 context when it makes the
+    // texture of a label whose text is empty, and gives up on the texture
+    // when it gets NULL back.
+    if width == 0 || height == 0 {
+        log!(
+            "CGBitmapContextCreate({:?}, {}, {}, {}, {}, {:?}, {:#x}): no pixels, returning NULL",
+            data,
+            width,
+            height,
+            bits_per_component,
+            bytes_per_row,
+            color_space,
+            bitmap_info,
+        );
+        return nil;
+    }
 
     let color_space = env.objc.borrow::<CGColorSpaceHostObject>(color_space).name;
 
