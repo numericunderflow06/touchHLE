@@ -206,6 +206,7 @@ pub const CLASSES: ClassExports = objc_classes! {
         message,
         delegate,
         ref button_titles,
+        cancel_button_index,
         ..
     } = env.objc.borrow::<UIAlertViewHostObject>(this);
     let button_titles = button_titles.clone();
@@ -328,18 +329,32 @@ pub const CLASSES: ClassExports = objc_classes! {
     let action = env
         .objc
         .register_host_selector("_touchHLE_buttonTapped:".to_string(), &mut env.mem);
-    for (index, &button_title) in button_titles.iter().enumerate() {
+    // Where each button goes. Side by side they are in the order of their
+    // indices (the cancel button, normally the first, on the left). Stacked,
+    // the cancel button is at the bottom whatever its index.
+    let mut order: Vec<usize> = (0..button_titles.len()).collect();
+    if !side_by_side {
+        if let Some(position) = order
+            .iter()
+            .position(|&index| index as NSInteger == cancel_button_index)
+        {
+            let cancel = order.remove(position);
+            order.push(cancel);
+        }
+    }
+    for (place, &index) in order.iter().enumerate() {
+        let button_title = button_titles[index];
         let frame = if side_by_side {
             let width = (text_width - margin) / 2.0;
             CGRect {
-                origin: CGPoint { x: margin + index as CGFloat * (width + margin), y: buttons_y },
+                origin: CGPoint { x: margin + place as CGFloat * (width + margin), y: buttons_y },
                 size: CGSize { width, height: button_height },
             }
         } else {
             CGRect {
                 origin: CGPoint {
                     x: margin,
-                    y: buttons_y + index as CGFloat * (button_height + margin * 0.5),
+                    y: buttons_y + place as CGFloat * (button_height + margin * 0.5),
                 },
                 size: CGSize { width: text_width, height: button_height },
             }
