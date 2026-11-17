@@ -144,6 +144,11 @@ class Control:
     def tilt_clear(self):
         return self.command("tilt", clear=True)
 
+    def type(self, text="", enter=False, backspaces=0):
+        """Type on the keyboard of the text field being edited. Returns
+        whether there was one (otherwise the input went nowhere)."""
+        return self.command("type", text=text, enter=enter, backspaces=backspaces)["editing"]
+
     def accel(self, x, y, z):
         return self.command("accel", x=x, y=y, z=z)
 

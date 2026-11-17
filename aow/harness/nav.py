@@ -48,7 +48,11 @@ def wait_ready(control, timeout=12.0):
     scene = game.current_scene(control)
     while time.time() < deadline:
         if scene["screen"] is not None and not scene["transition"]:
-            if scene["ready"] or scene["dialog"]:
+            if scene["dialog"]:
+                break
+            # Some screens raise the flag while their box is still sliding
+            # in; a button read then is not where it will be when tapped.
+            if scene["ready"] and wait_settled(control, timeout=3.0):
                 break
             if scene["ready"] is None and wait_settled(control, timeout=2.0):
                 break

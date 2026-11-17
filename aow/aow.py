@@ -142,6 +142,14 @@ def cmd_tilt(args):
     return 0
 
 
+def cmd_type(args):
+    control = Session.current().control()
+    editing = control.type(args.text, enter=args.enter, backspaces=args.backspaces)
+    out({"ok": editing, "editing": editing,
+         "note": None if editing else "no text field is being edited; the input went nowhere"})
+    return 0 if editing else 1
+
+
 def cmd_accel(args):
     control = Session.current().control()
     if args.clear:
@@ -415,6 +423,12 @@ def main():
     p.add_argument("y", type=float, nargs="?", default=0.0)
     p.add_argument("--clear", action="store_true")
     p.set_defaults(func=cmd_tilt)
+
+    p = sub.add_parser("type", help="type on the keyboard of the text field being edited")
+    p.add_argument("text", nargs="?", default="")
+    p.add_argument("--enter", action="store_true", help="press return afterwards")
+    p.add_argument("--backspaces", type=int, default=0, help="delete this many characters first")
+    p.set_defaults(func=cmd_type)
 
     p = sub.add_parser("accel", help="force raw accelerometer values (device axes, g)")
     p.add_argument("x", type=float, nargs="?", default=0.0)

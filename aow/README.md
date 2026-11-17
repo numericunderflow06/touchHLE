@@ -30,6 +30,7 @@ Only one game instance is "current" at a time (`runs/current.txt`); every comman
 | `tap X Y [--hold FRAMES]` | Tap. Returns after the finger is lifted. |
 | `drag X1 Y1 X2 Y2 [--frames N]` | Drag. |
 | `tilt X Y` / `tilt --clear` | Simulate tilting the device; X and Y are -1..1 in screen space. |
+| `type TEXT [--enter] [--backspaces N]` | Type on the keyboard of the text field being edited (`status` and `ping` say whether there is one: `keyboard`). Fails if there is none. |
 | `accel X Y Z` / `accel --clear` | Force raw accelerometer values (device axes, in g). |
 | `wait --frames N` / `wait --ms N` | Let the game run. |
 | `scene` | Which screen is showing (from the live Cocos2D scene tree). With a system dialog up, the screen is `dialog` and its text and buttons are listed. |
@@ -62,6 +63,7 @@ The game acts on a tap only after the tapped button's press animation, so the ef
 | `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
 | `run dialogs [version]` | 90 s | Every system screen the game shows on top of itself: the three confirmation dialogs (quit a battle, quit the map, delete a save), each declined and confirmed, and the music picker behind the playlist button. |
 | `run menus [version]` | 40 s | Options, Help, Ranking and Achievements: opened, looked at, every button pressed, and back to the main menu. |
+| `run conflict [version]` | 7 min | Conflict mode over four launches: win a stage, close the game in the middle of the next, relaunch and load it, lose, type a name into the ranking, find it again after another relaunch; and the other two answers to "new game or load?". |
 | `run perf [stage] [version]` | 70 s | A crowded battle left to fight: frame rate against the number of units, a profile, and the cost of a bare message send. |
 | `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen (waiting for each screen to accept taps); crashes and black pictures are findings; writes a map of the screens, dialogs included. |
 
