@@ -101,7 +101,7 @@ def body(s):
 
     # 1. Quitting the campaign map from its options.
     nav.load_game_to_map(c)
-    x, y = nav.named_button(c, "CampaignMapLayer", "btnOption")
+    x, y = nav.map_button(c, "btnOption")
     nav.tap_expect(c, x, y, "map_options")
     nav.wait_settled(c)
     shown = open_dialog(s, "quit map", "MapOptionLayer", "btnQuit", ["quit"])

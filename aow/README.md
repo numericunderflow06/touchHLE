@@ -59,11 +59,12 @@ The game acts on a tap only after the tapped button's press animation, so the ef
 | `run smoke` | 12 s | Boots to the main menu; picture is 480x320, upright, no black bands, animating, at least 30 FPS; the menu reacts to touch. |
 | `run battle` | 55 s | New game to stage 1-1; tilt scrolls the battlefield over its full range and the HUD stays put. |
 | `run stage N [difficulty] [gold] [limit] [version] [troop level] [hero level]` | 3-7 min | Stage N (campaign order) from a written save: buys upgrades, recruits, orders charges, follows the troops, and reports win or loss as the game itself records it. |
-| `run sweep [version] [parallel] [stages]` | about half an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. A stage that ends in one of the game's own crashes (`harness/known.py`) is played again and the crash is listed, not counted against the emulator. |
+| `run sweep [version] [parallel] [stages]` | about half an hour | Every stage, several at a time; summary in `runs/sweep_*.json`. A stage that ends in one of the game's own crashes (`harness/known.py`) is played again and the crash is listed, not counted against the emulator; a stage the bot loses or does not finish with its usual army is played once more with every upgrade at maximum. |
 | `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
 | `run dialogs [version]` | 90 s | Every system screen the game shows on top of itself: the three confirmation dialogs (quit a battle, quit the map, delete a save), each declined and confirmed, and the music picker behind the playlist button. |
 | `run menus [version]` | 40 s | Options, Help, Ranking and Achievements: opened, looked at, every button pressed, and back to the main menu. |
 | `run conflict [version]` | 7 min | Conflict mode over four launches: win a stage, close the game in the middle of the next, relaunch and load it, lose, type a name into the ranking, find it again after another relaunch; and the other two answers to "new game or load?". |
+| `run campaign [version] [difficulty] [tries] [seconds]` | 1-2 hours | The whole campaign from a new game, on the gold the stages pay: upgrades bought between stages, lost stages retried (replaying the stage before for gold when needed), the game relaunched on its save after one of its own crashes. |
 | `run perf [stage] [version]` | 70 s | A crowded battle left to fight: frame rate against the number of units, a profile, and the cost of a bare message send. |
 | `run crawl [depth] [parallel] [version]` | 10-30 min | Taps every button on every reachable screen (waiting for each screen to accept taps); crashes and black pictures are findings; writes a map of the screens, dialogs included. |
 

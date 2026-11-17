@@ -107,19 +107,86 @@ def ivar_offset(control, ptr, name):
     raise NavError(f"{ptr} has no instance variable {name}")
 
 
-def stage_buttons(control, stage_count=23):
-    """Stage buttons on the campaign map: {stage index (1-based): (x, y)}.
+# The campaign map's layer class, and the first stage on it. Version 2.0 has
+# a second map (chapters 10 to 12, stages 24 to 32) with the same layout of
+# instance variables; a button on each map (`btnMapMaya`) leads to the other.
+MAPS = {"CampaignMapLayer": 1, "CampaignMapMayaLayer": 24}
 
-    `CampaignMapLayer.btnStage` is an array of button pointers, one per stage
-    in campaign order; only unlocked stages have a visible button.
+
+def map_layer(control):
+    """(class, pointer) of the campaign map that is showing."""
+    for node, _, _ in game.walk(control.nodes(depth=4, max_nodes=600)):
+        if node.get("class") in MAPS:
+            return node["class"], node["ptr"]
+    raise NavError("no campaign map in the running scene")
+
+
+def map_button(control, ivar):
+    """Screen position of one of the showing campaign map's own buttons."""
+    return named_button(control, map_layer(control)[0], ivar)
+
+
+def go_to_map_of(control, stage_index, log=None):
+    """Switch to the campaign map that has stage `stage_index`, if it is the
+    other one."""
+    wanted = max((cls for cls, first in MAPS.items() if first <= stage_index), key=MAPS.get)
+    current, _ = map_layer(control)
+    if current != wanted:
+        x, y = named_button(control, current, "btnMapMaya")
+
+        def showing():
+            try:
+                return map_layer(control)[0]
+            except NavError:  # neither map: the change of scene is under way
+                return None
+
+        for _ in range(4):
+            control.tap(x, y)
+            deadline = time.time() + 6
+            while time.time() < deadline and showing() != wanted:
+                time.sleep(0.3)
+            if showing() == wanted:
+                break
+        else:
+            raise NavError(f"could not switch to the map with stage {stage_index}")
+        if log is not None:
+            log.append({"tap": [x, y], "reached": wanted})
+        wait_ready(control)
+
+
+def dismiss_map_popup(control):
+    """Version 2.0 announces its second map in a box on the first one;
+    press its OK if it is showing. Returns whether it was."""
+    cls, layer = map_layer(control)
+    try:
+        value = control.read(layer, "btnPopupOK", "id")
+    except ControlError:
+        return False
+    for button in game.buttons(control):
+        if value and button["ptr"] == value.get("ptr"):
+            control.tap(*button["center"])
+            control.wait_ms(1200)
+            return True
+    return False
+
+
+def stage_buttons(control, stage_count=23):
+    """Stage buttons on the campaign map that is showing:
+    {stage index (1-based, campaign order): (x, y)}.
+
+    The map layer's `btnStage` is an array of button pointers, one per stage
+    of that map in campaign order; only unlocked stages have a visible
+    button.
     """
-    layer = find_object(control, "CampaignMapLayer")
+    cls, layer = map_layer(control)
     base = int(layer, 16) + ivar_offset(control, layer, "btnStage")
     pointers = {}
     for index in range(stage_count):
         value = control.read_addr(base + 4 * index, "id")
         if value and value.get("class") == "CDEButton":
-            pointers[value["ptr"]] = index + 1
+            pointers[value["ptr"]] = index + MAPS[cls]
+        elif cls != "CampaignMapLayer":
+            break  # the second map's array is followed by other things
     screen_height = control.ping()["screen"][1]
     result = {}
     for entry in game.flatten(control.nodes(depth=10, max_nodes=3000), screen_height):
@@ -189,6 +256,7 @@ def battle_state(control, logic=None):
 
 def map_to_battle(control, stage_index=1, log=None):
     """From the campaign map: open a stage's briefing and start it."""
+    go_to_map_of(control, stage_index, log=log)
     buttons = stage_buttons(control)
     if stage_index not in buttons:
         raise NavError(f"stage {stage_index} is not unlocked; unlocked: {sorted(buttons)}")

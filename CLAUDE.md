@@ -37,6 +37,9 @@ A build takes about 15 s to type-check and 80 s to link. Runs are silent (OpenAL
 - Battle state lives in the `MainGameLogic` object (`Money`, `PlayerCastleHP`, `wave`, `Stage`, `Round`, ...); see `BATTLE_FIELDS` in `aow/harness/nav.py`.
 - Saves are in the preferences plist (`MilestoneDict_<slot>`); `aow/harness/save.py` writes one with any stages unlocked.
 - Stage tables for both versions are in `aow/game/stages_v*.json`.
+- Version 2.0 has a second campaign map (`CampaignMapMayaLayer`, stages 24 to 32, chapters 10 to 12); a button on each map leads to the other. The harness calls both `campaign_map` and switches as needed (`nav.go_to_map_of`).
+- Conflict (the endless mode) is greyed out on a new game. Closing the app in the middle of a Conflict battle makes the game offer "New Game / Load Game" next time; loading restarts that stage. High scores ask for a name through a hidden UITextField (`type` in the control interface).
+- Version 1.1 has a crash of its own (enemy slots, see `aow/harness/known.py`): stage 6-1 nearly always, timed and castle stages now and then. Version 2.0 does not. Do not work around it in the emulator.
 
 ## Layout
 

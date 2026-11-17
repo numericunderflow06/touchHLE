@@ -17,6 +17,9 @@ SCREENS = {
     "DifficultyLayer": "difficulty",
     "CampaignOpeningLayer": "opening_story",
     "CampaignMapLayer": "campaign_map",
+    # Version 2.0 has a second map for chapters 10 to 12; both are the
+    # campaign map as far as getting around is concerned (see nav.py).
+    "CampaignMapMayaLayer": "campaign_map",
     "CampaignStageInfoLayer": "stage_info",
     "MainGameLayer": "battle",
     "TutorialLayer": "tutorial",

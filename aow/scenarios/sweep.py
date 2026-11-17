@@ -50,14 +50,24 @@ def run_stage(index, version, difficulty, money, limit, attempts=3):
     again; those runs are listed in the result. The enemy-pool crash needs a
     crowd of enemies on the field, so the later attempts start with every
     upgrade at its maximum, which keeps the crowd smaller."""
-    game_bug_runs = []
+    game_bug_runs, weak_runs = [], []
     for attempt in range(attempts):
         levels = ("10", "10") if attempt else ()
         result = run_stage_once(index, version, difficulty, money, limit, levels)
-        if not result.get("known_game_bug"):
-            break
-        game_bug_runs.append({"id": result["known_game_bug"]["id"], "run_dir": result.get("run_dir")})
+        if result.get("known_game_bug"):
+            game_bug_runs.append({"id": result["known_game_bug"]["id"],
+                                  "run_dir": result.get("run_dir")})
+            continue
+        # Lost or out of time with everything else in order: the bot's army
+        # was not up to the stage. Once more with every upgrade at maximum.
+        outcome = (result.get("notes") or {}).get("outcome")
+        if (attempt == 0 and outcome in ("lost", "timeout") and not result.get("crash")
+                and result.get("failed") == ["stage was won"]):
+            weak_runs.append({"outcome": outcome, "run_dir": result.get("run_dir")})
+            continue
+        break
     result["game_bug_runs"] = game_bug_runs
+    result["weak_army_runs"] = weak_runs
     return result
 
 
@@ -81,6 +91,9 @@ def run(version="1.1", parallel="3", stages="", difficulty="0", money="300000", 
             "known_game_bug": (result.get("known_game_bug") or {}).get("id"),
             # Earlier attempts at this stage that ended in the game's own crash.
             "game_bug_runs": result.get("game_bug_runs", []),
+            # Earlier attempts that the bot lost or did not finish in time
+            # with its usual army; the stage was then played with a maxed one.
+            "weak_army_runs": result.get("weak_army_runs", []),
             "error": (result.get("error") or "")[:300] or None,
             "run_dir": result.get("run_dir"),
         })

@@ -64,7 +64,7 @@ def buy_upgrades(s, levels=3):
     item on the game's upgrade screen. Each purchase is confirmed by the gold
     shown on that screen going down. Returns the gold spent."""
     c = s.control
-    x, y = nav.named_button(c, "CampaignMapLayer", "btnUpgrade")
+    x, y = nav.map_button(c, "btnUpgrade")
     nav.tap_expect(c, x, y, "upgrade")
     nav.wait_settled(c)
     layer = nav.find_object(c, "UpgradeLayer")
@@ -270,6 +270,8 @@ def body(s, index, info, limit_seconds):
     nav.load_game_to_map(c)
     if not s.check_screen("campaign_map"):
         return
+    nav.wait_ready(c)
+    nav.go_to_map_of(c, index)
     available = nav.stage_buttons(c, stage_count=40)
     s.check(f"stage {index} is on the map", index in available, sorted(available))
     buy_upgrades(s, levels=1)
