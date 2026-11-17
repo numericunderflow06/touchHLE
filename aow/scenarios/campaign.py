@@ -20,7 +20,11 @@ emulator's: the checks are named for what happened ("stage 4-2 won").
 When the game ends in one of its own crashes (harness/known.py: version 1.1
 runs out of enemy slots), the run does what the player would: it launches
 the game again on the same save data, loads the save and goes on. Those
-crashes are listed in the result and do not fail it.
+crashes are listed in the result and do not fail it. A stage that ends in
+such a crash three times is given up: the next stage is opened in the save
+data while the game is closed, the stage is listed as passed over, and the
+run goes on, so that what comes after it is still played. (Version 1.1's
+stage 6-1 is such a stage, see harness/known.py.)
 
 With `rich` as the last argument the campaign starts instead from a save
 that has only the first stage open but every troop and upgrade at maximum.
@@ -35,11 +39,13 @@ battle.
 """
 
 import json
+import plistlib
 import subprocess
 import time
 from pathlib import Path
 
 from harness import game, nav, save
+from harness.session import BUNDLE_ID
 
 from .common import FPS_FLOOR, run_scenario
 from .stage import buy_upgrades, play
@@ -57,6 +63,21 @@ def memory_mb(pid):
         return round(int("".join(ch for ch in field if ch.isdigit())) / 1024)
     except (IndexError, ValueError, OSError):
         return None
+
+
+def open_next_stage(run_dir, stages, index, difficulty):
+    """In the save data a closed game left in `run_dir`: mark stage `index`
+    as finished and open the one after it."""
+    path = (Path(run_dir) / "touchHLE_sandbox" / BUNDLE_ID / "Library" / "Preferences"
+            / f"{BUNDLE_ID}.plist")
+    data = plistlib.loads(path.read_bytes())
+    slot = data["MilestoneDict_0"]
+    done = stages[index - 1]
+    slot[f"FinishStage{done['chapter']}_{done['round']}_{difficulty}"] = True
+    if index < len(stages):
+        following = stages[index]
+        slot[f"CanGo{following['chapter']}_{following['round']}"] = True
+    path.write_bytes(plistlib.dumps(data, fmt=plistlib.FMT_BINARY))
 
 
 def leave_result(s, timeout=60.0):
@@ -154,9 +175,11 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
         if not s.check_screen("campaign_map"):
             return
         nav.wait_ready(c)
+        nav.go_to_map_of(c, state["next"])
         available = sorted(nav.stage_buttons(c, stage_count=40))
+        first = nav.MAPS[nav.map_layer(c)[0]]
         s.check("after a relaunch the map offers what had been won",
-                available == list(range(1, state["next"] + 1)), available)
+                available == list(range(first, state["next"] + 1)), available)
 
     while state["next"] <= len(stages):
         index = state["next"]
@@ -260,11 +283,22 @@ def run(version="1.1", difficulty="0", attempts="6", limit_seconds="420", relaun
                     stage = attempt.get("farming") or row["id"]
         crashes.append({"stage": stage, "bug": bug["id"], "run_dir": result["run_dir"]})
         previous = result["run_dir"]
+        # Three times at the same stage: pass it over.
+        row = state["rows"][state["next"] - 1] if len(state["rows"]) >= state["next"] else None
+        if row and sum(1 for c in crashes if c["stage"] == row["id"]) >= 3:
+            stages = json.loads((GAME_DIR / f"stages_v{version}.json")
+                                .read_text(encoding="utf-8"))["stages"]
+            open_next_stage(previous, stages, state["next"], int(difficulty))
+            row["won"] = False
+            row["passed_over"] = bug["id"]
+            row["attempts"] = len(row["tries"])
+            state["next"] += 1
 
     rows = state["rows"]
     failed = [c["name"] for session in sessions for c in session["checks"] if not c["ok"]]
     won = sum(1 for row in rows if row.get("won"))
-    result["ok"] = (won == total and not failed and not result.get("crash")
+    passed_over = [row["id"] for row in rows if row.get("passed_over")]
+    result["ok"] = (won + len(passed_over) == total and not failed and not result.get("crash")
                     and not result.get("error"))
     result["failed"] = failed
     result["sessions"] = [{k: v for k, v in session.items() if k != "checks"} for session in sessions]
@@ -273,6 +307,9 @@ def run(version="1.1", difficulty="0", attempts="6", limit_seconds="420", relaun
     result["summary"] = {
         "stages_won": won,
         "stages_total": total,
+        # Given up after the game's own crash three times; the next stage
+        # was opened in the save data.
+        "stages_passed_over": passed_over,
         "stopped_at": (result.get("notes") or {}).get("stopped_at"),
         "launches": len(sessions),
         "game_bug_crashes": len(crashes),

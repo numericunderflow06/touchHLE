@@ -107,12 +107,18 @@ class Session:
                 raise FileNotFoundError(needed)
         stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
         safe = re.sub(r"[^A-Za-z0-9_.-]+", "-", label).strip("-") or "run"
-        run_dir = RUNS / f"{stamp}_{safe}"
+        # Several runs can start in the same second (a sweep, a crawl), so
+        # the directory is claimed by creating it, not by looking first.
+        RUNS.mkdir(exist_ok=True)
         n = 1
-        while run_dir.exists():
-            n += 1
-            run_dir = RUNS / f"{stamp}_{safe}_{n}"
-        (run_dir / "shots").mkdir(parents=True)
+        while True:
+            run_dir = RUNS / (f"{stamp}_{safe}" if n == 1 else f"{stamp}_{safe}_{n}")
+            try:
+                run_dir.mkdir()
+                break
+            except FileExistsError:
+                n += 1
+        (run_dir / "shots").mkdir()
 
         _link_dir(REPO / "touchHLE_dylibs", run_dir / "touchHLE_dylibs")
         _link_dir(REPO / "touchHLE_fonts", run_dir / "touchHLE_fonts")
