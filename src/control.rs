@@ -463,7 +463,11 @@ impl Control {
         match cmd {
             "ping" => {
                 let (width, height) = env.window().screen_size_points();
+                let keyboard = crate::frameworks::uikit::text_field_being_edited(env) != nil;
                 Ok(Some(json!({
+                    // Whether a text field is being edited, i.e. the device
+                    // would be showing its keyboard (see `type`).
+                    "keyboard": keyboard,
                     "fps": (self.fps * 10.0).round() / 10.0,
                     "uptime_ms": self.started.elapsed().as_millis() as u64,
                     "screen": [width, height],
@@ -545,6 +549,31 @@ impl Control {
                     )));
                 }
                 Ok(Some(json!({})))
+            }
+            // Keyboard input, as typed on the device's on-screen keyboard:
+            // optional backspaces, then text one character at a time, then
+            // optionally the return key. It goes to the text field being
+            // edited; without one it is dropped, as on the device, where
+            // there would be no keyboard to type on.
+            "type" => {
+                use crate::window::TextInputEvent;
+                let backspaces = opt_u32(request, "backspaces", 0)?;
+                let text = request.get("text").and_then(Value::as_str).unwrap_or("");
+                let enter = request.get("enter").and_then(Value::as_bool) == Some(true);
+                let editing = crate::frameworks::uikit::text_field_being_edited(env) != nil;
+                let window = env.window_mut();
+                for _ in 0..backspaces {
+                    window.control_push_event(Event::TextInput(TextInputEvent::Backspace));
+                }
+                for character in text.chars() {
+                    window.control_push_event(Event::TextInput(TextInputEvent::Text(
+                        character.to_string(),
+                    )));
+                }
+                if enter {
+                    window.control_push_event(Event::TextInput(TextInputEvent::Return));
+                }
+                Ok(Some(json!({ "editing": editing })))
             }
             "tilt" => {
                 let window = env.window_mut();
@@ -1321,6 +1350,10 @@ fn view_json(env: &mut Environment, view: id, window: id, depth: u32, budget: &m
         if let Some(text) = string_value(env, text) {
             map.insert("text".to_string(), json!(text));
         }
+    }
+    if is_a("UITextField") {
+        let editing = crate::frameworks::uikit::text_field_being_edited(env) == view;
+        map.insert("editing".to_string(), json!(editing));
     }
     if is_a("UIButton") {
         let title: id = crate::objc::msg![env; view currentTitle];

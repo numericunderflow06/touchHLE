@@ -98,6 +98,22 @@ pub struct State {
     ui_responder: ui_responder::State,
 }
 
+/// For [crate::control]: the `UITextField` that keyboard input currently goes
+/// to, or `nil`.
+pub fn text_field_being_edited(env: &mut Environment) -> crate::objc::id {
+    let responder = env.framework_state.uikit.ui_responder.first_responder;
+    if responder.is_null() {
+        return crate::objc::nil;
+    }
+    let class = crate::objc::msg![env; responder class];
+    let ui_text_field_class = env.objc.get_known_class("UITextField", &mut env.mem);
+    if env.objc.class_is_subclass_of(class, ui_text_field_class) {
+        responder
+    } else {
+        crate::objc::nil
+    }
+}
+
 /// For [crate::control]: every `UIWindow` that currently exists.
 pub fn all_windows(env: &Environment) -> Vec<crate::objc::id> {
     env.framework_state.uikit.ui_view.ui_window.windows.clone()
