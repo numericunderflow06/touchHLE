@@ -2,6 +2,7 @@
 
     python aow/aow.py run campaign                  # v1.1, easy
     python aow/aow.py run campaign 2.0 0 6 420      # version, difficulty, tries per stage, seconds per try
+    python aow/aow.py run campaign 2.0 0 6 420 12 rich
 
 The sweep runs every stage in its own emulator from a written save with a
 strong army. This is the game as a player meets it instead: no save data,
@@ -21,6 +22,14 @@ runs out of enemy slots), the run does what the player would: it launches
 the game again on the same save data, loads the save and goes on. Those
 crashes are listed in the result and do not fail it.
 
+With `rich` as the last argument the campaign starts instead from a save
+that has only the first stage open but every troop and upgrade at maximum.
+The bot's simple play gets stuck a few chapters into the game on earned gold
+alone (4-1 in version 1.1); the rich start takes its strength out of the
+question, so that the chain itself is played to the end: every stage
+unlocked by the one before, the story screens between chapters, the second
+map of version 2.0, the ending.
+
 Progress is in `campaign.json` in each run directory, rewritten after every
 battle.
 """
@@ -30,7 +39,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from harness import game, nav
+from harness import game, nav, save
 
 from .common import FPS_FLOOR, run_scenario
 from .stage import buy_upgrades, play
@@ -117,7 +126,15 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
         progress.write_text(json.dumps(rows, indent=1), encoding="utf-8")
 
     nav.to_main_menu(c)
-    if state["sessions"] == 0:
+    if state["sessions"] == 0 and state["rich"]:
+        nav.load_game_to_map(c)
+        if not s.check_screen("campaign_map"):
+            return
+        nav.wait_ready(c)
+        s.check("the prepared save offers only the first stage",
+                sorted(nav.stage_buttons(c, stage_count=40)) == [1],
+                sorted(nav.stage_buttons(c, stage_count=40)))
+    elif state["sessions"] == 0:
         scene = nav.new_game_to_map(c)
         if scene["screen"] == "difficulty":
             # Difficulty choices are listed easy to hard.
@@ -174,7 +191,10 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
                     s.check(f"replaying {farm['farming']} ended with a result", False, farm["outcome"])
                     return
                 nav.wait_ready(c)
-            buy_upgrades(s, levels=1)
+            if state["rich"]:
+                s.notes["upgrades"] = {}  # everything is at its maximum already
+            else:
+                buy_upgrades(s, levels=1)
             upgrades = dict(s.notes.get("upgrades", {}))
             attempt = {"outcome": "not started", "upgrades_bought": upgrades.get("purchases"),
                        "gold_spent": upgrades.get("gold_spent")}
@@ -207,16 +227,22 @@ def body(s, state, version, difficulty, attempts, limit_seconds):
     s.check("the campaign was played to its end", True, len(rows))
 
 
-def run(version="1.1", difficulty="0", attempts="6", limit_seconds="420", relaunches="12"):
+def run(version="1.1", difficulty="0", attempts="6", limit_seconds="420", relaunches="12",
+        start="new"):
     total = len(json.loads((GAME_DIR / f"stages_v{version}.json").read_text(encoding="utf-8"))["stages"])
-    state = {"rows": [], "next": 1, "sessions": 0}
+    state = {"rows": [], "next": 1, "sessions": 0, "rich": start == "rich"}
     sessions, crashes = [], []
     previous = None
+    plist = None
+    if state["rich"]:
+        plist = save.make_save(unlock=1, money=300000, difficulty=int(difficulty), version=version,
+                               upgrades={i: 10 for i in range(8)} | {i: 10 for i in range(14, 24)},
+                               extra={f"UnlockItem_{i}": True for i in range(40)})
     while True:
         result = run_scenario(
             "campaign",
             lambda s: body(s, state, version, int(difficulty), int(attempts), float(limit_seconds)),
-            ipa=version, sandbox_from=previous)
+            ipa=version, sandbox_from=previous, save_plist=None if previous else plist)
         state["sessions"] += 1
         bug = result.get("known_game_bug")
         sessions.append({"run_dir": result["run_dir"], "seconds": result.get("seconds"),
