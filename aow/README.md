@@ -63,6 +63,7 @@ The game acts on a tap only after the tapped button's press animation, so the ef
 | `run persistence` | 4 min | New game, win 1-1, quit, relaunch: progress and archived achievements are still there. |
 | `run dialogs [version]` | 90 s | Every system screen the game shows on top of itself: the three confirmation dialogs (quit a battle, quit the map, delete a save), each declined and confirmed, and the music picker behind the playlist button. |
 | `run menus [version]` | 40 s | Options, Help, Ranking and Achievements: opened, looked at, every button pressed, and back to the main menu. |
+| `run gestures [version]` | 75 s | Swiping through the help pages, and the troop commands drawn on the battlefield (`>`, `<`, `>>`, `<<`, touch-and-hold) as the game's own recogniser reads them. |
 | `run conflict [version]` | 7 min | Conflict mode over four launches: win a stage, close the game in the middle of the next, relaunch and load it, lose, type a name into the ranking, find it again after another relaunch; and the other two answers to "new game or load?". |
 | `run campaign [version] [difficulty] [tries] [seconds]` | 1-2 hours | The whole campaign from a new game, on the gold the stages pay: upgrades bought between stages, lost stages retried (replaying the stage before for gold when needed), the game relaunched on its save after one of its own crashes. |
 | `run perf [stage] [version]` | 70 s | A crowded battle left to fight: frame rate against the number of units, a profile, and the cost of a bare message send. |
