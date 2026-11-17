@@ -93,7 +93,7 @@ def body(s, version, difficulty, attempts, limit_seconds):
             nav.tap_expect(c, 240, 200, "campaign_map")
     if not s.check_screen("campaign_map"):
         return
-    nav.wait_settled(c)
+    nav.wait_ready(c)
     s.check("a new game offers only the first stage",
             sorted(nav.stage_buttons(c, stage_count=40)) == [1],
             sorted(nav.stage_buttons(c, stage_count=40)))
@@ -103,7 +103,7 @@ def body(s, version, difficulty, attempts, limit_seconds):
         rows.append(row)
         won = False
         for attempt in range(1, attempts + 1):
-            nav.wait_settled(c)
+            nav.wait_ready(c)
             available = sorted(nav.stage_buttons(c, stage_count=40))
             if attempt == 1:
                 s.check(f"{info['id']} is offered after the win before it",
