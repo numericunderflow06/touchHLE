@@ -44,6 +44,10 @@ class Image:
         self.symbols = json.loads((ROOT / "aow" / "game" / f"symbols_v{version}.json").read_text())
         # Data symbols too (instance variable offsets, class references, ...).
         self.names = {addr: name for addr, name in all_symbols(self.data, code_only=False)}
+        # The game's own code is Thumb; the Cocos2D engine in it is ARM.
+        self.thumb = {addr for addr, _name, thumb in all_symbols(self.data, with_mode=True) if thumb}
+        self.md_thumb = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
+        self.md_arm = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
 
     def read(self, addr, size):
         for vmaddr, vmsize, fileoff, filesize in self.segments:
@@ -75,6 +79,39 @@ class Image:
         return min(later) if later else start + 0x400
 
 
+def references(image, start, end):
+    """Disassemble the function at [start, end) in its own instruction mode.
+
+    Yields (instruction, value, target): `value` is set for an instruction
+    that loads a pc-relative literal; `target` is the address formed when pc
+    is added to such a literal (how this code reaches instance variable
+    offsets, selectors and strings)."""
+    thumb = start in image.thumb
+    md = image.md_thumb if thumb else image.md_arm
+    bias = 4 if thumb else 8
+    literal = {}
+    for ins in md.disasm(image.read(start, end - start), start):
+        value = target = None
+        ops = ins.op_str
+        parts = [part.strip() for part in ops.split(",")]
+        if ins.mnemonic.startswith("ldr") and "[pc, #" in ops:
+            try:
+                disp = int(ops.split("#")[1].rstrip("]"), 0)
+                value = image.u32(((ins.address + bias) & ~3) + disp)
+                literal[parts[0]] = value
+            except (IndexError, ValueError):
+                pass
+        elif ins.mnemonic.startswith("ldr") and len(parts) == 3 and parts[1] == "[pc":
+            reg = parts[2].rstrip("]")  # ARM: ldr rX, [pc, rY]
+            if literal.get(reg) is not None:
+                target = (literal[reg] + ins.address + bias) & 0xFFFFFFFF
+        elif ins.mnemonic in ("add", "adds") and "pc" in parts[1:]:
+            reg = ([part for part in parts[1:] if part != "pc"] or [parts[0]])[0]
+            if literal.get(reg) is not None:
+                target = (literal[reg] + ins.address + bias) & 0xFFFFFFFF
+        yield ins, value, target
+
+
 def main():
     # Strings read from the binary can hold bytes the console cannot show.
     sys.stdout.reconfigure(errors="replace")
@@ -83,37 +120,23 @@ def main():
     image = Image(version)
     start, name = image.find(query)
     end = min(image.end_of(start), start + (int(sys.argv[3]) if len(sys.argv) > 3 else 0x600))
-    print(f"{name}  [{start:#x}-{end:#x}]")
-    md = capstone.Cs(capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
-    md.detail = False
-    code = image.read(start, end - start)
-    literal = {}  # register -> value loaded pc-relative
-    for ins in md.disasm(code, start):
+    print(f"{name}  [{start:#x}-{end:#x}]  ({'Thumb' if start in image.thumb else 'ARM'})")
+    for ins, value, target in references(image, start, end):
         note = ""
         text = f"{ins.mnemonic} {ins.op_str}"
-        if ins.mnemonic.startswith("ldr") and "[pc" in ins.op_str:
-            reg = ins.op_str.split(",")[0]
-            try:
-                disp = int(ins.op_str.split("#")[1].rstrip("]"), 0)
-                value = image.u32(((ins.address + 4) & ~3) + disp)
-                literal[reg] = (value, ins.address)
-                note = f"; ={value:#x}"
-            except (IndexError, ValueError, TypeError):
-                pass
-        elif ins.mnemonic == "add" and ins.op_str.endswith(", pc"):
-            reg = ins.op_str.split(",")[0]
-            if reg in literal:
-                target = (literal[reg][0] + ins.address + 4) & 0xFFFFFFFF
-                pointee = image.u32(target)
-                text_at = image.cstr(pointee) if pointee else None
-                direct = image.cstr(target)
-                note = f"; -> {target:#x}"
-                if target in self.names if False else target in image.names:
-                    note += f" {image.names[target]}"
-                elif text_at and text_at.isprintable() and len(text_at) > 1:
-                    note += f" => {text_at!r}"
-                elif direct and direct.isprintable() and len(direct) > 2:
-                    note += f" {direct!r}"
+        if value is not None:
+            note = f"; ={value:#x}"
+        elif target is not None:
+            pointee = image.u32(target)
+            text_at = image.cstr(pointee) if pointee else None
+            direct = image.cstr(target)
+            note = f"; -> {target:#x}"
+            if target in image.names:
+                note += f" {image.names[target]}"
+            elif text_at and text_at.isprintable() and len(text_at) > 1:
+                note += f" => {text_at!r}"
+            elif direct and direct.isprintable() and len(direct) > 2:
+                note += f" {direct!r}"
         print(f"  {ins.address:#08x}  {text:<34}{note}")
 
 

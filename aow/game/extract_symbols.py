@@ -34,7 +34,13 @@ def armv7_slice(data):
     raise SystemExit("no armv7 slice")
 
 
-def symbols(macho, code_only=True):
+N_ARM_THUMB_DEF = 0x0008
+
+
+def symbols(macho, code_only=True, with_mode=False):
+    """Yield (address, name) for each defined symbol; with `with_mode`,
+    (address, name, is_thumb): the game's own code is Thumb, the Cocos2D
+    engine inside it is ARM."""
     magic, _cpu, _sub, _type, ncmds, _size, _flags = struct.unpack("<7I", macho[:28])
     if magic != MH_MAGIC:
         raise SystemExit("not a 32-bit little-endian Mach-O")
@@ -53,7 +59,9 @@ def symbols(macho, code_only=True):
                     continue
                 end = strings.find(b"\0", strx)
                 name = strings[strx:end].decode("utf-8", "replace")
-                if name:
+                if name and with_mode:
+                    yield value & ~1, name, bool(_desc & N_ARM_THUMB_DEF)
+                elif name:
                     yield value & ~1, name
         offset += cmdsize
 
