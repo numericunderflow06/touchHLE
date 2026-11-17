@@ -1,5 +1,7 @@
 # Harness for driving the game in the emulator
 
+Where the project stands, what is known about the game and what comes next: `aow/docs/` (start with `STATUS.md`).
+
 Everything here talks to the emulator's control interface (`src/control.rs`, enabled with `--control=host:port`). Run commands from the repository root. Every command prints JSON.
 
 ## The loop
@@ -120,7 +122,9 @@ Each launch creates `runs/<timestamp>_<label>/` containing:
 - `harness/winshot.py` — capture a window from outside (fallback for builds without the control interface).
 - `game/` — data generated from the game packages: stage tables (`extract_game_data.py`), symbol tables (`extract_symbols.py`), and reference screenshots in `game/screens/`.
 - `scenarios/` — scripted checks.
+- `docs/` — `STATUS.md` (state and evidence), `GAME.md` (the game), `EMULATOR_CHANGES.md` (the fork's changes to the emulator), `SKILL_VS_LEVELS.md` (plan for the next study).
 - `tools/stage_hunks.py` — stage part of a file's changes for a commit.
-- `tools/disasm.py` — disassemble a game function by name, with instance variable and selector names (needs `capstone` in `runs/venv`).
+- `tools/disasm.py` — disassemble a game function by name, with instance variable and selector names (needs `capstone` in `runs/venv`). The game's own code is Thumb and the Cocos2D engine in it is ARM; the three tools pick the mode per function from the symbol table.
 - `tools/xref.py` — which game functions refer to an instance variable, selector or string.
+- `tools/calls.py` — which game functions call an imported C function (`rand`, `gettimeofday`, ...); without arguments, every imported function by number of uses.
 - `tools/sample.py PID [seconds]` — sampling profiler for the emulator process itself (Windows): which host functions the main thread is in, named from `target/release/touchHLE.pdb`.

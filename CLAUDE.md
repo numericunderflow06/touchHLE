@@ -4,6 +4,10 @@ Personal fork of touchHLE (Rust high-level emulator for iPhone OS apps). Branch 
 
 **Goal:** "Avatar of War: The Dark Lord" (`cde.AvatarOfWarTDL`, Cocos2D, landscape, OpenGL ES 1.1) plays through completely: every campaign stage (23 in v1.1, 32 in v2.0), Conflict mode and every menu, with correct display, working touch and tilt, and no crashes.
 
+**Start here in a new session:** `aow/docs/STATUS.md` says what is done, what is proven and what is open.
+`aow/docs/GAME.md` holds what is known about the game, `aow/docs/EMULATOR_CHANGES.md` what this fork changed
+in the emulator, and `aow/docs/SKILL_VS_LEVELS.md` the plan for the next piece of work (not started).
+
 ## Hard rules
 
 - **Never send anything upstream.** Upstream forbids AI-assisted contributions (`CONTRIBUTING.md`). No pull requests, patches or issues to `touchHLE/touchHLE`. Push only to `origin` (the personal fork).
@@ -31,6 +35,8 @@ A build takes about 15 s to type-check and 80 s to link. Runs are silent (OpenAL
 
 ## Things worth knowing about the game
 
+The short list; `aow/docs/GAME.md` has the rest (rules, data tables, prices, time and random numbers).
+
 - It uses UIKit view controller auto-rotation: `willRotateToInterfaceOrientation:duration:` resizes the GL view to 480x320 and the view rebuilds its framebuffer in `layoutSubviews`.
 - The battlefield (1450 points wide) scrolls by **tilt**: `MainGameLayer` reads accelerometer y and moves `gameNode` between x = 0 and x = -970 when |y| > 0.3. The HUD is in `uiNode`. Dragging a finger on the field draws a command line; it does not scroll.
 - Screens are layer classes (`MainMenuLayer`, `ProfileLayer`, `CampaignMapLayer`, `MainGameLayer`, ...); `aow/harness/game.py` maps them to names. Buttons are `CDEButton` nodes. Taps during a screen's entrance animation are ignored by the game.
@@ -44,7 +50,7 @@ A build takes about 15 s to type-check and 80 s to link. Runs are silent (OpenAL
 ## Layout
 
 - `src/control.rs`, `src/control/json.rs` — control interface inside the emulator.
-- `aow/` — harness, scenarios, game data.
+- `aow/` — harness, scenarios, game data; `aow/docs/` — status, game knowledge, plans.
 - `runs/` — one directory per run, plus `runs/bin/` with the exact binary each run used (not in git).
 - The game packages are not in git: `touchHLE_apps/Avatar_of_War_The_Dark_Lord_v1.1.ipa` and `Avatar_Of_War_The_Dark_Lord_v2.0.ipa`.
 
